@@ -2,29 +2,19 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Menu, X, Phone, ChevronDown } from 'lucide-react'
+import { Menu, X, Phone } from 'lucide-react'
 
 const navLinks = [
-  { label: 'Home', href: '/' },
-  {
-    label: 'Tours', href: '/tours',
-    children: [
-      { label: 'Cultural Tours',       href: '/tours?cat=cultural' },
-      { label: 'Adventure & Trekking', href: '/tours?cat=adventure' },
-      { label: 'Festival Tours',       href: '/tours?cat=festival' },
-      { label: 'Luxury & Wellness',    href: '/tours?cat=luxury' },
-    ],
-  },
+  { label: 'Home',     href: '/' },
+  { label: 'Tours',    href: '/tours' },
   { label: 'Gallery',  href: '/gallery' },
   { label: 'About Us', href: '/about' },
   { label: 'Contact',  href: '/contact' },
 ]
 
 export default function Navbar() {
-  const [scrolled, setScrolled]           = useState(false)
-  const [mobileOpen, setMobileOpen]       = useState(false)
-  const [toursOpen, setToursOpen]         = useState(false)
-  const [toursExpanded, setToursExpanded] = useState(false)
+  const [scrolled, setScrolled]   = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -33,9 +23,7 @@ export default function Navbar() {
   }, [])
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { setMobileOpen(false); setToursOpen(false) }
-    }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMobileOpen(false) }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [])
@@ -78,70 +66,19 @@ export default function Navbar() {
 
           {/* ── Desktop Nav ── */}
           <nav className="hidden lg:flex items-center gap-0.5">
-            {navLinks.map((link) =>
-              link.children ? (
-                /* Tours with dropdown */
-                <div
-                  key={link.label}
-                  className="relative"
-                  onMouseEnter={() => setToursOpen(true)}
-                  onMouseLeave={() => setToursOpen(false)}
-                >
-                  <Link
-                    href={link.href}
-                    className={`flex items-center gap-1 text-sm font-medium px-3.5 py-2 rounded-lg transition-all duration-200 ${
-                      solid
-                        ? 'text-stone-700 hover:text-amber-600 hover:bg-amber-50/80'
-                        : 'text-white/90 hover:text-white hover:bg-white/10'
-                    }`}
-                  >
-                    {link.label}
-                    <ChevronDown className={`w-3.5 h-3.5 opacity-60 transition-transform duration-200 ${toursOpen ? 'rotate-180' : ''}`} />
-                  </Link>
-
-                  {/*
-                    Wrapper starts right at the link bottom with pt-2 visual gap —
-                    keeping the hover area continuous so onMouseLeave doesn't fire
-                    in the gap between the link and the panel.
-                  */}
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 z-50">
-                    <div
-                      className={`bg-white rounded-2xl shadow-xl shadow-stone-200/80 border border-stone-100 overflow-hidden transition-all duration-200 origin-top ${
-                        toursOpen
-                          ? 'opacity-100 scale-100 pointer-events-auto'
-                          : 'opacity-0 scale-95 pointer-events-none'
-                      }`}
-                    >
-                      {/* Vertical single column */}
-                      <div className="py-1.5">
-                        {link.children.map((child) => (
-                          <Link
-                            key={child.label}
-                            href={child.href}
-                            className="flex items-center px-4 py-2.5 text-sm text-stone-600 hover:bg-amber-50 hover:text-amber-700 mx-1.5 rounded-xl transition-colors whitespace-nowrap"
-                            onClick={() => setToursOpen(false)}
-                          >
-                            {child.label}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  className={`text-sm font-medium px-3.5 py-2 rounded-lg transition-all duration-200 ${
-                    solid
-                      ? 'text-stone-700 hover:text-amber-600 hover:bg-amber-50/80'
-                      : 'text-white/90 hover:text-white hover:bg-white/10'
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              )
-            )}
+            {navLinks.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                className={`text-sm font-medium px-3.5 py-2 rounded-lg transition-all duration-200 ${
+                  solid
+                    ? 'text-stone-700 hover:text-amber-600 hover:bg-amber-50/80'
+                    : 'text-white/90 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
           </nav>
 
           {/* ── Desktop CTA ── */}
@@ -184,46 +121,14 @@ export default function Navbar() {
       >
         <div className="bg-white border-t border-stone-100 px-4 pb-7 pt-2">
           {navLinks.map((link) => (
-            <div key={link.label}>
-              <div className="flex items-center justify-between border-b border-stone-50">
-                <Link
-                  href={link.href}
-                  className="flex-1 py-3.5 text-stone-800 font-medium text-sm hover:text-amber-600 transition-colors"
-                  onClick={() => { if (!link.children) setMobileOpen(false) }}
-                >
-                  {link.label}
-                </Link>
-                {link.children && (
-                  <button
-                    className="p-2 text-stone-400"
-                    onClick={() => setToursExpanded(!toursExpanded)}
-                    aria-label="Toggle tours submenu"
-                  >
-                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${toursExpanded ? 'rotate-180' : ''}`} />
-                  </button>
-                )}
-              </div>
-
-              {link.children && (
-                <div
-                  className="overflow-hidden transition-[max-height] duration-200 ease-in-out"
-                  style={{ maxHeight: toursExpanded ? '200px' : '0px' }}
-                >
-                  <div className="pl-3 py-1 bg-stone-50/50 rounded-xl my-1">
-                    {link.children.map((child) => (
-                      <Link
-                        key={child.label}
-                        href={child.href}
-                        className="flex py-2.5 px-2 text-sm text-stone-500 hover:text-amber-600 transition-colors"
-                        onClick={() => setMobileOpen(false)}
-                      >
-                        {child.label}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            <Link
+              key={link.label}
+              href={link.href}
+              className="flex py-3.5 text-stone-800 font-medium text-sm border-b border-stone-50 hover:text-amber-600 transition-colors"
+              onClick={() => setMobileOpen(false)}
+            >
+              {link.label}
+            </Link>
           ))}
 
           <div className="mt-5 flex flex-col gap-2.5">
