@@ -15,6 +15,7 @@ const navLinks = [
       { label: 'Luxury & Wellness', href: '/tours?cat=luxury' },
     ],
   },
+  { label: 'Gallery', href: '/gallery' },
   { label: 'About Us', href: '/about' },
   { label: 'Contact', href: '/contact' },
 ]

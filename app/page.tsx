@@ -11,10 +11,10 @@ import Image from 'next/image'
 import { ArrowRight, Mountain, Utensils, Bird, Paintbrush } from 'lucide-react'
 
 const experiences = [
-  { icon: Mountain,   title: 'Ancient Monasteries',  desc: 'Cliffside sanctuaries perched impossibly above sacred valleys', img: '/images/img-29.jpeg' },
-  { icon: Paintbrush, title: 'Living Festivals',      desc: 'Cham mask dances performed before crowds of devotees', img: '/images/img-13.jpeg' },
-  { icon: Utensils,   title: 'Authentic Cuisine',     desc: 'Fiery ema datshi, yak meat, and organic red rice', img: '/images/img-08.jpeg' },
-  { icon: Bird,       title: 'Pristine Nature',       desc: 'Snow leopards, black-necked cranes, and Himalayan valleys', img: '/images/img-25.jpeg' },
+  { icon: Mountain,   title: 'Ancient Monasteries',  desc: 'Cliffside sanctuaries perched impossibly above sacred valleys', img: '/images/tigers-nest-2.jpg' },
+  { icon: Paintbrush, title: 'Living Festivals',      desc: 'Cham mask dances performed before crowds of devotees', img: '/images/cham-dance-red.jpg' },
+  { icon: Utensils,   title: 'Authentic Cuisine',     desc: 'Fiery ema datshi, yak meat, and organic red rice', img: '/images/ema-datshi.jpg' },
+  { icon: Bird,       title: 'Pristine Nature',       desc: 'Snow leopards, black-necked cranes, and Himalayan valleys', img: '/images/prayer-flags-valley.jpg' },
 ]
 
 export default function HomePage() {
@@ -82,7 +82,7 @@ export default function HomePage() {
       {/* CTA Banner */}
       <section
         className="relative py-24 sm:py-28 text-center overflow-hidden"
-        style={{ backgroundImage: 'url(/images/img-38.jpeg)', backgroundSize: 'cover', backgroundPosition: 'center' }}
+        style={{ backgroundImage: 'url(/images/sunrise-silhouette.jpg)', backgroundSize: 'cover', backgroundPosition: 'center top' }}
       >
         <div className="absolute inset-0 bg-stone-900/70" />
         <div className="relative z-10 max-w-3xl mx-auto px-5">

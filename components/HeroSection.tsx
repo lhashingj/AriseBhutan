@@ -5,19 +5,24 @@ import { ChevronDown } from 'lucide-react'
 
 const slides = [
   {
-    image: '/images/img-33.jpeg',
+    image: '/images/tigers-nest-1.jpg',
     headline: 'Arise to New Adventures',
-    sub: 'Discover the Last Shangri-La — Ancient Monasteries, Sacred Mountains & Vibrant Festival Culture',
+    sub: "Discover the Last Shangri-La — Ancient Monasteries, Sacred Mountains & Vibrant Festival Culture",
   },
   {
-    image: '/images/img-02.jpeg',
+    image: '/images/cham-dance-blue.jpg',
     headline: 'Experience Sacred Festivals',
     sub: "Witness the living color of Bhutan's Tshechu — sacred Cham dances performed for centuries",
   },
   {
-    image: '/images/img-38.jpeg',
+    image: '/images/sunrise-summit.jpg',
     headline: 'Awaken at the Summit',
     sub: 'Trek pristine Himalayan trails and greet the sunrise from the roof of the world',
+  },
+  {
+    image: '/images/prayer-flags-mountains.jpg',
+    headline: 'Where Prayers Touch the Sky',
+    sub: 'Colorful prayer flags carry mantras across mountain passes in the Kingdom of Happiness',
   },
 ]
 

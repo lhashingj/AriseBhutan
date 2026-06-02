@@ -20,7 +20,9 @@ Thumbs.db
 .idea/
 *.swp
 
-# Source images (large originals — only public/images/ belongs in repo)
-images/
+# Source images (large originals stored outside repo)
+/images/
+# Allow public/images/ — these are the optimized web assets
+!public/images/
 .vercel
 .env*
