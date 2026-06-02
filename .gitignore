@@ -22,3 +22,5 @@ Thumbs.db
 
 # Source images (large originals — only public/images/ belongs in repo)
 images/
+.vercel
+.env*
