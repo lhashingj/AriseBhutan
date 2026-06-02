@@ -16,7 +16,7 @@ export default function ContactPage() {
       {/* Hero */}
       <section
         className="relative py-24 sm:py-28 text-white text-center overflow-hidden"
-        style={{ backgroundImage: 'url(/images/img-37.jpeg)', backgroundSize: 'cover', backgroundPosition: 'center' }}
+        style={{ backgroundImage: 'url(/images/prayer-flags-mountains.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
         <div className="absolute inset-0 bg-stone-900/65" />
         <div className="relative z-10 max-w-2xl mx-auto px-5">
@@ -73,7 +73,7 @@ export default function ContactPage() {
 
               {/* Office photo */}
               <div className="relative h-48 sm:h-52 rounded-2xl overflow-hidden">
-                <Image src="/images/img-39.jpeg" alt="Our team" fill className="object-cover" />
+                <Image src="/images/old-man-chorten.jpg" alt="Local Bhutanese guide" fill className="object-cover" />
               </div>
 
               {/* FAQs */}

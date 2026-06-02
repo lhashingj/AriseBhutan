@@ -38,7 +38,7 @@ function ToursContent() {
       {/* Hero */}
       <section
         className="relative py-28 sm:py-32 text-white text-center overflow-hidden"
-        style={{ backgroundImage: 'url(/images/img-20.jpeg)', backgroundSize: 'cover', backgroundPosition: 'center' }}
+        style={{ backgroundImage: 'url(/images/trekkers-valley.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
         <div className="absolute inset-0 bg-stone-900/65" />
         <div className="relative z-10 max-w-3xl mx-auto px-5">

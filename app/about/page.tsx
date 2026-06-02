@@ -11,19 +11,13 @@ const values = [
   { icon: Globe,  title: 'End-to-End Planning',     desc: 'From visa processing to airport pickup — we handle every detail so you can simply enjoy Bhutan.' },
 ]
 
-const team = [
-  { name: 'Kinley Wangchuk', role: 'Founder & Lead Guide', bio: "Born and raised in Paro, Kinley has been guiding travelers through Bhutan for over 15 years. His intimate knowledge of Bhutan's monasteries, festivals, and hidden trails is unmatched.", img: '/images/img-24.jpeg' },
-  { name: 'Sonam Dema', role: 'Cultural Specialist & Guide', bio: 'A former traditional dance performer turned guide, Sonam brings the vibrant world of Bhutanese festivals to life with unparalleled depth and passion.', img: '/images/img-42.jpeg' },
-  { name: 'Tshering Dorji', role: 'Trek Leader & Adventure Guide', bio: 'With summits across the Himalayas and 10+ years leading treks on the Druk Path and Jomolhari route, Tshering is the guide every serious trekker wants.', img: '/images/img-24.jpeg' },
-]
-
 export default function AboutPage() {
   return (
     <div className="pt-18">
       {/* Hero */}
       <section
         className="relative py-28 sm:py-32 text-white text-center overflow-hidden"
-        style={{ backgroundImage: 'url(/images/img-14.jpeg)', backgroundSize: 'cover', backgroundPosition: 'center 30%' }}
+        style={{ backgroundImage: 'url(/images/monastery-architecture.jpg)', backgroundSize: 'cover', backgroundPosition: 'center 30%' }}
       >
         <div className="absolute inset-0 bg-stone-900/65" />
         <div className="relative z-10 max-w-3xl mx-auto px-5">
@@ -60,10 +54,10 @@ export default function AboutPage() {
             </div>
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <div className="relative h-60 sm:h-72 rounded-2xl overflow-hidden">
-                <Image src="/images/img-33.jpeg" alt="Tiger's Nest" fill className="object-cover" />
+                <Image src="/images/tigers-nest-2.jpg" alt="Tiger's Nest" fill className="object-cover" />
               </div>
               <div className="relative h-60 sm:h-72 rounded-2xl overflow-hidden sm:mt-8">
-                <Image src="/images/img-13.jpeg" alt="Festival dancer" fill className="object-cover" />
+                <Image src="/images/cham-dance-blue.jpg" alt="Cham Dance festival" fill className="object-cover" />
               </div>
             </div>
           </div>
@@ -107,31 +101,6 @@ export default function AboutPage() {
                 <div>
                   <h3 className="font-semibold text-stone-900 mb-1 text-sm sm:text-base">{title}</h3>
                   <p className="text-stone-500 text-xs sm:text-sm leading-relaxed">{desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Team */}
-      <section className="py-16 sm:py-20 bg-stone-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12 sm:mb-14">
-            <span className="section-badge">Our People</span>
-            <h2 className="section-title">Meet Your Guides</h2>
-            <p className="section-subtitle mx-auto mt-4">Every guide is a licensed Bhutanese local who brings deep cultural knowledge, genuine warmth, and decades of experience.</p>
-          </div>
-          <div className="grid sm:grid-cols-3 gap-6 sm:gap-8">
-            {team.map(({ name, role, bio, img }) => (
-              <div key={name} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-stone-100 hover:shadow-lg transition-shadow">
-                <div className="relative h-56 sm:h-64">
-                  <Image src={img} alt={name} fill className="object-cover object-top" />
-                </div>
-                <div className="p-5 sm:p-6">
-                  <h3 className="font-serif font-bold text-xl text-stone-900 mb-1">{name}</h3>
-                  <p className="text-amber-600 font-medium text-sm mb-3">{role}</p>
-                  <p className="text-stone-500 text-sm leading-relaxed">{bio}</p>
                 </div>
               </div>
             ))}

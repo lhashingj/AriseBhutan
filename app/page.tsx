@@ -14,7 +14,7 @@ const experiences = [
   { icon: Mountain,   title: 'Ancient Monasteries',  desc: 'Cliffside sanctuaries perched impossibly above sacred valleys', img: '/images/tigers-nest-2.jpg' },
   { icon: Paintbrush, title: 'Living Festivals',      desc: 'Cham mask dances performed before crowds of devotees', img: '/images/cham-dance-red.jpg' },
   { icon: Utensils,   title: 'Authentic Cuisine',     desc: 'Fiery ema datshi, yak meat, and organic red rice', img: '/images/ema-datshi.jpg' },
-  { icon: Bird,       title: 'Pristine Nature',       desc: 'Snow leopards, black-necked cranes, and Himalayan valleys', img: '/images/prayer-flags-valley.jpg' },
+  { icon: Bird,       title: 'Pristine Nature',       desc: 'Snow leopards, black-necked cranes, and Himalayan valleys', img: '/images/trekkers-prayer-flags.jpg' },
 ]
 
 export default function HomePage() {
