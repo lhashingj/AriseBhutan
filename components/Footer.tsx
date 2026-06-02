@@ -67,7 +67,7 @@ export default function Footer() {
                 { label: 'About Us', href: '/about' },
                 { label: 'All Tours', href: '/tours' },
                 { label: 'Festival Calendar', href: '/tours?cat=festival' },
-                { label: 'Travel Info', href: '/about#travel-info' },
+                { label: 'Travel FAQ', href: '/faq' },
                 { label: 'Contact Us', href: '/contact' },
                 { label: 'Book a Tour', href: '/contact' },
               ].map((l) => (

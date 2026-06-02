@@ -6,7 +6,6 @@ import Link from 'next/link'
 import { Clock, Users, Star, MapPin, Mountain, CheckCircle, XCircle, Calendar, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react'
 import { getTourBySlug } from '@/data/tours'
 import BookingForm from '@/components/BookingForm'
-import { use } from 'react'
 
 const TABS = ['Overview', 'Itinerary', 'Inclusions', 'Book Now'] as const
 type Tab = typeof TABS[number]
@@ -18,13 +17,12 @@ const difficultyColor: Record<string, string> = {
   Strenuous: 'bg-red-100 text-red-700',
 }
 
-export default function TourDetailPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = use(params)
-  const tour = getTourBySlug(slug)
-  if (!tour) notFound()
-
+export default function TourDetailPage({ params }: { params: { slug: string } }) {
   const [activeTab, setActiveTab] = useState<Tab>('Overview')
   const [expandedDay, setExpandedDay] = useState<number | null>(1)
+
+  const tour = getTourBySlug(params.slug)
+  if (!tour) notFound()
 
   return (
     <div>
