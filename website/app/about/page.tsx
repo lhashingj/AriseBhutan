@@ -1,0 +1,177 @@
+import Image from 'next/image'
+import Link from 'next/link'
+import { Shield, Heart, Leaf, Award, Users, Globe } from 'lucide-react'
+
+const values = [
+  { icon: Heart,  title: 'Authentic Experiences',   desc: 'We go beyond the tourist trail, connecting you with real Bhutanese people, culture, and daily life.' },
+  { icon: Leaf,   title: 'Sustainable Tourism',     desc: "Bhutan's unique 'High Value, Low Impact' philosophy guides every tour we design." },
+  { icon: Shield, title: 'Licensed & Trustworthy',  desc: 'Fully licensed by the Association of Bhutan Tour Operators (ATCB). Your safety and experience are our priority.' },
+  { icon: Award,  title: 'Expert Local Guides',     desc: 'All guides are certified, local Bhutanese experts with deep knowledge of culture, history, and terrain.' },
+  { icon: Users,  title: 'Personalized Service',    desc: 'No two trips are the same. We custom-craft every itinerary around your interests and travel style.' },
+  { icon: Globe,  title: 'End-to-End Planning',     desc: 'From visa processing to airport pickup — we handle every detail so you can simply enjoy Bhutan.' },
+]
+
+const team = [
+  { name: 'Kinley Wangchuk', role: 'Founder & Lead Guide', bio: 'Born and raised in Paro, Kinley has been guiding travelers through Bhutan for over 15 years. His intimate knowledge of Bhutan\'s monasteries, festivals, and hidden trails is unmatched.', img: '/images/img-24.jpeg' },
+  { name: 'Sonam Dema', role: 'Cultural Specialist & Guide', bio: 'A former traditional dance performer turned guide, Sonam brings the vibrant world of Bhutanese festivals to life with unparalleled depth and passion.', img: '/images/img-42.jpeg' },
+  { name: 'Tshering Dorji', role: 'Trek Leader & Adventure Guide', bio: 'With summits across the Himalayas and 10+ years leading treks on the Druk Path and Jomolhari route, Tshering is the guide every serious trekker wants.', img: '/images/img-24.jpeg' },
+]
+
+export default function AboutPage() {
+  return (
+    <div className="pt-18">
+      {/* Hero */}
+      <section
+        className="relative py-32 text-white text-center overflow-hidden"
+        style={{ backgroundImage: 'url(/images/img-14.jpeg)', backgroundSize: 'cover', backgroundPosition: 'center 30%' }}
+      >
+        <div className="absolute inset-0 bg-stone-900/65" />
+        <div className="relative z-10 max-w-3xl mx-auto px-4">
+          <span className="text-amber-400 font-semibold text-sm tracking-widest uppercase mb-4 block">About Us</span>
+          <h1 className="font-serif text-4xl md:text-5xl font-bold mb-5">
+            More Than a Tour Company — We&apos;re Your Gateway to Bhutan
+          </h1>
+          <p className="text-white/80 text-lg">
+            Founded by Bhutanese guides with a passion for sharing their extraordinary kingdom, Arise Bhutan Tours & Travel has been crafting life-changing journeys since 2012.
+          </p>
+        </div>
+      </section>
+
+      {/* Story */}
+      <section className="py-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div>
+              <span className="text-amber-600 font-semibold text-sm tracking-widest uppercase mb-4 block">Our Story</span>
+              <h2 className="font-serif text-3xl md:text-4xl font-bold text-stone-900 mb-6">
+                Born from a Love of Bhutan
+              </h2>
+              <div className="space-y-4 text-stone-600 leading-relaxed">
+                <p>
+                  Arise Bhutan was founded with a single conviction: that Bhutan deserves to be experienced deeply, not just seen briefly. Too many travelers arrive, tick the Tiger's Nest off their list, and leave — missing the ancient soul of this remarkable kingdom.
+                </p>
+                <p>
+                  Our founder, a Paro native and third-generation guide, created Arise Bhutan to build the bridge between curious travelers and authentic Bhutanese culture. The name &ldquo;Arise&rdquo; captures our core belief: that the best journeys don't just take you somewhere new — they awaken something within you.
+                </p>
+                <p>
+                  Every itinerary we craft is designed to create that awakening: a morning hike where prayer flags flutter in mountain mist, a festival moment where centuries-old dance dissolves time, a quiet afternoon in a farmhouse where a family shares their ema datshi and stories of the land.
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="relative h-72 rounded-2xl overflow-hidden">
+                <Image src="/images/img-33.jpeg" alt="Tiger's Nest" fill className="object-cover" />
+              </div>
+              <div className="relative h-72 rounded-2xl overflow-hidden mt-8">
+                <Image src="/images/img-13.jpeg" alt="Festival dancer" fill className="object-cover" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* What Arise Means */}
+      <section className="py-20 bg-gradient-to-b from-amber-50 to-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+          <span className="text-amber-600 font-semibold text-sm tracking-widest uppercase mb-4 block">Our Philosophy</span>
+          <h2 className="font-serif text-3xl md:text-4xl font-bold text-stone-900 mb-6">What Does It Mean to &ldquo;Arise&rdquo;?</h2>
+          <div className="grid md:grid-cols-3 gap-6 text-left mt-10">
+            {[
+              { num: '01', title: 'To Awaken', body: 'Bhutan doesn\'t just change your itinerary — it changes your perspective. Leave with a clearer sense of what makes a life well-lived.' },
+              { num: '02', title: 'To Explore', body: 'Go beyond the famous sights. We take you to hidden valleys, family homes, and sacred places most visitors never find.' },
+              { num: '03', title: 'To Grow', body: 'The best travel is transformative. We design every journey to stretch your horizons, deepen your understanding, and nourish your spirit.' },
+            ].map(({ num, title, body }) => (
+              <div key={num} className="bg-white rounded-2xl p-7 shadow-sm border border-amber-100">
+                <span className="font-serif text-4xl font-bold text-amber-200 block mb-3">{num}</span>
+                <h3 className="font-serif font-bold text-xl text-stone-900 mb-2">{title}</h3>
+                <p className="text-stone-600 text-sm leading-relaxed">{body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Values */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <span className="text-amber-600 font-semibold text-sm tracking-widest uppercase mb-3 block">What We Stand For</span>
+            <h2 className="section-title">Our Core Values</h2>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-7">
+            {values.map(({ icon: Icon, title, desc }) => (
+              <div key={title} className="flex gap-4 p-6 rounded-2xl border border-stone-100 hover:shadow-md hover:border-amber-200 transition-all">
+                <div className="w-11 h-11 bg-amber-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Icon className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-stone-900 mb-1">{title}</h3>
+                  <p className="text-stone-500 text-sm leading-relaxed">{desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Team */}
+      <section className="py-20 bg-stone-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <span className="text-amber-600 font-semibold text-sm tracking-widest uppercase mb-3 block">Our People</span>
+            <h2 className="section-title">Meet Your Guides</h2>
+            <p className="section-subtitle mx-auto mt-4">Every guide is a licensed Bhutanese local who brings deep cultural knowledge, genuine warmth, and decades of experience.</p>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-8">
+            {team.map(({ name, role, bio, img }) => (
+              <div key={name} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-stone-100 hover:shadow-lg transition-shadow">
+                <div className="relative h-64">
+                  <Image src={img} alt={name} fill className="object-cover object-top" />
+                </div>
+                <div className="p-6">
+                  <h3 className="font-serif font-bold text-xl text-stone-900 mb-1">{name}</h3>
+                  <p className="text-amber-600 font-medium text-sm mb-3">{role}</p>
+                  <p className="text-stone-500 text-sm leading-relaxed">{bio}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Travel Info */}
+      <section id="travel-info" className="py-20 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <span className="text-amber-600 font-semibold text-sm tracking-widest uppercase mb-3 block">Essential Information</span>
+            <h2 className="section-title">Planning Your Bhutan Visit</h2>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-6">
+            {[
+              { q: 'Do I need a visa?', a: 'Yes. All visitors (except Indian, Bangladeshi, and Maldivian nationals) require a Bhutan visa. Arise Bhutan handles all visa processing on your behalf. Visas are issued only through licensed tour operators.' },
+              { q: 'What is the Sustainable Development Fee (SDF)?', a: 'Bhutan charges a mandatory daily SDF of USD 100/day (as of 2024). This fee supports free education, healthcare, and environmental conservation. It is included in all our packages.' },
+              { q: 'When is the best time to visit?', a: 'March–May (spring, rhododendrons in bloom) and September–November (autumn, clear mountain views) are peak seasons. Winter (Dec–Feb) is cold but offers uncrowded festivals like Punakha Drubchen.' },
+              { q: 'How do I get to Bhutan?', a: 'Bhutan is served by Druk Air and Bhutan Airlines, with connections from Bangkok, Singapore, Delhi, Kathmandu, Mumbai, and Kolkata. The approach to Paro Airport is one of the world\'s most dramatic.' },
+            ].map(({ q, a }) => (
+              <div key={q} className="bg-stone-50 rounded-2xl p-6 border border-stone-100">
+                <h3 className="font-semibold text-stone-900 mb-2">{q}</h3>
+                <p className="text-stone-600 text-sm leading-relaxed">{a}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-16 bg-amber-600 text-center">
+        <div className="max-w-2xl mx-auto px-4">
+          <h2 className="font-serif text-3xl font-bold text-white mb-4">Ready to Plan Your Bhutan Adventure?</h2>
+          <p className="text-amber-100 mb-8">Our specialists are standing by to craft your perfect itinerary.</p>
+          <Link href="/contact" className="bg-white text-amber-700 font-bold px-8 py-4 rounded-full hover:bg-amber-50 transition-colors inline-block shadow-lg">
+            Get in Touch Today
+          </Link>
+        </div>
+      </section>
+    </div>
+  )
+}

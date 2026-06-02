@@ -1,0 +1,24 @@
+# Dependencies — never commit these
+node_modules/
+
+# Next.js build artifacts
+.next/
+out/
+build/
+
+# Environment secrets
+.env
+.env.local
+.env*.local
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Source images (large originals — only public/images/ belongs in repo)
+images/
