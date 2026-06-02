@@ -37,7 +37,7 @@ function ToursContent() {
     <>
       {/* Hero */}
       <section
-        className="relative py-28 sm:py-32 text-white text-center overflow-hidden"
+        className="relative pt-36 pb-20 sm:pt-44 sm:pb-24 text-white text-center overflow-hidden"
         style={{ backgroundImage: 'url(/images/trekkers-valley.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
         <div className="absolute inset-0 bg-stone-900/65" />
@@ -145,7 +145,7 @@ function ToursContent() {
 
 export default function ToursPage() {
   return (
-    <div className="pt-18">
+    <div>
       <Suspense fallback={<div className="h-32 flex items-center justify-center text-stone-400">Loading tours...</div>}>
         <ToursContent />
       </Suspense>

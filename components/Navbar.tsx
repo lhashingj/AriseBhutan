@@ -112,19 +112,17 @@ export default function Navbar() {
                           : 'opacity-0 scale-95 pointer-events-none'
                       }`}
                     >
-                      {/* Single horizontal row — one item per cell, no wrapping */}
-                      <div className="flex items-center px-1.5 py-1.5 gap-0.5">
-                        {link.children.map((child, i) => (
-                          <div key={child.label} className="flex items-center">
-                            {i > 0 && <div className="w-px h-4 bg-stone-200 mx-0.5" />}
-                            <Link
-                              href={child.href}
-                              className="px-4 py-2 text-sm text-stone-600 hover:bg-amber-50 hover:text-amber-700 rounded-xl transition-colors whitespace-nowrap"
-                              onClick={() => setToursOpen(false)}
-                            >
-                              {child.label}
-                            </Link>
-                          </div>
+                      {/* Vertical single column */}
+                      <div className="py-1.5">
+                        {link.children.map((child) => (
+                          <Link
+                            key={child.label}
+                            href={child.href}
+                            className="flex items-center px-4 py-2.5 text-sm text-stone-600 hover:bg-amber-50 hover:text-amber-700 mx-1.5 rounded-xl transition-colors whitespace-nowrap"
+                            onClick={() => setToursOpen(false)}
+                          >
+                            {child.label}
+                          </Link>
                         ))}
                       </div>
                     </div>

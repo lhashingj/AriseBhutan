@@ -13,10 +13,10 @@ const values = [
 
 export default function AboutPage() {
   return (
-    <div className="pt-18">
+    <div>
       {/* Hero */}
       <section
-        className="relative py-28 sm:py-32 text-white text-center overflow-hidden"
+        className="relative pt-36 pb-20 sm:pt-44 sm:pb-24 text-white text-center overflow-hidden"
         style={{ backgroundImage: 'url(/images/monastery-architecture.jpg)', backgroundSize: 'cover', backgroundPosition: 'center 30%' }}
       >
         <div className="absolute inset-0 bg-stone-900/65" />

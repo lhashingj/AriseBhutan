@@ -12,10 +12,10 @@ const contactInfo = [
 
 export default function ContactPage() {
   return (
-    <div className="pt-18">
+    <div>
       {/* Hero */}
       <section
-        className="relative py-24 sm:py-28 text-white text-center overflow-hidden"
+        className="relative pt-36 pb-16 sm:pt-44 sm:pb-20 text-white text-center overflow-hidden"
         style={{ backgroundImage: 'url(/images/prayer-flags-mountains.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
         <div className="absolute inset-0 bg-stone-900/65" />

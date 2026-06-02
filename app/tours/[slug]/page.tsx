@@ -27,9 +27,9 @@ export default function TourDetailPage({ params }: { params: Promise<{ slug: str
   const [expandedDay, setExpandedDay] = useState<number | null>(1)
 
   return (
-    <div className="pt-18">
+    <div>
       {/* Hero */}
-      <div className="relative h-[55vh] min-h-[400px] overflow-hidden">
+      <div className="relative h-[60vh] min-h-[480px] overflow-hidden">
         <Image src={tour.heroImage} alt={tour.title} fill className="object-cover" priority />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-6 lg:px-8 pb-10 max-w-7xl mx-auto">

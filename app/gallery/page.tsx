@@ -159,16 +159,20 @@ export default function GalleryPage() {
   return (
     <>
       {/* Hero */}
-      <section className="pt-32 pb-12 sm:pt-36 sm:pb-16 bg-stone-900 text-white text-center">
-        <div className="max-w-3xl mx-auto px-4">
+      <section
+        className="relative pt-36 pb-20 sm:pt-44 sm:pb-24 text-white text-center overflow-hidden"
+        style={{ backgroundImage: 'url(/images/cham-dance-crowd.jpg)', backgroundSize: 'cover', backgroundPosition: 'center 40%' }}
+      >
+        <div className="absolute inset-0 bg-stone-900/65" />
+        <div className="relative z-10 max-w-3xl mx-auto px-5">
           <div className="inline-flex items-center gap-2 bg-amber-600/90 text-white text-[10px] font-semibold px-4 py-2 rounded-full tracking-widest uppercase mb-6">
             <Camera className="w-3.5 h-3.5" />
             Visual Stories
           </div>
-          <h1 className="font-serif text-4xl sm:text-5xl font-bold mb-4 leading-tight">
+          <h1 className="font-serif text-[2rem] sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-5 leading-tight">
             Bhutan Through the Lens
           </h1>
-          <p className="text-stone-300 text-base sm:text-lg max-w-xl mx-auto">
+          <p className="text-white/80 text-base sm:text-lg">
             Every photograph is a window into a kingdom that time has left untouched — sacred monasteries, living festivals, dramatic landscapes, and warm Bhutanese faces.
           </p>
         </div>
