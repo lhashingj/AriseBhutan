@@ -4,48 +4,67 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { X, ChevronLeft, ChevronRight, ZoomIn, Camera } from 'lucide-react'
 
-type Photo = {
-  src: string
-  alt: string
-  category: string
-  orientation?: 'landscape' | 'portrait' | 'square'
-}
+type Photo = { src: string; alt: string; category: string }
 
 const allPhotos: Photo[] = [
   // Monasteries & Temples
-  { src: '/images/tigers-nest-1.jpg',         alt: "Tiger's Nest Monastery — Paro Taktsang",       category: 'Monasteries' },
-  { src: '/images/tigers-nest-2.jpg',          alt: "Tiger's Nest with Prayer Flags",               category: 'Monasteries' },
-  { src: '/images/tigers-nest-3.jpg',          alt: "Tiger's Nest — Cliffside Detail",              category: 'Monasteries' },
-  { src: '/images/monastery-architecture.jpg', alt: 'Traditional Bhutanese Temple Architecture',    category: 'Monasteries' },
-  { src: '/images/punakha-dzong.jpg',           alt: 'Punakha Dzong — the Palace of Great Happiness', category: 'Monasteries' },
+  { src: '/images/tigers-nest-1.jpg',          alt: "Tiger's Nest — Paro Taktsang",                 category: 'Monasteries' },
+  { src: '/images/tigers-nest-2.jpg',           alt: "Tiger's Nest with Prayer Flags",               category: 'Monasteries' },
+  { src: '/images/tigers-nest-3.jpg',           alt: "Tiger's Nest — Cliffside Portrait",            category: 'Monasteries' },
+  { src: '/images/tigers-nest-rhododendron.jpg', alt: "Tiger's Nest with Red Rhododendrons",         category: 'Monasteries' },
+  { src: '/images/tigers-nest-flags-close.jpg', alt: "Tiger's Nest Framed by Prayer Flags",          category: 'Monasteries' },
+  { src: '/images/tigers-nest-flags-day.jpg',   alt: "Tiger's Nest Through Colorful Prayer Flags",   category: 'Monasteries' },
+  { src: '/images/tigers-nest-pilgrim.jpg',     alt: "Pilgrim Gazing at Tiger's Nest",               category: 'Monasteries' },
+  { src: '/images/monastery-architecture.jpg',  alt: 'Traditional Bhutanese Temple Architecture',    category: 'Monasteries' },
+  { src: '/images/river-temple.jpg',            alt: 'Riverside Temple with Prayer Flags',           category: 'Monasteries' },
+  { src: '/images/river-bridge.jpg',            alt: 'Wooden Bridge at Bhutanese Village',           category: 'Monasteries' },
+  { src: '/images/buddha-dordenma.jpg',         alt: 'Buddha Dordenma Statue — Thimphu',             category: 'Monasteries' },
+  { src: '/images/butter-lamps.jpg',            alt: 'Lighting Butter Lamps at the Temple',          category: 'Monasteries' },
 
-  // Festivals & Culture
-  { src: '/images/cham-dance-blue.jpg',        alt: 'Cham Mask Dance — Blue Deity',                category: 'Festivals' },
-  { src: '/images/cham-dance-red.jpg',          alt: 'Cham Festival — Red Silk Costume',            category: 'Festivals' },
-  { src: '/images/cham-dance-orange.jpg',       alt: 'Tshechu Cham Dance — Orange Robes',           category: 'Festivals' },
-  { src: '/images/cham-dance-masks.jpg',        alt: 'Sacred Cham Mask Dancers',                    category: 'Festivals' },
-  { src: '/images/cham-dance-crowd.jpg',        alt: 'Festival Devotees at Tshechu',                category: 'Festivals' },
-  { src: '/images/festival-scene.jpg',          alt: 'Bhutan Festival Performance',                  category: 'Festivals' },
+  // Festivals & Cham Dance
+  { src: '/images/cham-dance-blue.jpg',         alt: 'Cham Dance — Blue Deity Costume',              category: 'Festivals' },
+  { src: '/images/cham-dance-red.jpg',          alt: 'Cham Dance — Red Costumes in Formation',       category: 'Festivals' },
+  { src: '/images/cham-dance-orange.jpg',       alt: 'Cham Dance — Orange Silk Robes',               category: 'Festivals' },
+  { src: '/images/cham-dance-green.jpg',        alt: 'Cham Dance — Green Robe with Crown',           category: 'Festivals' },
+  { src: '/images/cham-dance-crowd.jpg',        alt: 'Festival Crowd at Tshechu',                    category: 'Festivals' },
+  { src: '/images/cham-dance-red-pair.jpg',     alt: 'Pair of Red Cham Dancers',                     category: 'Festivals' },
+  { src: '/images/festival-scene.jpg',          alt: 'Tshechu Festival Performance',                  category: 'Festivals' },
+  { src: '/images/monks-ceremony.jpg',          alt: 'Sacred Ceremony with Young Monks',             category: 'Festivals' },
+  { src: '/images/archery-tournament.jpg',      alt: 'Traditional Bhutanese Archery',                category: 'Festivals' },
 
   // Landscapes & Nature
-  { src: '/images/sunrise-summit.jpg',          alt: 'Sunrise Over the Himalayas',                  category: 'Landscapes' },
-  { src: '/images/sunrise-silhouette.jpg',      alt: 'Pilgrim at Himalayan Sunrise',                category: 'Landscapes' },
-  { src: '/images/prayer-flags-mountains.jpg', alt: 'Prayer Flags and Mountain Peaks',              category: 'Landscapes' },
-  { src: '/images/prayer-flags-valley.jpg',    alt: 'Colorful Prayer Flags in the Valley',          category: 'Landscapes' },
-  { src: '/images/mountain-valley.jpg',         alt: 'Pristine Bhutanese Mountain Valley',          category: 'Landscapes' },
+  { src: '/images/sunrise-silhouette.jpg',      alt: 'Sunrise Silhouette on the Summit',             category: 'Landscapes' },
+  { src: '/images/sunrise-summit.jpg',          alt: 'Himalayan Sunrise at the Peak',                category: 'Landscapes' },
+  { src: '/images/prayer-flags-mountains.jpg',  alt: 'Prayer Flags at Mountain Sunrise',             category: 'Landscapes' },
+  { src: '/images/tigers-nest-trail.jpg',       alt: "Tiger's Nest Hiking Trail",                    category: 'Landscapes' },
+  { src: '/images/mountain-valley.jpg',         alt: 'Himalayan Peaks Through Pine Trees',           category: 'Landscapes' },
+  { src: '/images/forest-trail.jpg',            alt: 'Ancient Forest Trail to the Monastery',        category: 'Landscapes' },
+  { src: '/images/trekkers-valley.jpg',         alt: 'Trekkers in the Himalayan Valley',             category: 'Landscapes' },
+  { src: '/images/trekkers-prayer-flags.jpg',   alt: 'Trekking Beneath Prayer Flags',                category: 'Landscapes' },
 
   // Food & Culture
-  { src: '/images/ema-datshi.jpg',              alt: 'Ema Datshi — National Dish of Bhutan',        category: 'Food & Culture' },
-  { src: '/images/red-rice-dish.jpg',           alt: 'Traditional Red Rice Meal',                   category: 'Food & Culture' },
-  { src: '/images/chilli-fritters.jpg',         alt: 'Bhutanese Chilli Fritters',                   category: 'Food & Culture' },
-  { src: '/images/bhutanese-food-spread.jpg',  alt: 'Authentic Bhutanese Food Spread',              category: 'Food & Culture' },
+  { src: '/images/ema-datshi.jpg',              alt: 'Ema Datshi — National Dish of Bhutan',         category: 'Food & Culture' },
+  { src: '/images/red-rice-dish.jpg',           alt: 'Traditional Bhutanese Rice Meal',              category: 'Food & Culture' },
+  { src: '/images/chilli-fritters.jpg',         alt: 'Bhutanese Chilli Fritters',                    category: 'Food & Culture' },
+  { src: '/images/dried-meat.jpg',              alt: 'Bhutanese Dried Yak Meat',                     category: 'Food & Culture' },
+  { src: '/images/bhutan-painting.jpg',         alt: 'Traditional Bhutanese Painting',               category: 'Food & Culture' },
+  { src: '/images/birdwatcher-telescope.jpg',   alt: 'Birdwatching in Bhutan',                       category: 'Food & Culture' },
 
   // Wildlife
-  { src: '/images/yellow-billed-magpie.jpg',   alt: 'Yellow-billed Blue Magpie',                   category: 'Wildlife' },
+  { src: '/images/yellow-billed-magpie.jpg',    alt: 'Yellow-billed Blue Magpie',                    category: 'Wildlife' },
+  { src: '/images/yellow-billed-magpie-2.jpg',  alt: 'Yellow-billed Magpie on a Rock',               category: 'Wildlife' },
 
   // People & Guides
-  { src: '/images/pilgrimage-group.jpg',        alt: 'Pilgrimage Group Journey',                    category: 'People & Guides' },
-  { src: '/images/guide-tourist.jpg',           alt: 'Arise Bhutan Guide with Guests',              category: 'People & Guides' },
+  { src: '/images/pilgrimage-group.jpg',        alt: 'Pilgrimage Group at Buddha Dordenma',          category: 'People & Guides' },
+  { src: '/images/guide-chorten.jpg',           alt: 'Arise Bhutan Guide at a Sacred Chorten',       category: 'People & Guides' },
+  { src: '/images/old-man-chorten.jpg',         alt: 'Bhutanese Elder with Prayer Beads',            category: 'People & Guides' },
+  { src: '/images/bhutanese-locals.jpg',        alt: 'Bhutanese Locals in Traditional Dress',        category: 'People & Guides' },
+  { src: '/images/group-trekkers.jpg',          alt: 'Tour Group Trekking to Tiger\'s Nest',         category: 'People & Guides' },
+  { src: '/images/group-tigers-nest.jpg',       alt: 'Happy Trekkers at Tiger\'s Nest Base',         category: 'People & Guides' },
+  { src: '/images/tour-group-temple.jpg',       alt: 'Tour Group Blessing at Temple',                category: 'People & Guides' },
+  { src: '/images/tour-group-mountains.jpg',    alt: 'Tour Group with Bhutan Mountain Vista',        category: 'People & Guides' },
+  { src: '/images/red-group-dzong.jpg',         alt: 'Pilgrimage Group at the Dzong',                category: 'People & Guides' },
+  { src: '/images/guide-mountain.jpg',          alt: 'Bhutanese Guide with Mountain View',           category: 'People & Guides' },
 ]
 
 const categories = ['All', 'Monasteries', 'Festivals', 'Landscapes', 'Food & Culture', 'Wildlife', 'People & Guides']
@@ -89,7 +108,7 @@ function PhotoCard({ photo, index, onOpen }: { photo: Photo; index: number; onOp
         className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
         quality={85}
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-350" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
         <div className="bg-white/20 backdrop-blur-sm rounded-full p-3 scale-75 group-hover:scale-100 transition-transform duration-300">
           <ZoomIn className="w-5 h-5 text-white" />
@@ -150,7 +169,7 @@ export default function GalleryPage() {
             Bhutan Through the Lens
           </h1>
           <p className="text-stone-300 text-base sm:text-lg max-w-xl mx-auto">
-            Every photograph is a window into a kingdom that time has left untouched — explore monasteries, festivals, landscapes, and daily life.
+            Every photograph is a window into a kingdom that time has left untouched — sacred monasteries, living festivals, dramatic landscapes, and warm Bhutanese faces.
           </p>
         </div>
       </section>
@@ -162,7 +181,7 @@ export default function GalleryPage() {
             {categories.map((cat) => (
               <button
                 key={cat}
-                onClick={() => setActiveCategory(cat)}
+                onClick={() => { setActiveCategory(cat); setLightboxIdx(null) }}
                 className={`flex-shrink-0 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                   activeCategory === cat
                     ? 'bg-amber-600 text-white shadow-md shadow-amber-500/20'
@@ -174,13 +193,11 @@ export default function GalleryPage() {
             ))}
           </div>
 
-          {/* Photo count */}
           <p className="text-stone-400 text-sm mb-6">
             {filtered.length} photo{filtered.length !== 1 ? 's' : ''}
             {activeCategory !== 'All' ? ` in ${activeCategory}` : ''}
           </p>
 
-          {/* Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {filtered.map((photo, i) => (
               <PhotoCard
@@ -192,16 +209,11 @@ export default function GalleryPage() {
             ))}
           </div>
 
-          {/* CTA */}
           <div className="text-center mt-12 sm:mt-16">
-            <p className="text-stone-500 text-sm mb-6">Ready to create your own Bhutan story?</p>
+            <p className="text-stone-500 text-sm mb-6">Ready to experience Bhutan yourself?</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/tours" className="btn-primary">
-                Explore Our Tours
-              </Link>
-              <Link href="/contact" className="btn-outline">
-                Plan My Trip
-              </Link>
+              <Link href="/tours" className="btn-primary">Explore Our Tours</Link>
+              <Link href="/contact" className="btn-outline">Plan My Trip</Link>
             </div>
           </div>
         </div>
@@ -220,7 +232,6 @@ export default function GalleryPage() {
           >
             <X className="w-7 h-7" />
           </button>
-
           <button
             className="absolute left-3 sm:left-5 z-10 p-2 text-white/60 hover:text-white transition-colors rounded-full hover:bg-white/10"
             onClick={(e) => { e.stopPropagation(); prevPhoto() }}
@@ -228,7 +239,6 @@ export default function GalleryPage() {
           >
             <ChevronLeft className="w-9 h-9" />
           </button>
-
           <div
             className="relative w-full max-w-5xl h-[70vw] sm:h-[65vw] md:h-[70vh] mx-14 sm:mx-20"
             onClick={(e) => e.stopPropagation()}
@@ -242,7 +252,6 @@ export default function GalleryPage() {
               quality={90}
             />
           </div>
-
           <button
             className="absolute right-3 sm:right-5 z-10 p-2 text-white/60 hover:text-white transition-colors rounded-full hover:bg-white/10"
             onClick={(e) => { e.stopPropagation(); nextPhoto() }}
@@ -250,21 +259,24 @@ export default function GalleryPage() {
           >
             <ChevronRight className="w-9 h-9" />
           </button>
-
           <div className="absolute bottom-5 left-0 right-0 text-center px-4">
-            <p className="text-white/85 text-sm mb-1">{currentPhoto.alt}</p>
-            <div className="flex items-center justify-center gap-2 mt-2">
-              {filtered.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={(e) => { e.stopPropagation(); setLightboxIdx(i) }}
-                  className={`rounded-full transition-all duration-200 ${
-                    i === lightboxIdx ? 'w-5 h-1.5 bg-amber-500' : 'w-1.5 h-1.5 bg-white/30 hover:bg-white/60'
-                  }`}
-                  aria-label={`Photo ${i + 1}`}
-                />
-              ))}
+            <p className="text-white/85 text-sm mb-2">{currentPhoto.alt}</p>
+            <div className="flex items-center justify-center gap-1.5 flex-wrap max-w-xs mx-auto">
+              {filtered.slice(Math.max(0, (lightboxIdx ?? 0) - 4), (lightboxIdx ?? 0) + 5).map((_, i) => {
+                const actualIdx = Math.max(0, (lightboxIdx ?? 0) - 4) + i
+                return (
+                  <button
+                    key={actualIdx}
+                    onClick={(e) => { e.stopPropagation(); setLightboxIdx(actualIdx) }}
+                    className={`rounded-full transition-all duration-200 ${
+                      actualIdx === lightboxIdx ? 'w-5 h-1.5 bg-amber-500' : 'w-1.5 h-1.5 bg-white/30 hover:bg-white/60'
+                    }`}
+                    aria-label={`Photo ${actualIdx + 1}`}
+                  />
+                )
+              })}
             </div>
+            <p className="text-white/40 text-xs mt-1">{(lightboxIdx ?? 0) + 1} / {filtered.length}</p>
           </div>
         </div>
       )}

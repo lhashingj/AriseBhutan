@@ -7,15 +7,15 @@ import { X, ZoomIn, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
 type Photo = { src: string; alt: string; span: string }
 
 const mosaicPhotos: Photo[] = [
-  { src: '/images/tigers-nest-1.jpg',         alt: "Tiger's Nest Monastery — Paro Taktsang",  span: 'col-span-2 row-span-2' },
-  { src: '/images/cham-dance-blue.jpg',        alt: 'Cham Mask Dance — Tshechu Festival',      span: '' },
-  { src: '/images/sunrise-summit.jpg',          alt: 'Sunrise Over the Himalayas',              span: '' },
-  { src: '/images/prayer-flags-mountains.jpg', alt: 'Prayer Flags and Mountain Peaks',          span: '' },
-  { src: '/images/cham-dance-red.jpg',          alt: 'Festival Performer in Red',               span: '' },
-  { src: '/images/yellow-billed-magpie.jpg',   alt: 'Yellow-billed Blue Magpie',               span: '' },
-  { src: '/images/ema-datshi.jpg',              alt: 'Ema Datshi — National Dish of Bhutan',   span: '' },
-  { src: '/images/mountain-valley.jpg',         alt: 'Pristine Bhutanese Valley',               span: '' },
-  { src: '/images/pilgrimage-group.jpg',        alt: 'Pilgrimage Journey in Bhutan',            span: '' },
+  { src: '/images/tigers-nest-1.jpg',           alt: "Tiger's Nest — Paro Taktsang",           span: 'col-span-2 row-span-2' },
+  { src: '/images/cham-dance-blue.jpg',          alt: 'Cham Dance — Blue Deity',               span: '' },
+  { src: '/images/sunrise-silhouette.jpg',       alt: 'Himalayan Sunrise',                     span: '' },
+  { src: '/images/tigers-nest-pilgrim.jpg',      alt: 'Pilgrim at Tiger\'s Nest',              span: '' },
+  { src: '/images/cham-dance-red.jpg',           alt: 'Tshechu Festival Performers',           span: '' },
+  { src: '/images/yellow-billed-magpie.jpg',     alt: 'Yellow-billed Blue Magpie',             span: '' },
+  { src: '/images/old-man-chorten.jpg',          alt: 'Bhutanese Elder with Prayer Beads',     span: '' },
+  { src: '/images/prayer-flags-mountains.jpg',   alt: 'Prayer Flags at Sunrise',               span: '' },
+  { src: '/images/pilgrimage-group.jpg',         alt: 'Pilgrimage at Buddha Dordenma',         span: '' },
 ]
 
 function useReveal(threshold = 0.1) {
