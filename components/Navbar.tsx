@@ -21,19 +21,21 @@ const navLinks = [
 ]
 
 export default function Navbar() {
-  const [scrolled, setScrolled]       = useState(false)
-  const [mobileOpen, setMobileOpen]   = useState(false)
-  const [toursOpen, setToursOpen]     = useState(false)
+  const [scrolled, setScrolled]           = useState(false)
+  const [mobileOpen, setMobileOpen]       = useState(false)
+  const [toursOpen, setToursOpen]         = useState(false)
   const [toursExpanded, setToursExpanded] = useState(false)
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 50)
+    const onScroll = () => setScrolled(window.scrollY > 20)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { setMobileOpen(false); setToursOpen(false) } }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { setMobileOpen(false); setToursOpen(false) }
+    }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [])
@@ -49,8 +51,8 @@ export default function Navbar() {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         solid
-          ? 'bg-white/98 backdrop-blur-md shadow-[0_1px_0_0_rgba(0,0,0,0.06)]'
-          : 'bg-gradient-to-b from-black/50 via-black/20 to-transparent'
+          ? 'bg-white shadow-sm'
+          : 'bg-gradient-to-b from-black/55 via-black/20 to-transparent'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -58,14 +60,13 @@ export default function Navbar() {
 
           {/* ── Logo ── */}
           <Link href="/" className="flex items-center gap-3 flex-shrink-0">
-            <div className={`relative h-10 w-10 rounded-full overflow-hidden ring-2 transition-all duration-300 ${
-              solid ? 'ring-stone-200' : 'ring-white/25'
-            }`}>
+            {/* White circle ensures logo is visible on any bg — no filter needed */}
+            <div className="relative h-10 w-10 rounded-full overflow-hidden flex-shrink-0 bg-white shadow-sm ring-1 ring-white/30">
               <Image
                 src="/images/logo.jpeg"
                 alt="Arise Bhutan"
                 fill
-                className={`object-contain transition-all duration-300 ${solid ? '' : 'brightness-0 invert'}`}
+                className="object-contain"
                 priority
               />
             </div>
@@ -79,6 +80,7 @@ export default function Navbar() {
           <nav className="hidden lg:flex items-center gap-0.5">
             {navLinks.map((link) =>
               link.children ? (
+                /* Tours with dropdown */
                 <div
                   key={link.label}
                   className="relative"
@@ -97,24 +99,35 @@ export default function Navbar() {
                     <ChevronDown className={`w-3.5 h-3.5 opacity-60 transition-transform duration-200 ${toursOpen ? 'rotate-180' : ''}`} />
                   </Link>
 
-                  {/* Dropdown panel */}
-                  <div
-                    className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-54 bg-white rounded-2xl shadow-xl shadow-stone-200/80 border border-stone-100 py-1.5 z-50 transition-all duration-200 origin-top ${
-                      toursOpen ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto' : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'
-                    }`}
-                  >
-                    {/* Arrow */}
-                    <div className="absolute -top-[7px] left-1/2 -translate-x-1/2 w-3.5 h-3.5 bg-white border-t border-l border-stone-100 rotate-45 rounded-sm" />
-                    {link.children.map((child) => (
-                      <Link
-                        key={child.label}
-                        href={child.href}
-                        className="flex items-center px-4 py-2.5 text-sm text-stone-600 hover:bg-amber-50 hover:text-amber-700 mx-1 rounded-xl transition-colors"
-                        onClick={() => setToursOpen(false)}
-                      >
-                        {child.label}
-                      </Link>
-                    ))}
+                  {/*
+                    Wrapper starts right at the link bottom with pt-2 visual gap —
+                    keeping the hover area continuous so onMouseLeave doesn't fire
+                    in the gap between the link and the panel.
+                  */}
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 z-50">
+                    <div
+                      className={`bg-white rounded-2xl shadow-xl shadow-stone-200/80 border border-stone-100 overflow-hidden transition-all duration-200 origin-top ${
+                        toursOpen
+                          ? 'opacity-100 scale-100 pointer-events-auto'
+                          : 'opacity-0 scale-95 pointer-events-none'
+                      }`}
+                    >
+                      {/* Single horizontal row — one item per cell, no wrapping */}
+                      <div className="flex items-center px-1.5 py-1.5 gap-0.5">
+                        {link.children.map((child, i) => (
+                          <div key={child.label} className="flex items-center">
+                            {i > 0 && <div className="w-px h-4 bg-stone-200 mx-0.5" />}
+                            <Link
+                              href={child.href}
+                              className="px-4 py-2 text-sm text-stone-600 hover:bg-amber-50 hover:text-amber-700 rounded-xl transition-colors whitespace-nowrap"
+                              onClick={() => setToursOpen(false)}
+                            >
+                              {child.label}
+                            </Link>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -136,13 +149,13 @@ export default function Navbar() {
           {/* ── Desktop CTA ── */}
           <div className="hidden lg:flex items-center gap-4">
             <a
-              href="tel:+97517123456"
+              href="tel:+97517288286"
               className={`flex items-center gap-1.5 text-sm font-medium transition-colors duration-200 ${
                 solid ? 'text-stone-500 hover:text-amber-600' : 'text-white/75 hover:text-white'
               }`}
             >
               <Phone className="w-3.5 h-3.5" />
-              +975 17 123 456
+              +975 17 288 286
             </a>
             <Link
               href="/contact"
@@ -161,14 +174,7 @@ export default function Navbar() {
             aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={mobileOpen}
           >
-            <div className="relative w-5 h-5">
-              <span className={`absolute inset-0 transition-all duration-200 ${mobileOpen ? 'opacity-100 rotate-0' : 'opacity-0 rotate-90'}`}>
-                <X className="w-5 h-5" />
-              </span>
-              <span className={`absolute inset-0 transition-all duration-200 ${mobileOpen ? 'opacity-0 -rotate-90' : 'opacity-100 rotate-0'}`}>
-                <Menu className="w-5 h-5" />
-              </span>
-            </div>
+            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </div>
@@ -224,11 +230,11 @@ export default function Navbar() {
 
           <div className="mt-5 flex flex-col gap-2.5">
             <a
-              href="tel:+97517123456"
+              href="tel:+97517288286"
               className="flex items-center justify-center gap-2 py-3 text-sm font-medium text-stone-700 bg-stone-50 rounded-2xl hover:bg-stone-100 transition-colors"
             >
               <Phone className="w-4 h-4 text-amber-600" />
-              +975 17 123 456
+              +975 17 288 286
             </a>
             <Link
               href="/contact"

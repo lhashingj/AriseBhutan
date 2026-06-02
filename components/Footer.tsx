@@ -19,12 +19,12 @@ export default function Footer() {
           {/* Brand */}
           <div className="sm:col-span-2 lg:col-span-1">
             <div className="flex items-center gap-3 mb-5">
-              <div className="relative h-11 w-11 flex-shrink-0">
-                <Image src="/images/logo.jpeg" alt="Arise Bhutan Logo" fill className="object-contain brightness-0 invert" />
+              <div className="relative h-11 w-11 flex-shrink-0 rounded-full overflow-hidden bg-white shadow-sm">
+                <Image src="/images/logo.jpeg" alt="Arise Bhutan Logo" fill className="object-contain" />
               </div>
               <div>
                 <p className="font-serif font-bold text-white text-lg leading-tight">Arise Bhutan</p>
-                <p className="text-[10px] tracking-[0.2em] uppercase text-stone-400">Tours & Travel</p>
+                <p className="text-[10px] tracking-[0.2em] uppercase text-stone-400">Tours &amp; Travels</p>
               </div>
             </div>
             <p className="text-sm text-stone-400 leading-relaxed mb-5">
@@ -90,8 +90,8 @@ export default function Footer() {
               </div>
               <div className="flex items-center gap-3">
                 <Phone className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                <a href="tel:+97517123456" className="text-sm text-stone-400 hover:text-amber-400 transition-colors">
-                  +975 17 123 456
+                <a href="tel:+97517288286" className="text-sm text-stone-400 hover:text-amber-400 transition-colors">
+                  +975 17 288 286
                 </a>
               </div>
               <div className="flex items-center gap-3">
