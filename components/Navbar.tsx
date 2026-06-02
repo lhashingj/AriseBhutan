@@ -71,7 +71,7 @@ export default function Navbar() {
             </div>
             <div className={`hidden sm:block transition-colors duration-300 ${solid ? 'text-stone-900' : 'text-white'}`}>
               <p className="font-serif font-bold text-[1.05rem] leading-tight">Arise Bhutan</p>
-              <p className="text-[9px] tracking-[0.22em] uppercase opacity-55 font-semibold">Tours &amp; Travel</p>
+              <p className="text-[9px] tracking-[0.22em] uppercase opacity-55 font-semibold">Tours &amp; Travels</p>
             </div>
           </Link>
 
