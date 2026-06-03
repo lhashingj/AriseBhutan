@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
-import { PlusCircle, FileText, Clock, CheckCircle2, XCircle, Download, Package } from 'lucide-react'
+import { PlusCircle, FileText, Clock, CheckCircle2, XCircle, Download, Package, Pencil } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
 import PackageBuilder from '@/components/PackageBuilder'
 import BookingVoucher from '@/components/BookingVoucher'
@@ -16,11 +16,12 @@ const STATUS_CONFIG = {
 }
 
 export default function ClientDashboard() {
-  const [profile, setProfile]     = useState(null)
-  const [bookings, setBookings]   = useState([])
-  const [loading, setLoading]     = useState(true)
-  const [showBuilder, setBuilder] = useState(false)
-  const [viewBooking, setView]    = useState(null) // booking to show as voucher
+  const [profile, setProfile]       = useState(null)
+  const [bookings, setBookings]     = useState([])
+  const [loading, setLoading]       = useState(true)
+  const [showBuilder, setBuilder]   = useState(false)
+  const [editingBooking, setEditing] = useState(null) // booking being edited
+  const [viewBooking, setView]      = useState(null)  // booking to show as voucher
 
   async function load() {
     const { data: { session } } = await supabase.auth.getSession()
@@ -166,6 +167,15 @@ export default function ClientDashboard() {
                         <p className="text-[9px] text-stone-300 font-mono">
                           {booking.id?.slice(0, 8).toUpperCase()}
                         </p>
+                        {booking.status === 'PENDING' && (
+                          <button
+                            onClick={() => setEditing(booking)}
+                            title="Edit itinerary"
+                            className="p-2 rounded-xl bg-stone-50 text-stone-500 hover:bg-stone-100 transition-colors"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                        )}
                         <button
                           onClick={() => setView(booking)}
                           title="View voucher"
@@ -203,12 +213,22 @@ export default function ClientDashboard() {
         )}
       </div>
 
-      {/* ── Package Builder Slide-over ── */}
+      {/* ── New Package Builder ── */}
       {showBuilder && (
         <PackageBuilder
           profile={profile}
           onClose={() => setBuilder(false)}
           onSaved={() => { setBuilder(false); load() }}
+        />
+      )}
+
+      {/* ── Edit Existing Booking ── */}
+      {editingBooking && (
+        <PackageBuilder
+          profile={profile}
+          editBooking={editingBooking}
+          onClose={() => setEditing(null)}
+          onSaved={() => { setEditing(null); load() }}
         />
       )}
     </div>

@@ -32,11 +32,11 @@ export function buildVoucherData(booking, profile) {
     status: booking.status || 'PENDING',
 
     client: {
-      name:             booking.client_name || profile?.name || '—',
-      email:            profile?.email || '—',
-      phone:            '—',
-      nationality:      '—',
-      passportNo:       'On file',
+      name:             booking.client_name    || profile?.name  || '—',
+      email:            booking.client_email   || profile?.email || '—',
+      phone:            booking.client_phone   || '—',
+      nationality:      booking.nationality    || '—',
+      passportNo:       booking.passport_number || 'On file',
       passportExpiry:   'On file',
       emergencyContact: '—',
     },

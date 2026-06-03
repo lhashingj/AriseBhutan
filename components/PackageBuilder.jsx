@@ -115,15 +115,23 @@ function buildInitialDays(tourData) {
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export default function PackageBuilder({ profile, onClose, onSaved, initialTourData }) {
-  // When coming from a specific tour, start at step 1 (skip template picker)
-  const [step, setStep]         = useState(initialTourData ? 1 : 0)
+export default function PackageBuilder({ profile, onClose, onSaved, initialTourData, editBooking }) {
+  const isEditing = Boolean(editBooking)
+
+  // When editing an existing booking or coming from a specific tour, skip the template picker
+  const [step, setStep]         = useState(initialTourData || isEditing ? 1 : 0)
   const [saving, setSaving]     = useState(false)
   const [saveError, setSaveErr] = useState('')
 
-  // Build synthetic template from tour data if provided
-  const initialTemplate = initialTourData
-    ? {
+  // Build synthetic template from tour data or existing booking
+  const initialTemplate = (() => {
+    if (isEditing) {
+      const itin = editBooking.itinerary_days || []
+      const nights = itin.length > 0 ? itin.length - 1 : 0
+      return { id: 'edit', title: editBooking.tour_title || 'Custom Package', days: itin.length || 1, nights, basePerPax: 0, category: 'Custom' }
+    }
+    if (initialTourData) {
+      return {
         id:         initialTourData.id || 'tour',
         title:      initialTourData.title,
         days:       initialTourData.days   || 1,
@@ -131,22 +139,28 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
         basePerPax: initialTourData.startingFrom || 0,
         category:   initialTourData.categoryLabel || 'Cultural',
       }
-    : TOUR_TEMPLATES[0]
+    }
+    return TOUR_TEMPLATES[0]
+  })()
 
-  // Form state
+  // Form state — pre-filled from editBooking or tour data when available
   const [template, setTemplate]     = useState(initialTemplate)
-  const [hotelTier, setHotelTier]   = useState('3-Star')
-  const [pax, setPax]               = useState(2)
-  const [arrivalDate, setArrival]   = useState('')
-  const [returnDate, setReturn]     = useState('')
-  const [flightIn, setFlightIn]     = useState('')
-  const [flightOut, setFlightOut]   = useState('')
-  const [clientName, setClientName]     = useState(profile?.name || '')
-  const [passportNum, setPassport]      = useState('')
-  const [nationality, setNationality]   = useState('')
-  const [clientEmail, setClientEmail]   = useState(profile?.email || '')
-  const [clientPhone, setClientPhone]   = useState('')
-  const [days, setDays]                 = useState(() => buildInitialDays(initialTourData))
+  const [hotelTier, setHotelTier]   = useState(editBooking?.hotel_tier || '3-Star')
+  const [pax, setPax]               = useState(parseInt(editBooking?.group_size) || 2)
+  const [arrivalDate, setArrival]   = useState(editBooking?.arrival_date || '')
+  const [returnDate, setReturn]     = useState(editBooking?.return_date  || '')
+  const [flightIn, setFlightIn]     = useState(editBooking?.flight_arrival || '')
+  const [flightOut, setFlightOut]   = useState(editBooking?.flight_return  || '')
+  const [clientName, setClientName]     = useState(editBooking?.client_name    || profile?.name  || '')
+  const [passportNum, setPassport]      = useState(editBooking?.passport_number || '')
+  const [nationality, setNationality]   = useState(editBooking?.nationality    || '')
+  const [clientEmail, setClientEmail]   = useState(editBooking?.client_email   || profile?.email || '')
+  const [clientPhone, setClientPhone]   = useState(editBooking?.client_phone   || '')
+  const [days, setDays]                 = useState(() =>
+    isEditing
+      ? (editBooking.itinerary_days || [])
+      : buildInitialDays(initialTourData)
+  )
 
   const isCustom   = template.id === 'custom'
   const nights     = arrivalDate && returnDate
@@ -155,10 +169,11 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
   const totalDays  = nights + 1
   const costs      = calcCosts({ template, hotelTier, pax, nights, isCustom })
 
-  // Rebuild days array when nights changes
+  // Rebuild days array when night count or arrival date changes.
+  // Uses functional updater so prevDays is always current (no stale closure).
   useEffect(() => {
-    setDays(Array.from({ length: totalDays }, (_, i) => {
-      const existing = days[i] || {}
+    setDays((prevDays) => Array.from({ length: totalDays }, (_, i) => {
+      const existing = prevDays[i] || {}
       const date = arrivalDate
         ? new Date(new Date(arrivalDate).getTime() + i * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
         : `Day ${i + 1}`
@@ -172,7 +187,6 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
         date,
       }
     }))
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [totalDays, arrivalDate])
 
   function updateDay(i, k, v) {
@@ -218,7 +232,13 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
       payment_status:  'UNPAID',
     }
 
-    const { data: saved, error } = await supabase.from('bookings').insert(payload).select().single()
+    let saved, error
+    if (isEditing) {
+      ;({ error } = await supabase.from('bookings').update(payload).eq('id', editBooking.id))
+      saved = { ...editBooking, ...payload }
+    } else {
+      ;({ data: saved, error } = await supabase.from('bookings').insert(payload).select().single())
+    }
     if (error) { setSaveErr(error.message); setSaving(false); return }
 
     onSaved(saved)
@@ -235,7 +255,7 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
         <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 bg-white flex-shrink-0">
           <div>
             <h2 className="font-serif font-bold text-stone-900 text-lg">
-              {initialTourData ? `Book: ${initialTourData.title}` : 'Build Custom Package'}
+              {isEditing ? `Edit: ${editBooking.tour_title || 'Booking'}` : initialTourData ? `Book: ${initialTourData.title}` : 'Build Custom Package'}
             </h2>
             <p className="text-stone-400 text-xs">Step {step + 1} of {STEP_LABELS.length}</p>
           </div>
@@ -629,7 +649,7 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
               >
                 {saving
                   ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving package…</>
-                  : <><Save className="w-4 h-4" /> Save & Preview Voucher</>
+                  : <><Save className="w-4 h-4" /> {isEditing ? 'Update Itinerary' : 'Save & Preview Voucher'}</>
                 }
               </button>
             </div>
