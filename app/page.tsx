@@ -4,7 +4,6 @@ import BrandPhilosophy from '@/components/BrandPhilosophy'
 import TourCard from '@/components/TourCard'
 import GallerySection from '@/components/GallerySection'
 import Testimonials from '@/components/Testimonials'
-import BookingForm from '@/components/BookingForm'
 import { getFeaturedTours } from '@/data/tours'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -104,19 +103,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Inline Booking Form */}
-      <section className="py-16 sm:py-20 bg-amber-50" id="booking">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6">
-          <div className="bg-white rounded-3xl shadow-xl p-6 sm:p-8 md:p-10">
-            <div className="text-center mb-7 sm:mb-8">
-              <span className="section-badge">Free Consultation</span>
-              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mb-2">Plan Your Bhutan Trip</h2>
-              <p className="text-stone-500 text-sm">Fill in your details and our specialist will craft a custom itinerary for you.</p>
-            </div>
-            <BookingForm />
-          </div>
-        </div>
-      </section>
     </>
   )
 }
