@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Clock, Users, Star, MapPin, Mountain, CheckCircle, XCircle, Calendar, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react'
 import { getTourBySlug } from '@/data/tours'
-import BookingForm from '@/components/BookingForm'
+import BookTourButton from '@/components/BookTourButton'
 
 const TABS = ['Overview', 'Itinerary', 'Inclusions', 'Book Now'] as const
 type Tab = typeof TABS[number]
@@ -68,12 +68,12 @@ export default function TourDetailPage({ params }: { params: { slug: string } })
                 <span className="text-xs text-stone-400">From</span>
                 <p className="font-bold text-2xl text-stone-900">${tour.startingFrom.toLocaleString()}<span className="text-sm font-normal text-stone-400"> /pax</span></p>
               </div>
-              <button
-                onClick={() => setActiveTab('Book Now')}
+              <BookTourButton
+                tour={tour}
                 className="btn-primary whitespace-nowrap"
               >
                 Book This Tour
-              </button>
+              </BookTourButton>
             </div>
           </div>
         </div>
@@ -244,8 +244,27 @@ export default function TourDetailPage({ params }: { params: { slug: string } })
             {activeTab === 'Book Now' && (
               <div>
                 <h2 className="font-serif text-2xl font-bold text-stone-900 mb-2">Book This Tour</h2>
-                <p className="text-stone-500 mb-8">Complete the form below and our Bhutan specialist will respond within 24 hours with a personalized quote.</p>
-                <BookingForm defaultTour={`${tour.title} — ${tour.duration}`} />
+                <p className="text-stone-500 mb-8">
+                  Sign in or create a free account to build your personalised itinerary, get an instant cost breakdown, and receive your official booking voucher.
+                </p>
+
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 mb-8">
+                  <h3 className="font-semibold text-stone-900 mb-3">How it works</h3>
+                  <ol className="space-y-2 text-sm text-stone-700">
+                    <li className="flex items-start gap-2"><span className="w-5 h-5 rounded-full bg-amber-600 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">1</span> Create a free account or sign in</li>
+                    <li className="flex items-start gap-2"><span className="w-5 h-5 rounded-full bg-amber-600 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">2</span> Review and personalise the pre-filled day-by-day itinerary</li>
+                    <li className="flex items-start gap-2"><span className="w-5 h-5 rounded-full bg-amber-600 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">3</span> Get an instant cost breakdown including SDF &amp; GST</li>
+                    <li className="flex items-start gap-2"><span className="w-5 h-5 rounded-full bg-amber-600 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">4</span> Download your official booking voucher</li>
+                  </ol>
+                </div>
+
+                <BookTourButton
+                  tour={tour}
+                  className="btn-primary text-base px-8 py-3.5"
+                >
+                  Book This Tour — Get Started
+                </BookTourButton>
+                <p className="text-xs text-stone-400 mt-3">No payment required at this stage. You&apos;ll receive a voucher and payment instructions after submitting.</p>
               </div>
             )}
           </div>
@@ -260,12 +279,9 @@ export default function TourDetailPage({ params }: { params: { slug: string } })
                 <span className="text-base font-normal text-stone-400"> /person</span>
               </p>
               <p className="text-xs text-stone-400 mb-5">SDF & visa processing included</p>
-              <button
-                onClick={() => setActiveTab('Book Now')}
-                className="btn-primary w-full text-center"
-              >
-                Book Now / Inquire
-              </button>
+              <BookTourButton tour={tour} className="btn-primary w-full text-center">
+                Book This Tour
+              </BookTourButton>
               <p className="text-xs text-stone-400 text-center mt-3">No payment required at this stage</p>
             </div>
 

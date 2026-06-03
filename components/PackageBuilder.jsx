@@ -94,14 +94,47 @@ function StepBar({ current }) {
   )
 }
 
+// ─── Build initial days from tour itinerary data ──────────────────────────────
+function buildInitialDays(tourData) {
+  if (!tourData?.itinerary?.length) return []
+  return tourData.itinerary.map((day, i) => {
+    const meals = (day.meals || '').toLowerCase()
+    const activitiesText = Array.isArray(day.activities)
+      ? day.activities.join(', ')
+      : (day.activities || day.description || '')
+    return {
+      title:      day.title || '',
+      activities: activitiesText,
+      hotel:      day.accommodation || '',
+      breakfast:  meals.includes('breakfast'),
+      lunch:      meals.includes('lunch'),
+      dinner:     meals.includes('dinner'),
+      date:       `Day ${i + 1}`,
+    }
+  })
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
-export default function PackageBuilder({ profile, onClose, onSaved }) {
-  const [step, setStep]         = useState(0)
+export default function PackageBuilder({ profile, onClose, onSaved, initialTourData }) {
+  // When coming from a specific tour, start at step 1 (skip template picker)
+  const [step, setStep]         = useState(initialTourData ? 1 : 0)
   const [saving, setSaving]     = useState(false)
   const [saveError, setSaveErr] = useState('')
 
+  // Build synthetic template from tour data if provided
+  const initialTemplate = initialTourData
+    ? {
+        id:         initialTourData.id || 'tour',
+        title:      initialTourData.title,
+        days:       initialTourData.days   || 1,
+        nights:     initialTourData.nights || 0,
+        basePerPax: initialTourData.startingFrom || 0,
+        category:   initialTourData.categoryLabel || 'Cultural',
+      }
+    : TOUR_TEMPLATES[0]
+
   // Form state
-  const [template, setTemplate]     = useState(TOUR_TEMPLATES[0])
+  const [template, setTemplate]     = useState(initialTemplate)
   const [hotelTier, setHotelTier]   = useState('3-Star')
   const [pax, setPax]               = useState(2)
   const [arrivalDate, setArrival]   = useState('')
@@ -113,7 +146,7 @@ export default function PackageBuilder({ profile, onClose, onSaved }) {
   const [nationality, setNationality]   = useState('')
   const [clientEmail, setClientEmail]   = useState(profile?.email || '')
   const [clientPhone, setClientPhone]   = useState('')
-  const [days, setDays]                 = useState([])
+  const [days, setDays]                 = useState(() => buildInitialDays(initialTourData))
 
   const isCustom   = template.id === 'custom'
   const nights     = arrivalDate && returnDate
@@ -185,10 +218,10 @@ export default function PackageBuilder({ profile, onClose, onSaved }) {
       payment_status:  'UNPAID',
     }
 
-    const { error } = await supabase.from('bookings').insert(payload)
+    const { data: saved, error } = await supabase.from('bookings').insert(payload).select().single()
     if (error) { setSaveErr(error.message); setSaving(false); return }
 
-    onSaved()
+    onSaved(saved)
   }
 
   return (
@@ -201,7 +234,9 @@ export default function PackageBuilder({ profile, onClose, onSaved }) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 bg-white flex-shrink-0">
           <div>
-            <h2 className="font-serif font-bold text-stone-900 text-lg">Build Custom Package</h2>
+            <h2 className="font-serif font-bold text-stone-900 text-lg">
+              {initialTourData ? `Book: ${initialTourData.title}` : 'Build Custom Package'}
+            </h2>
             <p className="text-stone-400 text-xs">Step {step + 1} of {STEP_LABELS.length}</p>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-stone-100 text-stone-400 hover:text-stone-600 transition-colors">
@@ -216,40 +251,67 @@ export default function PackageBuilder({ profile, onClose, onSaved }) {
           {/* ── Step 0: Template ── */}
           {step === 0 && (
             <div className="space-y-4">
-              <div>
-                <h3 className="font-semibold text-stone-900 mb-1">Choose a Journey Template</h3>
-                <p className="text-stone-400 text-sm">Start from a curated itinerary or build fully custom.</p>
-              </div>
-              <div className="grid sm:grid-cols-2 gap-3">
-                {TOUR_TEMPLATES.map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => setTemplate(t)}
-                    className={`text-left p-4 rounded-2xl border-2 transition-all ${
-                      template.id === t.id
-                        ? 'border-amber-500 bg-amber-50 shadow-md shadow-amber-100'
-                        : 'border-stone-200 hover:border-stone-300 bg-white'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <p className="font-semibold text-stone-900 text-sm leading-snug">{t.title}</p>
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border flex-shrink-0 ${CAT_COLOR[t.category]}`}>
-                        {t.category}
+              {initialTourData ? (
+                // Pre-selected tour — show confirmation card
+                <div>
+                  <h3 className="font-semibold text-stone-900 mb-1">Selected Tour</h3>
+                  <p className="text-stone-400 text-sm mb-4">Your itinerary has been pre-filled. You can edit every day in step 3.</p>
+                  <div className="border-2 border-amber-500 bg-amber-50 rounded-2xl p-5 shadow-md shadow-amber-100">
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <p className="font-bold text-stone-900 text-base leading-snug">{initialTourData.title}</p>
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-amber-300 bg-amber-100 text-amber-700 flex-shrink-0">
+                        {initialTourData.categoryLabel || 'Tour'}
                       </span>
                     </div>
-                    {t.basePerPax > 0
-                      ? <p className="text-xs text-stone-500">{t.days}D / {t.nights}N · from ${t.basePerPax.toLocaleString()}/pax</p>
-                      : <p className="text-xs text-stone-500">Fully custom — set your own parameters</p>
-                    }
-                    {template.id === t.id && (
-                      <div className="mt-2 flex items-center gap-1 text-amber-600 text-xs font-medium">
-                        <Check className="w-3 h-3" /> Selected
+                    <p className="text-sm text-stone-600 mb-3">{initialTourData.subtitle || ''}</p>
+                    <div className="grid grid-cols-2 gap-2 text-xs text-stone-600">
+                      <p>📅 {initialTourData.days}D / {initialTourData.nights}N</p>
+                      <p>💰 From ${(initialTourData.startingFrom || 0).toLocaleString()}/pax</p>
+                    </div>
+                    <div className="mt-3 flex items-center gap-1 text-amber-600 text-xs font-medium">
+                      <Check className="w-3 h-3" /> Pre-filled itinerary ready to review
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                // Standard template picker
+                <div>
+                  <h3 className="font-semibold text-stone-900 mb-1">Choose a Journey Template</h3>
+                  <p className="text-stone-400 text-sm">Start from a curated itinerary or build fully custom.</p>
+                </div>
+              )}
+              {!initialTourData && (
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {TOUR_TEMPLATES.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setTemplate(t)}
+                      className={`text-left p-4 rounded-2xl border-2 transition-all ${
+                        template.id === t.id
+                          ? 'border-amber-500 bg-amber-50 shadow-md shadow-amber-100'
+                          : 'border-stone-200 hover:border-stone-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <p className="font-semibold text-stone-900 text-sm leading-snug">{t.title}</p>
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border flex-shrink-0 ${CAT_COLOR[t.category]}`}>
+                          {t.category}
+                        </span>
                       </div>
-                    )}
-                  </button>
-                ))}
-              </div>
+                      {t.basePerPax > 0
+                        ? <p className="text-xs text-stone-500">{t.days}D / {t.nights}N · from ${t.basePerPax.toLocaleString()}/pax</p>
+                        : <p className="text-xs text-stone-500">Fully custom — set your own parameters</p>
+                      }
+                      {template.id === t.id && (
+                        <div className="mt-2 flex items-center gap-1 text-amber-600 text-xs font-medium">
+                          <Check className="w-3 h-3" /> Selected
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -567,7 +629,7 @@ export default function PackageBuilder({ profile, onClose, onSaved }) {
               >
                 {saving
                   ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving package…</>
-                  : <><Save className="w-4 h-4" /> Save Package to My Portal</>
+                  : <><Save className="w-4 h-4" /> Save & Preview Voucher</>
                 }
               </button>
             </div>

@@ -2,16 +2,19 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Eye, EyeOff, LogIn, AlertCircle } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
 
 const inputCls = 'w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors bg-white placeholder:text-stone-400'
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const next = searchParams.get('next') || ''
+
   const [form, setForm]     = useState({ email: '', password: '' })
   const [showPw, setShowPw] = useState(false)
   const [error, setError]   = useState('')
@@ -35,14 +38,18 @@ export default function LoginPage() {
       return
     }
 
-    // Fetch role and route accordingly
+    // Fetch role then redirect to ?next= or role-based dashboard
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', data.user.id)
       .single()
 
-    router.push(profile?.role === 'ADMIN' ? '/admin/dashboard' : '/client/dashboard')
+    if (next && next.startsWith('/')) {
+      router.push(next)
+    } else {
+      router.push(profile?.role === 'ADMIN' ? '/admin/dashboard' : '/client/dashboard')
+    }
   }
 
   return (
@@ -124,5 +131,13 @@ export default function LoginPage() {
         </Link>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="h-32 flex items-center justify-center"><div className="w-6 h-6 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" /></div>}>
+      <LoginForm />
+    </Suspense>
   )
 }

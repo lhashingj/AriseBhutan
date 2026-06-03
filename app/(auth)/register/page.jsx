@@ -2,16 +2,19 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Eye, EyeOff, UserPlus, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
 
 const inputCls = 'w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors bg-white placeholder:text-stone-400'
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const next = searchParams.get('next') || ''
+
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' })
   const [showPw, setShowPw]     = useState(false)
   const [error, setError]       = useState('')
@@ -57,9 +60,9 @@ export default function RegisterPage() {
     setSuccess(true)
     setLoading(false)
 
-    // If auto-confirmed, redirect immediately
+    // If auto-confirmed, redirect to ?next= or client dashboard
     if (data.session) {
-      setTimeout(() => router.push('/client/dashboard'), 1200)
+      setTimeout(() => router.push(next && next.startsWith('/') ? next : '/client/dashboard'), 1200)
     }
   }
 
@@ -73,7 +76,7 @@ export default function RegisterPage() {
         <p className="text-stone-500 text-sm max-w-xs mx-auto">
           {`Check your inbox for a confirmation email, then sign in to access your portal.`}
         </p>
-        <Link href="/login" className="btn-primary inline-flex mt-2">
+        <Link href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'} className="btn-primary inline-flex mt-2">
           Go to Sign In
         </Link>
       </div>
@@ -182,10 +185,18 @@ export default function RegisterPage() {
 
       <div className="text-center text-sm text-stone-500">
         Already have an account?{' '}
-        <Link href="/login" className="text-amber-600 font-semibold hover:underline">
+        <Link href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'} className="text-amber-600 font-semibold hover:underline">
           Sign in
         </Link>
       </div>
     </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="h-32 flex items-center justify-center"><div className="w-6 h-6 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" /></div>}>
+      <RegisterForm />
+    </Suspense>
   )
 }
