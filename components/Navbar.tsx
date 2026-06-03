@@ -82,7 +82,7 @@ export default function Navbar() {
           </nav>
 
           {/* ── Desktop CTA ── */}
-          <div className="hidden lg:flex items-center gap-4">
+          <div className="hidden lg:flex items-center gap-3">
             <a
               href="tel:+97517288286"
               className={`flex items-center gap-1.5 text-sm font-medium transition-colors duration-200 ${
@@ -93,10 +93,20 @@ export default function Navbar() {
               +975 17 288 286
             </a>
             <Link
-              href="/contact"
+              href="/login"
+              className={`text-sm font-semibold px-4 py-2 rounded-full border transition-all duration-200 ${
+                solid
+                  ? 'border-stone-300 text-stone-700 hover:border-amber-500 hover:text-amber-600'
+                  : 'border-white/40 text-white hover:bg-white/10'
+              }`}
+            >
+              Login
+            </Link>
+            <Link
+              href="/register"
               className="bg-amber-600 hover:bg-amber-700 active:scale-[0.97] text-white text-sm font-semibold px-5 py-2.5 rounded-full transition-all duration-200 shadow-md hover:shadow-lg hover:shadow-amber-600/25"
             >
-              Book Now
+              Sign Up
             </Link>
           </div>
 
@@ -140,11 +150,18 @@ export default function Navbar() {
               +975 17 288 286
             </a>
             <Link
-              href="/contact"
+              href="/login"
+              className="flex items-center justify-center py-3 text-sm font-semibold text-stone-700 bg-stone-100 rounded-2xl hover:bg-stone-200 transition-colors"
+              onClick={() => setMobileOpen(false)}
+            >
+              Login
+            </Link>
+            <Link
+              href="/register"
               className="flex items-center justify-center bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3.5 text-sm rounded-2xl transition-colors"
               onClick={() => setMobileOpen(false)}
             >
-              Book Your Bhutan Trip
+              Sign Up — It&apos;s Free
             </Link>
           </div>
         </div>

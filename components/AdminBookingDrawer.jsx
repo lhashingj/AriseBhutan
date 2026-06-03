@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { X, CheckCircle2, Clock, XCircle, ChevronDown, ChevronUp, FileText, Loader2, User, Mail, Calendar, Users, DollarSign } from 'lucide-react'
+import { X, CheckCircle2, Clock, XCircle, ChevronDown, ChevronUp, FileText, Loader2, User, Mail, Calendar, Users, DollarSign, CreditCard } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
 
 const STATUS_CONFIG = {
@@ -38,6 +38,8 @@ function BookingCard({ booking, onConfirm, onCancel }) {
   const [open, setOpen]         = useState(false)
   const [confirming, setConf]   = useState(false)
   const [cancelling, setCanc]   = useState(false)
+  const [marking, setMark]      = useState(false)
+  const isPaid = booking.payment_status === 'PAID'
 
   const nights = booking.arrival_date && booking.return_date
     ? Math.max(0, Math.floor((new Date(booking.return_date) - new Date(booking.arrival_date)) / 86400000))
@@ -63,6 +65,16 @@ function BookingCard({ booking, onConfirm, onCancel }) {
     if (!error) onCancel()
   }
 
+  async function handleMarkPaid() {
+    setMark(true)
+    const { error } = await supabase
+      .from('bookings')
+      .update({ payment_status: 'PAID' })
+      .eq('id', booking.id)
+    setMark(false)
+    if (!error) onConfirm()
+  }
+
   const refCode = `ARB-${new Date(booking.created_at).getFullYear()}-${booking.id.slice(0,6).toUpperCase()}`
 
   return (
@@ -81,7 +93,18 @@ function BookingCard({ booking, onConfirm, onCancel }) {
             </div>
             <p className="text-[10px] font-mono text-stone-400">{refCode}</p>
           </div>
-          <StatusBadge status={booking.status} />
+          <div className="flex flex-col items-end gap-1">
+            <StatusBadge status={booking.status} />
+            {booking.status === 'PENDING' && (
+              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                isPaid
+                  ? 'bg-blue-100 text-blue-700 border-blue-200'
+                  : 'bg-stone-100 text-stone-500 border-stone-200'
+              }`}>
+                {isPaid ? '💰 Payment Received' : '⏳ Unpaid'}
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-x-4 gap-y-1 mb-3">
@@ -100,7 +123,22 @@ function BookingCard({ booking, onConfirm, onCancel }) {
 
         {/* Action buttons */}
         <div className="flex items-center gap-2">
-          {booking.status === 'PENDING' && (
+          {booking.status === 'PENDING' && !isPaid && (
+            <>
+              <div className="flex-1 text-xs text-amber-700 bg-amber-50 rounded-xl px-3 py-2 border border-amber-200 leading-snug">
+                Awaiting payment from client
+              </div>
+              <button
+                onClick={handleMarkPaid}
+                disabled={marking}
+                className="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2 px-3 rounded-xl transition-colors disabled:opacity-60"
+              >
+                {marking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
+                Mark Paid
+              </button>
+            </>
+          )}
+          {booking.status === 'PENDING' && isPaid && (
             <>
               <button
                 onClick={handleConfirm}
@@ -125,7 +163,7 @@ function BookingCard({ booking, onConfirm, onCancel }) {
           )}
           {booking.status === 'CONFIRMED' && (
             <div className="flex items-center gap-1.5 text-green-600 text-xs font-semibold">
-              <CheckCircle2 className="w-4 h-4" /> Payment confirmed — booking active
+              <CheckCircle2 className="w-4 h-4" /> Booking confirmed — active
             </div>
           )}
           <button
@@ -141,6 +179,27 @@ function BookingCard({ booking, onConfirm, onCancel }) {
       {/* Expanded details */}
       {open && (
         <div className="border-t border-stone-100">
+
+          {/* Client details */}
+          {(booking.passport_number || booking.nationality || booking.client_email || booking.client_phone) && (
+            <div className="px-4 py-3 bg-blue-50/50 border-b border-stone-100">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-2">Client Travel Details</p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                {booking.passport_number && (
+                  <p className="text-stone-700"><span className="text-stone-400">Passport:</span> <span className="font-mono font-semibold">{booking.passport_number}</span></p>
+                )}
+                {booking.nationality && (
+                  <p className="text-stone-700"><span className="text-stone-400">Nationality:</span> {booking.nationality}</p>
+                )}
+                {booking.client_email && (
+                  <p className="text-stone-700 col-span-2"><span className="text-stone-400">Email:</span> {booking.client_email}</p>
+                )}
+                {booking.client_phone && (
+                  <p className="text-stone-700"><span className="text-stone-400">Phone:</span> {booking.client_phone}</p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Flight details */}
           {(booking.flight_arrival || booking.flight_return) && (

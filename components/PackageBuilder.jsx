@@ -108,8 +108,12 @@ export default function PackageBuilder({ profile, onClose, onSaved }) {
   const [returnDate, setReturn]     = useState('')
   const [flightIn, setFlightIn]     = useState('')
   const [flightOut, setFlightOut]   = useState('')
-  const [clientName, setClientName] = useState(profile?.name || '')
-  const [days, setDays]             = useState([])
+  const [clientName, setClientName]     = useState(profile?.name || '')
+  const [passportNum, setPassport]      = useState('')
+  const [nationality, setNationality]   = useState('')
+  const [clientEmail, setClientEmail]   = useState(profile?.email || '')
+  const [clientPhone, setClientPhone]   = useState('')
+  const [days, setDays]                 = useState([])
 
   const isCustom   = template.id === 'custom'
   const nights     = arrivalDate && returnDate
@@ -145,7 +149,7 @@ export default function PackageBuilder({ profile, onClose, onSaved }) {
   // Validation per step
   const valid = [
     true,
-    clientName && pax >= 1 && (isCustom ? (arrivalDate && returnDate && nights > 0) : true),
+    clientName && passportNum && nationality && clientEmail && clientPhone && pax >= 1 && (isCustom ? (arrivalDate && returnDate && nights > 0) : true),
     days.every((d) => d.title.trim()),
     true,
     true,
@@ -159,21 +163,26 @@ export default function PackageBuilder({ profile, onClose, onSaved }) {
     if (!session) { setSaveErr('Session expired. Please sign in again.'); setSaving(false); return }
 
     const payload = {
-      user_id:        session.user.id,
-      client_name:    clientName,
-      group_size:     String(pax),
-      tour_title:     template.title,
-      hotel_tier:     hotelTier,
-      flight_arrival: flightIn,
-      flight_return:  flightOut,
-      arrival_date:   arrivalDate || null,
-      return_date:    returnDate  || null,
-      itinerary_days: days,
-      cost_items:     costs.items,
-      subtotal:       costs.subtotal,
-      gst:            costs.gst,
-      total_cost:     costs.total,
-      status:         'PENDING',
+      user_id:         session.user.id,
+      client_name:     clientName,
+      passport_number: passportNum,
+      nationality:     nationality,
+      client_email:    clientEmail,
+      client_phone:    clientPhone,
+      group_size:      String(pax),
+      tour_title:      template.title,
+      hotel_tier:      hotelTier,
+      flight_arrival:  flightIn,
+      flight_return:   flightOut,
+      arrival_date:    arrivalDate || null,
+      return_date:     returnDate  || null,
+      itinerary_days:  days,
+      cost_items:      costs.items,
+      subtotal:        costs.subtotal,
+      gst:             costs.gst,
+      total_cost:      costs.total,
+      status:          'PENDING',
+      payment_status:  'UNPAID',
     }
 
     const { error } = await supabase.from('bookings').insert(payload)
@@ -255,7 +264,7 @@ export default function PackageBuilder({ profile, onClose, onSaved }) {
               <div className="space-y-4">
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Guest Name *</label>
+                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Full Name (as on passport) *</label>
                     <input value={clientName} onChange={(e) => setClientName(e.target.value)}
                       className={inputCls} placeholder="Full name on passport" />
                   </div>
@@ -264,6 +273,32 @@ export default function PackageBuilder({ profile, onClose, onSaved }) {
                     <input type="number" min={1} max={50} value={pax}
                       onChange={(e) => setPax(Math.max(1, parseInt(e.target.value) || 1))}
                       className={inputCls} />
+                  </div>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Passport Number *</label>
+                    <input value={passportNum} onChange={(e) => setPassport(e.target.value)}
+                      className={inputCls} placeholder="e.g. A1234567" autoComplete="off" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Nationality *</label>
+                    <input value={nationality} onChange={(e) => setNationality(e.target.value)}
+                      className={inputCls} placeholder="e.g. Indian, British, American" />
+                  </div>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Email Address *</label>
+                    <input type="email" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)}
+                      className={inputCls} placeholder="your@email.com" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Phone Number *</label>
+                    <input type="tel" value={clientPhone} onChange={(e) => setClientPhone(e.target.value)}
+                      className={inputCls} placeholder="+91 98765 43210" />
                   </div>
                 </div>
 
@@ -498,15 +533,19 @@ export default function PackageBuilder({ profile, onClose, onSaved }) {
 
               <div className="bg-stone-50 rounded-2xl border border-stone-200 divide-y divide-stone-200">
                 {[
-                  ['Guest',     clientName || '—'],
-                  ['Tour',      template.title],
-                  ['Duration',  `${totalDays} Days / ${nights} Nights`],
-                  ['Group',     `${pax} pax`],
-                  ['Hotel',     hotelTier],
-                  ['Dates',     arrivalDate ? `${arrivalDate} → ${returnDate || '—'}` : 'Not set'],
-                  ['Flight In', flightIn || '—'],
-                  ['Flight Out',flightOut || '—'],
-                  ['Total USD', `$${costs.total.toLocaleString()}`],
+                  ['Guest',      clientName || '—'],
+                  ['Passport',   passportNum || '—'],
+                  ['Nationality',nationality || '—'],
+                  ['Email',      clientEmail || '—'],
+                  ['Phone',      clientPhone || '—'],
+                  ['Tour',       template.title],
+                  ['Duration',   `${totalDays} Days / ${nights} Nights`],
+                  ['Group',      `${pax} pax`],
+                  ['Hotel',      hotelTier],
+                  ['Dates',      arrivalDate ? `${arrivalDate} → ${returnDate || '—'}` : 'Not set'],
+                  ['Flight In',  flightIn || '—'],
+                  ['Flight Out', flightOut || '—'],
+                  ['Total USD',  `$${costs.total.toLocaleString()}`],
                 ].map(([label, val]) => (
                   <div key={label} className="flex items-center justify-between px-4 py-3">
                     <span className="text-xs text-stone-400 font-medium uppercase tracking-wide">{label}</span>

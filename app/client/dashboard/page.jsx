@@ -175,6 +175,26 @@ export default function ClientDashboard() {
                         </button>
                       </div>
                     </div>
+
+                    {/* Payment instructions for pending bookings */}
+                    {booking.status === 'PENDING' && (
+                      <div className={`rounded-xl p-3 text-xs border ${
+                        booking.payment_status === 'PAID'
+                          ? 'bg-blue-50 border-blue-200'
+                          : 'bg-amber-50 border-amber-200'
+                      }`}>
+                        {booking.payment_status === 'PAID' ? (
+                          <p className="font-semibold text-blue-700">✅ Payment received — awaiting confirmation from our team.</p>
+                        ) : (
+                          <>
+                            <p className="font-semibold text-amber-800 mb-1">💳 Payment Required to Confirm Your Trip</p>
+                            <p className="text-amber-700">Amount: <strong>${Number(booking.total_cost).toLocaleString()} USD</strong></p>
+                            <p className="text-stone-600 mt-1.5">Transfer to our account and contact us with your booking reference: <span className="font-mono font-bold">{booking.id?.slice(0, 8).toUpperCase()}</span></p>
+                            <p className="text-stone-500 mt-1">📞 +975 17 288 286 &nbsp;·&nbsp; ✉ arisebhutan@gmail.com</p>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               )
