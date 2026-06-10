@@ -33,6 +33,49 @@ const CAT_COLOR = {
 
 const STEP_LABELS = ['Template', 'Travel Details', 'Itinerary', 'Cost Review', 'Save']
 
+// ─── Flight schedules ─────────────────────────────────────────────────────────
+const INBOUND_FLIGHTS = [
+  // Delhi → Paro
+  { id: 'kb201',     airline: 'Druk Air',        flightNo: 'KB201', sector: 'Delhi → Paro',      depart: '12:30', arrive: '15:20', days: 'Daily (peak season)' },
+  { id: 'kb203',     airline: 'Druk Air',        flightNo: 'KB203', sector: 'Delhi → Paro',      depart: '04:45', arrive: '07:15', days: 'Select days' },
+  { id: 'b3774-del', airline: 'Bhutan Airlines', flightNo: 'B3774', sector: 'Delhi → Paro',      depart: '04:30', arrive: '07:10', days: 'Select days' },
+  // Kolkata → Paro
+  { id: 'b3701',     airline: 'Bhutan Airlines', flightNo: 'B3701', sector: 'Kolkata → Paro',    depart: '08:25', arrive: '09:55', days: 'Select days' },
+  { id: 'kb211',     airline: 'Druk Air',        flightNo: 'KB211', sector: 'Kolkata → Paro',    depart: '13:20', arrive: '15:20', days: 'Mon, Wed, Fri, Sat' },
+  // Kathmandu → Paro
+  { id: 'b3774-ktm', airline: 'Bhutan Airlines', flightNo: 'B3774', sector: 'Kathmandu → Paro', depart: '14:20', arrive: '15:35', days: 'Select days' },
+  { id: 'kb401',     airline: 'Druk Air',        flightNo: 'KB401', sector: 'Kathmandu → Paro', depart: '09:10', arrive: '10:30', days: 'Mon–Fri, Sun' },
+  // Dhaka → Paro
+  { id: 'kb301',     airline: 'Druk Air',        flightNo: 'KB301', sector: 'Dhaka → Paro',      depart: '09:20', arrive: '10:50', days: 'Mon, Wed, Fri–Sun' },
+  // Bangkok → Paro
+  { id: 'b3707',     airline: 'Bhutan Airlines', flightNo: 'B3707', sector: 'Bangkok → Paro',    depart: '08:30', arrive: '12:20', days: 'Daily' },
+  // Singapore → Paro
+  { id: 'kb501',     airline: 'Druk Air',        flightNo: 'KB501', sector: 'Singapore → Paro',  depart: '09:30', arrive: '—',     days: 'Select days' },
+]
+
+const OUTBOUND_FLIGHTS = [
+  // Paro → Delhi
+  { id: 'kb202',     airline: 'Druk Air',        flightNo: 'KB202', sector: 'Paro → Delhi',      depart: '11:55', arrive: '13:45', days: 'Daily (peak season)' },
+  { id: 'b3773',     airline: 'Bhutan Airlines', flightNo: 'B3773', sector: 'Paro → Delhi',      depart: '10:50', arrive: '12:20', days: 'Select days' },
+  // Paro → Kolkata
+  { id: 'b3700-ccu', airline: 'Bhutan Airlines', flightNo: 'B3700', sector: 'Paro → Kolkata',    depart: '10:35', arrive: '11:15', days: 'Select days' },
+  { id: 'kb210',     airline: 'Druk Air',        flightNo: 'KB210', sector: 'Paro → Kolkata',    depart: '11:20', arrive: '12:20', days: 'Mon, Wed, Fri, Sat' },
+  // Paro → Kathmandu
+  { id: 'b3771',     airline: 'Bhutan Airlines', flightNo: 'B3771', sector: 'Paro → Kathmandu', depart: '07:50', arrive: '08:55', days: 'Tue, Wed, Fri, Sun' },
+  { id: 'kb400',     airline: 'Druk Air',        flightNo: 'KB400', sector: 'Paro → Kathmandu', depart: '07:10', arrive: '08:10', days: 'Mon–Fri, Sun' },
+  // Paro → Dhaka
+  { id: 'kb300',     airline: 'Druk Air',        flightNo: 'KB300', sector: 'Paro → Dhaka',      depart: '07:00', arrive: '08:30', days: 'Select days' },
+  // Paro → Bangkok
+  { id: 'b3700-bkk', airline: 'Bhutan Airlines', flightNo: 'B3700', sector: 'Paro → Bangkok',   depart: '10:35', arrive: '16:05', days: 'Via Kolkata' },
+  // Paro → Singapore
+  { id: 'kb500',     airline: 'Druk Air',        flightNo: 'KB500', sector: 'Paro → Singapore',  depart: '—',     arrive: '—',     days: 'Select days' },
+]
+
+function findFlight(list, flightNo, sector) {
+  if (!flightNo && !sector) return null
+  return list.find((f) => f.flightNo === flightNo && f.sector === sector) || null
+}
+
 const inputCls = 'w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors bg-white placeholder:text-stone-400'
 
 // ─── Cost calculator ──────────────────────────────────────────────────────────
@@ -149,13 +192,23 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
   const [pax, setPax]               = useState(parseInt(editBooking?.group_size) || 2)
   const [arrivalDate, setArrival]   = useState(editBooking?.arrival_date || '')
   const [returnDate, setReturn]     = useState(editBooking?.return_date  || '')
-  const [flightIn, setFlightIn]     = useState(editBooking?.flight_arrival || '')
-  const [flightOut, setFlightOut]   = useState(editBooking?.flight_return  || '')
+  const [inboundFlightId, setInboundId]   = useState(() => {
+    const match = findFlight(INBOUND_FLIGHTS, editBooking?.flight_arrival_no, editBooking?.flight_arrival)
+    return match ? match.id : 'custom'
+  })
+  const [outboundFlightId, setOutboundId] = useState(() => {
+    const match = findFlight(OUTBOUND_FLIGHTS, editBooking?.flight_return_no, editBooking?.flight_return)
+    return match ? match.id : 'custom'
+  })
+  const [customFlightIn, setCustomIn]   = useState(editBooking?.flight_arrival || '')
+  const [customFlightOut, setCustomOut] = useState(editBooking?.flight_return  || '')
   const [clientName, setClientName]     = useState(editBooking?.client_name    || profile?.name  || '')
   const [passportNum, setPassport]      = useState(editBooking?.passport_number || '')
   const [nationality, setNationality]   = useState(editBooking?.nationality    || '')
   const [clientEmail, setClientEmail]   = useState(editBooking?.client_email   || profile?.email || '')
-  const [clientPhone, setClientPhone]   = useState(editBooking?.client_phone   || '')
+  const [clientPhone, setClientPhone]       = useState(editBooking?.client_phone     || '')
+  const [passportExpiry, setPassportExpiry] = useState(editBooking?.passport_expiry  || '')
+  const [emergencyContact, setEmergency]    = useState(editBooking?.emergency_contact || '')
   const [days, setDays]                 = useState(() =>
     isEditing
       ? (editBooking.itinerary_days || [])
@@ -209,18 +262,29 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { setSaveErr('Session expired. Please sign in again.'); setSaving(false); return }
 
+    const inFlight  = INBOUND_FLIGHTS.find((f) => f.id === inboundFlightId)  || null
+    const outFlight = OUTBOUND_FLIGHTS.find((f) => f.id === outboundFlightId) || null
+
     const payload = {
       user_id:         session.user.id,
       client_name:     clientName,
       passport_number: passportNum,
       nationality:     nationality,
       client_email:    clientEmail,
-      client_phone:    clientPhone,
+      client_phone:      clientPhone,
+      passport_expiry:   passportExpiry || null,
+      emergency_contact: emergencyContact || null,
       group_size:      String(pax),
       tour_title:      template.title,
       hotel_tier:      hotelTier,
-      flight_arrival:  flightIn,
-      flight_return:   flightOut,
+      flight_arrival:        inFlight ? inFlight.sector   : customFlightIn,
+      flight_arrival_no:     inFlight ? inFlight.flightNo  : null,
+      flight_arrival_depart: inFlight ? inFlight.depart    : null,
+      flight_arrival_arrive: inFlight ? inFlight.arrive    : null,
+      flight_return:         outFlight ? outFlight.sector  : customFlightOut,
+      flight_return_no:      outFlight ? outFlight.flightNo : null,
+      flight_return_depart:  outFlight ? outFlight.depart   : null,
+      flight_return_arrive:  outFlight ? outFlight.arrive   : null,
       arrival_date:    arrivalDate || null,
       return_date:     returnDate  || null,
       itinerary_days:  days,
@@ -386,6 +450,19 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Passport Expiry Date</label>
+                    <input type="date" value={passportExpiry} onChange={(e) => setPassportExpiry(e.target.value)}
+                      className={inputCls} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Emergency Contact</label>
+                    <input value={emergencyContact} onChange={(e) => setEmergency(e.target.value)}
+                      className={inputCls} placeholder="Name & phone number" />
+                  </div>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
                     <label className="block text-sm font-medium text-stone-700 mb-1.5">
                       Arrival Date {isCustom && '*'}
                     </label>
@@ -410,22 +487,49 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
                   </p>
                 )}
 
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1.5">
-                      Inbound Flight Sector
-                    </label>
-                    <input value={flightIn} onChange={(e) => setFlightIn(e.target.value)}
-                      className={inputCls} placeholder="e.g. Delhi → Paro" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1.5">
-                      Outbound Flight Sector
-                    </label>
-                    <input value={flightOut} onChange={(e) => setFlightOut(e.target.value)}
-                      className={inputCls} placeholder="e.g. Paro → Delhi" />
-                  </div>
-                </div>
+                {/* ── Flight picker ── */}
+                {[
+                  { label: 'Inbound Flight (→ Paro)', list: INBOUND_FLIGHTS, id: inboundFlightId, setId: setInboundId, custom: customFlightIn, setCustom: setCustomIn, placeholder: 'e.g. Delhi → Paro' },
+                  { label: 'Outbound Flight (Paro →)', list: OUTBOUND_FLIGHTS, id: outboundFlightId, setId: setOutboundId, custom: customFlightOut, setCustom: setCustomOut, placeholder: 'e.g. Paro → Delhi' },
+                ].map(({ label, list, id, setId, custom, setCustom, placeholder }) => {
+                  const drukFlights   = list.filter((f) => f.airline === 'Druk Air')
+                  const bhutanFlights = list.filter((f) => f.airline === 'Bhutan Airlines')
+                  const selected      = list.find((f) => f.id === id) || null
+                  return (
+                    <div key={label}>
+                      <label className="block text-sm font-medium text-stone-700 mb-1.5">{label}</label>
+                      <select value={id} onChange={(e) => setId(e.target.value)} className={inputCls}>
+                        <option value="custom">— Enter manually —</option>
+                        <optgroup label="Druk Air (KB)">
+                          {drukFlights.map((f) => (
+                            <option key={f.id} value={f.id}>
+                              {f.flightNo} · {f.sector} · Dep {f.depart} → Arr {f.arrive}
+                            </option>
+                          ))}
+                        </optgroup>
+                        <optgroup label="Bhutan Airlines (B3)">
+                          {bhutanFlights.map((f) => (
+                            <option key={f.id} value={f.id}>
+                              {f.flightNo} · {f.sector} · Dep {f.depart} → Arr {f.arrive}
+                            </option>
+                          ))}
+                        </optgroup>
+                      </select>
+                      {id === 'custom' ? (
+                        <input value={custom} onChange={(e) => setCustom(e.target.value)}
+                          className={`${inputCls} mt-2`} placeholder={placeholder} />
+                      ) : selected ? (
+                        <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
+                          <span className="text-stone-500">Flight</span>   <span className="font-semibold text-stone-800">{selected.flightNo} · {selected.airline}</span>
+                          <span className="text-stone-500">Sector</span>   <span className="font-semibold text-stone-800">{selected.sector}</span>
+                          <span className="text-stone-500">Departure</span><span className="font-semibold text-stone-800">{selected.depart}</span>
+                          <span className="text-stone-500">Arrival</span>  <span className="font-semibold text-stone-800">{selected.arrive}</span>
+                          <span className="text-stone-500">Days</span>     <span className="text-stone-600">{selected.days}</span>
+                        </div>
+                      ) : null}
+                    </div>
+                  )
+                })}
 
                 <div>
                   <label className="block text-sm font-medium text-stone-700 mb-2">Hotel Tier</label>
@@ -619,14 +723,16 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
                   ['Passport',   passportNum || '—'],
                   ['Nationality',nationality || '—'],
                   ['Email',      clientEmail || '—'],
-                  ['Phone',      clientPhone || '—'],
+                  ['Phone',            clientPhone    || '—'],
+                  ['Passport Expiry',  passportExpiry || '—'],
+                  ['Emergency Contact',emergencyContact || '—'],
                   ['Tour',       template.title],
                   ['Duration',   `${totalDays} Days / ${nights} Nights`],
                   ['Group',      `${pax} pax`],
                   ['Hotel',      hotelTier],
                   ['Dates',      arrivalDate ? `${arrivalDate} → ${returnDate || '—'}` : 'Not set'],
-                  ['Flight In',  flightIn || '—'],
-                  ['Flight Out', flightOut || '—'],
+                  ['Flight In',  (() => { const f = INBOUND_FLIGHTS.find((x) => x.id === inboundFlightId); return f ? `${f.flightNo} · ${f.sector} · Dep ${f.depart}` : customFlightIn || '—' })()],
+                  ['Flight Out', (() => { const f = OUTBOUND_FLIGHTS.find((x) => x.id === outboundFlightId); return f ? `${f.flightNo} · ${f.sector} · Dep ${f.depart}` : customFlightOut || '—' })()],
                   ['Total USD',  `$${costs.total.toLocaleString()}`],
                 ].map(([label, val]) => (
                   <div key={label} className="flex items-center justify-between px-4 py-3">

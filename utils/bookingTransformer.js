@@ -37,8 +37,8 @@ export function buildVoucherData(booking, profile) {
       phone:            booking.client_phone   || '—',
       nationality:      booking.nationality    || '—',
       passportNo:       booking.passport_number || 'On file',
-      passportExpiry:   'On file',
-      emergencyContact: '—',
+      passportExpiry:   booking.passport_expiry   || '—',
+      emergencyContact: booking.emergency_contact || '—',
     },
 
     tour: {
@@ -56,18 +56,22 @@ export function buildVoucherData(booking, profile) {
       {
         sector:   booking.flight_arrival || '—',
         date:     fmtDate(booking.arrival_date),
-        flightNo: '—',
-        depart:   '—',
-        arrive:   '—',
-        airline:  'Druk Air / Bhutan Airlines',
+        flightNo: booking.flight_arrival_no     || '—',
+        depart:   booking.flight_arrival_depart || '—',
+        arrive:   booking.flight_arrival_arrive || '—',
+        airline:  booking.flight_arrival_no?.startsWith('KB') ? 'Druk Air'
+                : booking.flight_arrival_no?.startsWith('B3') ? 'Bhutan Airlines'
+                : 'Druk Air / Bhutan Airlines',
       },
       {
         sector:   booking.flight_return || '—',
         date:     fmtDate(booking.return_date),
-        flightNo: '—',
-        depart:   '—',
-        arrive:   '—',
-        airline:  'Druk Air / Bhutan Airlines',
+        flightNo: booking.flight_return_no     || '—',
+        depart:   booking.flight_return_depart || '—',
+        arrive:   booking.flight_return_arrive || '—',
+        airline:  booking.flight_return_no?.startsWith('KB') ? 'Druk Air'
+                : booking.flight_return_no?.startsWith('B3') ? 'Bhutan Airlines'
+                : 'Druk Air / Bhutan Airlines',
       },
     ],
 
