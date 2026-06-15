@@ -4,7 +4,7 @@ import BookingForm from '@/components/BookingForm'
 
 const contactInfo = [
   { icon: Phone,         label: 'Phone / WhatsApp',  value: '+975 17 288 286',          href: 'tel:+97517288286' },
-  { icon: Mail,          label: 'Email',              value: 'info@arisebhutan.com',      href: 'mailto:info@arisebhutan.com' },
+  { icon: Mail,          label: 'Email',              value: 'arisebhutan@gmail.com',     href: 'mailto:arisebhutan@gmail.com' },
   { icon: MapPin,        label: 'Office',             value: 'Paro Town, Bhutan',         href: undefined },
   { icon: Clock,         label: 'Response Time',      value: 'Within 24 hours',           href: undefined },
   { icon: MessageCircle, label: 'WeChat / LINE',       value: 'AriseBhutan',               href: undefined },

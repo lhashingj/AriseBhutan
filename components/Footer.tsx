@@ -96,8 +96,8 @@ export default function Footer() {
               </div>
               <div className="flex items-center gap-3">
                 <Mail className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                <a href="mailto:info@arisebhutan.com" className="text-sm text-stone-400 hover:text-amber-400 transition-colors">
-                  info@arisebhutan.com
+                <a href="mailto:arisebhutan@gmail.com" className="text-sm text-stone-400 hover:text-amber-400 transition-colors">
+                  arisebhutan@gmail.com
                 </a>
               </div>
             </div>

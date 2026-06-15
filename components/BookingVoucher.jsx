@@ -638,7 +638,7 @@ export default function BookingVoucher({ booking = SAMPLE_BOOKING }) {
               <p style={{ fontSize: 10, letterSpacing: '0.14em' }} className="text-amber-400 font-bold uppercase mb-2">Contact &amp; Support</p>
               <p style={{ fontSize: 10 }} className="text-stone-400">📞 +975 17 288 286</p>
               <p style={{ fontSize: 10 }} className="text-stone-400">📞 +975 2 272 929 (Office)</p>
-              <p style={{ fontSize: 10 }} className="text-stone-400">✉ info@arisebhutan.com</p>
+              <p style={{ fontSize: 10 }} className="text-stone-400">✉ arisebhutan@gmail.com</p>
               <p style={{ fontSize: 10 }} className="text-stone-400">🌐 www.arisebhutan.com</p>
               <p style={{ fontSize: 10 }} className="text-stone-400">💬 WhatsApp: +975 17 288 286</p>
             </div>
