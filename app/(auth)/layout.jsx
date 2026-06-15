@@ -24,7 +24,7 @@ export default function AuthLayout({ children }) {
         <div className="relative z-10">
           <Link href="/" className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-white overflow-hidden shadow-lg flex-shrink-0">
-              <Image src="/images/logo.jpeg" alt="Arise Bhutan" width={40} height={40} className="object-contain" />
+              <Image src="/images/logo-buddha.png" alt="Arise Bhutan" width={40} height={40} className="object-contain" />
             </div>
             <div className="text-white">
               <p className="font-serif font-bold text-lg leading-tight">Arise Bhutan</p>
@@ -56,7 +56,7 @@ export default function AuthLayout({ children }) {
           {/* Mobile logo */}
           <div className="flex lg:hidden items-center gap-3 mb-8">
             <div className="w-9 h-9 rounded-full bg-stone-100 overflow-hidden">
-              <Image src="/images/logo.jpeg" alt="Arise Bhutan" width={36} height={36} className="object-contain" />
+              <Image src="/images/logo-buddha.png" alt="Arise Bhutan" width={36} height={36} className="object-contain" />
             </div>
             <div>
               <p className="font-serif font-bold text-stone-900 leading-tight">Arise Bhutan</p>

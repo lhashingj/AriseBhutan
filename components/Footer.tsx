@@ -20,7 +20,7 @@ export default function Footer() {
           <div className="sm:col-span-2 lg:col-span-1">
             <div className="flex items-center gap-3 mb-5">
               <div className="relative h-11 w-11 flex-shrink-0 rounded-full overflow-hidden bg-white shadow-sm">
-                <Image src="/images/logo.jpeg" alt="Arise Bhutan Logo" fill className="object-contain" />
+                <Image src="/images/logo-buddha.png" alt="Arise Bhutan Logo" fill className="object-contain" />
               </div>
               <div>
                 <p className="font-serif font-bold text-white text-lg leading-tight">Arise Bhutan</p>
