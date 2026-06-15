@@ -262,6 +262,12 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { setSaveErr('Session expired. Please sign in again.'); setSaving(false); return }
 
+    if (!session.user.email_confirmed_at) {
+      setSaveErr('Please verify your email address before submitting a booking. Check your inbox for the confirmation link we sent when you registered.')
+      setSaving(false)
+      return
+    }
+
     const inFlight  = INBOUND_FLIGHTS.find((f) => f.id === inboundFlightId)  || null
     const outFlight = OUTBOUND_FLIGHTS.find((f) => f.id === outboundFlightId) || null
 

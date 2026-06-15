@@ -3,38 +3,90 @@
 export const dynamic = 'force-dynamic'
 
 import { useState, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Eye, EyeOff, UserPlus, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Eye, EyeOff, UserPlus, AlertCircle, CheckCircle2, Mail } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
 
 const inputCls = 'w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors bg-white placeholder:text-stone-400'
 
+// Known disposable / temporary email provider domains
+const BLOCKED_DOMAINS = new Set([
+  'mailinator.com', 'mailinator.net', 'mailinator.org',
+  'guerrillamail.com', 'guerrillamail.info', 'guerrillamail.biz',
+  'guerrillamail.de', 'guerrillamail.net', 'guerrillamail.org',
+  'guerrillamailblock.com', 'grr.la', 'spam4.me', 'sharklasers.com',
+  'trashmail.com', 'trashmail.me', 'trashmail.net', 'trashmail.at',
+  'trashmail.io', 'trashmail.xyz', 'trashmail.org',
+  '10minutemail.com', '10minutemail.net', '10minutemail.org', '10minutemail.de',
+  '10minemail.com', '10minutemail.co.za',
+  'tempmail.com', 'tempmail.net', 'tempmail.io', 'tempmailo.com',
+  'temp-mail.org', 'temp-mail.io', 'temp-mail.ru',
+  'throwaway.email', 'throwam.com',
+  'yopmail.com', 'yopmail.fr',
+  'dispostable.com', 'discardmail.com', 'discardmail.de',
+  'spamgourmet.com', 'spamgourmet.net', 'spamgourmet.org',
+  'mailnull.com', 'mailnesia.com', 'maildrop.cc',
+  'fakeinbox.com', 'fakeinbox.org',
+  'discard.email', 'emailondeck.com',
+  'getnada.com', 'mohmal.com',
+  'einrot.com', 'einrot.de',
+  'filzmail.com', 'filzmail.de',
+  'getairmail.com', 'mailexpire.com',
+  'spamhere.com', 'spamhereplease.com', 'spamcorner.com',
+  'spamoff.de', 'spamevader.com',
+  'tempinbox.com', 'tempinbox.co.uk',
+  'tempsky.com', 'tempail.com',
+  'mt2015.com', 'mt2016.com', 'mt2017.com',
+  'byom.de', 'wegwerfmail.de', 'wegwerfmail.org', 'wegwerfmail.net',
+  'sogetthis.com', 'spamavert.com',
+  'boximail.com', 'crazymailing.com',
+  'binkmail.com', 'bobmail.info', 'meltmail.com',
+  'mytrashmail.com', 'mytempemail.com',
+  'trashdevil.com', 'trashdevil.de',
+  'spamfree24.org', 'spamfree.eu',
+  'junk1.com', 'mail-temporaire.fr',
+  'safetymail.info', 'safe-mail.net',
+  'no-spam.ws', 'nospam.ze.tc', 'nospam4.us',
+  'anonbox.net', 'anonymbox.com',
+])
+
+function isDisposableEmail(email) {
+  const domain = email.split('@')[1]?.toLowerCase()
+  if (!domain) return false
+  return BLOCKED_DOMAINS.has(domain)
+}
+
 function RegisterForm() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const next = searchParams.get('next') || ''
 
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' })
-  const [showPw, setShowPw]     = useState(false)
-  const [error, setError]       = useState('')
-  const [loading, setLoading]   = useState(false)
-  const [success, setSuccess]   = useState(false)
+  const [showPw, setShowPw]   = useState(false)
+  const [error, setError]     = useState('')
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
 
-  const pwMatch   = form.password === form.confirm
-  const pwStrong  = form.password.length >= 8
+  const pwMatch  = form.password === form.confirm
+  const pwStrong = form.password.length >= 8
 
   async function handleSubmit(e) {
     e.preventDefault()
     if (!pwMatch)  return setError('Passwords do not match.')
     if (!pwStrong) return setError('Password must be at least 8 characters.')
 
+    // Block disposable email addresses before hitting the API
+    if (isDisposableEmail(form.email)) {
+      return setError(
+        'Temporary or disposable email addresses are not accepted. Please use your real email — we need it to send your booking vouchers and confirmations.'
+      )
+    }
+
     setLoading(true)
     setError('')
 
-    // Create auth user
     const { data, error: signUpErr } = await supabase.auth.signUp({
       email:    form.email,
       password: form.password,
@@ -47,7 +99,7 @@ function RegisterForm() {
       return
     }
 
-    // Upsert profile row (trigger handles insert but this ensures name is set)
+    // Upsert profile row
     if (data.user) {
       await supabase.from('profiles').upsert({
         id:    data.user.id,
@@ -57,26 +109,45 @@ function RegisterForm() {
       })
     }
 
-    setSuccess(true)
     setLoading(false)
-
-    // If auto-confirmed, redirect to ?next= or client dashboard
-    if (data.session) {
-      setTimeout(() => router.push(next && next.startsWith('/') ? next : '/client/dashboard'), 1200)
-    }
+    // Always show the "Check Your Inbox" screen — never auto-redirect.
+    // This ensures every user goes through email confirmation before accessing the portal.
+    setSuccess(true)
   }
 
   if (success) {
     return (
-      <div className="text-center space-y-4 py-8">
-        <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-          <CheckCircle2 className="w-7 h-7 text-green-600" />
+      <div className="text-center py-8 space-y-5">
+        <div className="relative mx-auto w-16 h-16">
+          <div className="absolute inset-0 bg-amber-100 rounded-full animate-ping opacity-40" />
+          <div className="relative w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center">
+            <Mail className="w-7 h-7 text-amber-600" />
+          </div>
         </div>
-        <h2 className="text-xl font-serif font-bold text-stone-900">Account Created!</h2>
-        <p className="text-stone-500 text-sm max-w-xs mx-auto">
-          {`Check your inbox for a confirmation email, then sign in to access your portal.`}
-        </p>
-        <Link href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'} className="btn-primary inline-flex mt-2">
+
+        <div>
+          <h2 className="text-2xl font-serif font-bold text-stone-900">Check Your Inbox</h2>
+          <p className="text-stone-500 text-sm mt-2 max-w-xs mx-auto leading-relaxed">
+            We sent a confirmation link to{' '}
+            <span className="font-semibold text-stone-700">{form.email}</span>.<br />
+            Click the link to activate your account, then sign in.
+          </p>
+        </div>
+
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 text-left space-y-2">
+          <p className="text-xs font-semibold text-amber-800 uppercase tracking-wider">Didn&apos;t receive it?</p>
+          <ul className="text-sm text-stone-600 space-y-1 list-disc list-inside">
+            <li>Check your spam / junk folder</li>
+            <li>Make sure <span className="font-medium">{form.email}</span> is correct</li>
+            <li>Allow a minute or two for delivery</li>
+          </ul>
+        </div>
+
+        <Link
+          href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'}
+          className="btn-primary inline-flex mt-2"
+        >
+          <CheckCircle2 className="w-4 h-4" />
           Go to Sign In
         </Link>
       </div>
@@ -93,7 +164,7 @@ function RegisterForm() {
       {error && (
         <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
           <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-          {error}
+          <span>{error}</span>
         </div>
       )}
 

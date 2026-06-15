@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { LayoutDashboard, FileText, LogOut, Menu, X } from 'lucide-react'
+import { LayoutDashboard, FileText, LogOut, Menu, X, MailWarning, RefreshCw } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
+import { useEmailVerified } from '@/utils/useEmailVerified'
 
 const navItems = [
   { label: 'Dashboard',  href: '/client/dashboard', icon: LayoutDashboard },
@@ -17,6 +18,15 @@ export default function ClientLayout({ children }) {
   const [profile, setProfile]     = useState(null)
   const [checking, setChecking]   = useState(true)
   const [sidebarOpen, setSidebar] = useState(false)
+  const [resendSent, setResendSent] = useState(false)
+
+  const { verified, loading: verifyLoading, resend } = useEmailVerified()
+
+  async function handleResend() {
+    await resend()
+    setResendSent(true)
+    setTimeout(() => setResendSent(false), 30000)
+  }
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -119,6 +129,27 @@ export default function ClientLayout({ children }) {
           <p className="font-serif font-bold text-stone-900">Client Portal</p>
           <div className="w-9" />
         </div>
+
+        {/* ── Email verification banner ── */}
+        {!verifyLoading && verified === false && (
+          <div className="bg-amber-50 border-b border-amber-200 px-4 sm:px-6 py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+            <div className="flex items-start gap-2.5 flex-1 min-w-0">
+              <MailWarning className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-amber-900 leading-snug">
+                <span className="font-semibold">Verify your email address.</span>{' '}
+                Check your inbox for the confirmation link we sent you. You won&apos;t be able to submit bookings until your email is verified.
+              </p>
+            </div>
+            <button
+              onClick={handleResend}
+              disabled={resendSent}
+              className="flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap text-amber-700 hover:text-amber-900 disabled:opacity-50 disabled:cursor-default transition-colors self-start sm:self-auto"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${resendSent ? '' : 'hover:rotate-180 transition-transform'}`} />
+              {resendSent ? 'Email sent!' : 'Resend email'}
+            </button>
+          </div>
+        )}
 
         <main className="flex-1 p-6 lg:p-8">
           {children}
