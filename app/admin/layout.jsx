@@ -9,7 +9,7 @@ import { supabase } from '@/utils/supabase/client'
 
 const navItems = [
   { label: 'Overview',  href: '/admin/dashboard', icon: LayoutDashboard },
-  { label: 'Clients',   href: '/admin/dashboard', icon: Users },
+  { label: 'Clients',   href: '/admin/users',     icon: Users },
   { label: 'Bookings',  href: '/admin/dashboard', icon: FileText },
 ]
 
