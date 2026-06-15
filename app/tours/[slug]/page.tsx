@@ -63,18 +63,12 @@ export default function TourDetailPage({ params }: { params: { slug: string } })
               <span className="flex items-center gap-1.5"><Star className="w-4 h-4 fill-amber-400 text-amber-400" /> {tour.rating} ({tour.reviews} reviews)</span>
               <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-amber-500" /> {tour.bestSeason}</span>
             </div>
-            <div className="flex items-center gap-4">
-              <div>
-                <span className="text-xs text-stone-400">From</span>
-                <p className="font-bold text-2xl text-stone-900">${tour.startingFrom.toLocaleString()}<span className="text-sm font-normal text-stone-400"> /pax</span></p>
-              </div>
-              <BookTourButton
-                tour={tour}
-                className="btn-primary whitespace-nowrap"
-              >
-                Book This Tour
-              </BookTourButton>
-            </div>
+            <BookTourButton
+              tour={tour}
+              className="btn-primary whitespace-nowrap"
+            >
+              Book This Tour
+            </BookTourButton>
           </div>
         </div>
       </div>
@@ -271,14 +265,10 @@ export default function TourDetailPage({ params }: { params: { slug: string } })
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Price card */}
+            {/* Book card */}
             <div className="bg-white border border-stone-200 rounded-2xl p-6 shadow-sm">
-              <p className="text-stone-500 text-sm mb-1">Starting from</p>
-              <p className="font-bold text-3xl text-stone-900 mb-1">
-                ${tour.startingFrom.toLocaleString()}
-                <span className="text-base font-normal text-stone-400"> /person</span>
-              </p>
-              <p className="text-xs text-stone-400 mb-5">SDF & visa processing included</p>
+              <p className="font-serif font-bold text-stone-900 text-lg mb-1">Ready to Book?</p>
+              <p className="text-stone-500 text-sm mb-5">Build your itinerary and we&apos;ll send you a personalised quote — no commitment needed.</p>
               <BookTourButton tour={tour} className="btn-primary w-full text-center">
                 Book This Tour
               </BookTourButton>

@@ -89,7 +89,7 @@ export default function Navbar() {
             {/* White circle ensures logo is visible on any bg — no filter needed */}
             <div className="relative h-10 w-10 rounded-full overflow-hidden flex-shrink-0 bg-white shadow-sm ring-1 ring-white/30">
               <Image
-                src="/images/logo.jpeg"
+                src="/images/logo-buddha.png"
                 alt="Arise Bhutan"
                 fill
                 className="object-contain"

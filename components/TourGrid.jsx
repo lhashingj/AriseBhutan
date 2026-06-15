@@ -133,27 +133,18 @@ function TourCard({ tour }) {
           <span className="text-stone-700 font-medium">{tour.accommodationTier}</span>
         </div>
 
-        {/* Price + CTA */}
-        <div className="mt-auto pt-4 border-t border-stone-100">
-          <div className="flex items-center justify-between gap-3 mb-3">
-            <div>
-              <p className="text-xs text-stone-400">From</p>
-              <p className="font-bold text-stone-900 text-xl">
-                ${tour.startingFrom.toLocaleString()}
-                <span className="text-xs font-normal text-stone-400"> /pax</span>
-              </p>
-            </div>
-            <Link
-              href={`/tours/${tour.slug}`}
-              className="flex items-center gap-1.5 text-stone-600 hover:text-amber-700 font-semibold text-sm px-4 py-2 rounded-full border border-stone-200 hover:border-amber-300 transition-all duration-200 whitespace-nowrap"
-            >
-              View Tour
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
+        {/* CTA */}
+        <div className="mt-auto pt-4 border-t border-stone-100 flex items-center gap-3">
+          <Link
+            href={`/tours/${tour.slug}`}
+            className="flex items-center gap-1.5 text-stone-600 hover:text-amber-700 font-semibold text-sm px-4 py-2 rounded-full border border-stone-200 hover:border-amber-300 transition-all duration-200 whitespace-nowrap"
+          >
+            View Tour
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
           <BookTourButton
             tour={tour}
-            className="w-full flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 active:scale-[0.98] text-white font-semibold text-sm px-4 py-2.5 rounded-full transition-all duration-200 shadow-sm hover:shadow-md hover:shadow-amber-600/25"
+            className="flex-1 flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 active:scale-[0.98] text-white font-semibold text-sm px-4 py-2.5 rounded-full transition-all duration-200 shadow-sm hover:shadow-md hover:shadow-amber-600/25"
           >
             Book Now
           </BookTourButton>

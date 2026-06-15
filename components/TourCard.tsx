@@ -81,14 +81,7 @@ export default function TourCard({ tour }: { tour: Tour }) {
         </span>
 
         {/* Footer */}
-        <div className="mt-auto pt-4 border-t border-stone-100 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-stone-400">From</p>
-            <p className="font-bold text-stone-900 text-lg">
-              ${tour.startingFrom.toLocaleString()}
-              <span className="text-xs font-normal text-stone-400"> /pax</span>
-            </p>
-          </div>
+        <div className="mt-auto pt-4 border-t border-stone-100 flex items-center justify-end">
           <div className="flex items-center gap-1 text-amber-600 font-semibold text-sm group-hover:gap-2 transition-all">
             View Tour
             <ChevronRight className="w-4 h-4" />
