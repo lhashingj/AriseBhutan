@@ -9,6 +9,17 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  async redirects() {
+    return [
+      // Redirect bare domain to www
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'arisebhutan.com' }],
+        destination: 'https://www.arisebhutan.com/:path*',
+        permanent: true,
+      },
+    ]
+  },
 }
 
 export default nextConfig
