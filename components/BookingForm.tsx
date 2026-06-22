@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { Check, ChevronRight } from 'lucide-react'
+import { Check, ChevronRight, AlertCircle } from 'lucide-react'
 
 interface FormData {
   name: string; email: string; phone: string; country: string
@@ -20,6 +20,8 @@ const inputCls = 'w-full border border-stone-200 rounded-xl px-4 py-3 text-sm fo
 export default function BookingForm({ defaultTour = '' }: { defaultTour?: string }) {
   const [step, setStep] = useState(0)
   const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
   const [data, setData] = useState<FormData>({
     name: '', email: '', phone: '', country: '',
     tourInterest: defaultTour, travelDate: '', groupSize: '2', duration: '',
@@ -67,7 +69,24 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
         ))}
       </div>
 
-      <form onSubmit={(e) => { e.preventDefault(); setSubmitted(true) }}>
+      <form onSubmit={async (e) => {
+        e.preventDefault()
+        setSubmitting(true)
+        setSubmitError('')
+        try {
+          const res = await fetch('/api/contact', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+          })
+          if (!res.ok) throw new Error('Failed')
+          setSubmitted(true)
+        } catch {
+          setSubmitError('Something went wrong sending your enquiry. Please email us directly at arisebhutan@gmail.com.')
+        } finally {
+          setSubmitting(false)
+        }
+      }}>
         {/* Step 0: Contact */}
         {step === 0 && (
           <div className="space-y-4">
@@ -177,10 +196,19 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
                 className={`${inputCls} resize-none`}
                 placeholder="Any dietary requirements, accessibility needs, or specific interests you'd like us to know..." />
             </div>
+            {submitError && (
+              <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>{submitError}</span>
+              </div>
+            )}
             <div className="flex gap-3">
-              <button type="button" onClick={() => setStep(1)} className="btn-outline flex-1">Back</button>
-              <button type="submit" className="btn-primary flex-1">
-                <Check className="w-4 h-4" /> Submit Inquiry
+              <button type="button" onClick={() => setStep(1)} className="btn-outline flex-1" disabled={submitting}>Back</button>
+              <button type="submit" className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed" disabled={submitting}>
+                {submitting
+                  ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Sending…</>
+                  : <><Check className="w-4 h-4" /> Submit Inquiry</>
+                }
               </button>
             </div>
             <p className="text-xs text-stone-400 text-center">We respond within 24 hours. No payment required at this stage.</p>
