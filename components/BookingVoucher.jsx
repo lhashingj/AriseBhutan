@@ -234,7 +234,7 @@ export default function BookingVoucher({ booking = SAMPLE_BOOKING }) {
             {/* Logo + brand */}
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden flex-shrink-0">
-                <img src="/images/logo-buddha.png" alt="Arise Bhutan" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                <img src="/images/logo.jpeg" alt="Arise Bhutan" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
               </div>
               <div className="text-white">
                 <p style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.01em' }} className="font-serif leading-tight">

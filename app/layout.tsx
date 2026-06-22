@@ -11,8 +11,8 @@ export const metadata: Metadata = {
   description: 'Experience authentic Bhutan with Arise Bhutan Tours. Cultural tours, trekking adventures, festival experiences, and luxury wellness retreats in the Kingdom of Happiness. Licensed by ATCB.',
   keywords: "Bhutan tours, Bhutan travel, Tiger's Nest hike, Bhutan trekking, Bhutan festivals, Tshechu, Paro, Thimphu, Punakha",
   icons: {
-    icon: '/images/logo-buddha.png',
-    apple: '/images/logo-buddha.png',
+    icon: '/images/logo.jpeg',
+    apple: '/images/logo.jpeg',
   },
 }
 

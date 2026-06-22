@@ -263,7 +263,7 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
     if (!session) { setSaveErr('Session expired. Please sign in again.'); setSaving(false); return }
 
     if (!session.user.email_confirmed_at) {
-      setSaveErr('Please verify your email address before submitting a booking. Check your inbox for the confirmation link we sent when you registered.')
+      setSaveErr('Please verify your email address before submitting a booking. Check your inbox for the confirmation link.')
       setSaving(false)
       return
     }

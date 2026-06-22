@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useState, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Eye, EyeOff, UserPlus, AlertCircle, CheckCircle2, Mail } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
@@ -58,6 +58,7 @@ function isDisposableEmail(email) {
 }
 
 function RegisterForm() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const next = searchParams.get('next') || ''
 
@@ -94,7 +95,18 @@ function RegisterForm() {
     })
 
     if (signUpErr) {
-      setError(signUpErr.message)
+      const raw = signUpErr.message ?? ''
+      const msg = String(raw).toLowerCase()
+      const isEmpty = !raw || raw === '{}' || raw === '{}'
+      if (isEmpty || msg.includes('sending') || msg.includes('email') || msg.includes('smtp') || msg.includes('rate')) {
+        setError(
+          'We couldn\'t send your confirmation email right now. Our email service may be temporarily busy — please try again in a few minutes, or email us directly at arisebhutan@gmail.com.'
+        )
+      } else if (msg.includes('already registered') || msg.includes('already exists') || msg.includes('user already')) {
+        setError('An account with this email already exists. Please sign in instead.')
+      } else {
+        setError(String(raw) || 'Something went wrong. Please try again.')
+      }
       setLoading(false)
       return
     }
@@ -110,9 +122,13 @@ function RegisterForm() {
     }
 
     setLoading(false)
-    // Always show the "Check Your Inbox" screen — never auto-redirect.
-    // This ensures every user goes through email confirmation before accessing the portal.
-    setSuccess(true)
+    // If confirmation is disabled Supabase returns a session immediately — redirect.
+    // If confirmation is enabled, no session yet — show inbox screen.
+    if (data?.session) {
+      router.push(next || '/client/dashboard')
+    } else {
+      setSuccess(true)
+    }
   }
 
   if (success) {

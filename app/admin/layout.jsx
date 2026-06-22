@@ -66,7 +66,7 @@ export default function AdminLayout({ children }) {
         <div className="px-5 py-5 border-b border-white/10">
           <Link href="/" className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-white overflow-hidden flex-shrink-0">
-              <Image src="/images/logo-buddha.png" alt="Arise Bhutan" width={36} height={36} className="object-contain" />
+              <Image src="/images/logo.jpeg" alt="Arise Bhutan" width={36} height={36} className="object-contain" />
             </div>
             <div>
               <p className="font-serif font-bold text-white text-sm leading-tight">Arise Bhutan</p>

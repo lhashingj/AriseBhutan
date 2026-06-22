@@ -18,14 +18,20 @@ export default function ClientLayout({ children }) {
   const [profile, setProfile]     = useState(null)
   const [checking, setChecking]   = useState(true)
   const [sidebarOpen, setSidebar] = useState(false)
-  const [resendSent, setResendSent] = useState(false)
+  const [resendSent, setResendSent]   = useState(false)
+  const [resendError, setResendError] = useState('')
 
   const { verified, loading: verifyLoading, resend } = useEmailVerified()
 
   async function handleResend() {
-    await resend()
-    setResendSent(true)
-    setTimeout(() => setResendSent(false), 30000)
+    setResendError('')
+    const { error } = await resend()
+    if (error) {
+      setResendError('Couldn\'t send email — try again in a few minutes.')
+    } else {
+      setResendSent(true)
+      setTimeout(() => setResendSent(false), 30000)
+    }
   }
 
   useEffect(() => {
@@ -72,7 +78,7 @@ export default function ClientLayout({ children }) {
         <div className="px-5 py-5 border-b border-white/10">
           <Link href="/" className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-white overflow-hidden flex-shrink-0">
-              <Image src="/images/logo-buddha.png" alt="Arise Bhutan" width={36} height={36} className="object-contain" />
+              <Image src="/images/logo.jpeg" alt="Arise Bhutan" width={36} height={36} className="object-contain" />
             </div>
             <div>
               <p className="font-serif font-bold text-white text-sm leading-tight">Arise Bhutan</p>
@@ -132,22 +138,27 @@ export default function ClientLayout({ children }) {
 
         {/* ── Email verification banner ── */}
         {!verifyLoading && verified === false && (
-          <div className="bg-amber-50 border-b border-amber-200 px-4 sm:px-6 py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-            <div className="flex items-start gap-2.5 flex-1 min-w-0">
-              <MailWarning className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-amber-900 leading-snug">
-                <span className="font-semibold">Verify your email address.</span>{' '}
-                Check your inbox for the confirmation link we sent you. You won&apos;t be able to submit bookings until your email is verified.
-              </p>
+          <div className="bg-amber-50 border-b border-amber-200 px-4 sm:px-6 py-3 flex flex-col gap-1.5">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+              <div className="flex items-start gap-2.5 flex-1 min-w-0">
+                <MailWarning className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-amber-900 leading-snug">
+                  <span className="font-semibold">Verify your email address.</span>{' '}
+                  Check your inbox for the confirmation link we sent you. You won&apos;t be able to submit bookings until your email is verified.
+                </p>
+              </div>
+              <button
+                onClick={handleResend}
+                disabled={resendSent}
+                className="flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap text-amber-700 hover:text-amber-900 disabled:opacity-50 disabled:cursor-default transition-colors self-start sm:self-auto"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${resendSent ? '' : 'hover:rotate-180 transition-transform'}`} />
+                {resendSent ? 'Email sent!' : 'Resend email'}
+              </button>
             </div>
-            <button
-              onClick={handleResend}
-              disabled={resendSent}
-              className="flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap text-amber-700 hover:text-amber-900 disabled:opacity-50 disabled:cursor-default transition-colors self-start sm:self-auto"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${resendSent ? '' : 'hover:rotate-180 transition-transform'}`} />
-              {resendSent ? 'Email sent!' : 'Resend email'}
-            </button>
+            {resendError && (
+              <p className="text-xs text-red-600 pl-6">{resendError}</p>
+            )}
           </div>
         )}
 

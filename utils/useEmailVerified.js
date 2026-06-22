@@ -36,8 +36,9 @@ export function useEmailVerified() {
   }, [])
 
   async function resend() {
-    if (!state.email) return
-    await supabase.auth.resend({ type: 'signup', email: state.email })
+    if (!state.email) return { error: null }
+    const { error } = await supabase.auth.resend({ type: 'signup', email: state.email })
+    return { error }
   }
 
   return { ...state, resend }
