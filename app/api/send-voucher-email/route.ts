@@ -27,12 +27,32 @@ export async function POST(req: NextRequest) {
 
   // ── 2. Parse body ──────────────────────────────────────────
   const body = await req.json()
-  const { enquiryId, tourTitle, arrivalDate, returnDate, totalCost } = body as {
+  const {
+    enquiryId,
+    tourTitle,
+    arrivalDate,
+    returnDate,
+    guide,
+    vehicle,
+    pricing,
+    inclusions,
+    exclusions,
+  } = body as {
     enquiryId:   string
     tourTitle:   string
     arrivalDate: string
     returnDate:  string
-    totalCost:   number
+    guide?:      string
+    vehicle?:    string
+    pricing?: {
+      pricePerPerson:       number
+      sdfPerPersonPerNight: number
+      serviceFeePerPax:     number
+      gstRate:              number
+      inrRate:              number
+    }
+    inclusions?: string[]
+    exclusions?: string[]
   }
 
   if (!enquiryId || !arrivalDate || !returnDate) {
@@ -51,11 +71,10 @@ export async function POST(req: NextRequest) {
   }
 
   // ── 4. Build voucher data ──────────────────────────────────
-  const start   = new Date(arrivalDate)
-  const end     = new Date(returnDate)
-  const nights  = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / 86_400_000))
-  const pax     = enquiry.guests || 2
-  const cost    = Number(totalCost) || 0
+  const start  = new Date(arrivalDate)
+  const end    = new Date(returnDate)
+  const nights = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / 86_400_000))
+  const pax    = enquiry.guests || 2
   const bookingRef = `ARB-${enquiry.id.slice(0, 8).toUpperCase()}`
 
   const voucherData = {
@@ -64,37 +83,37 @@ export async function POST(req: NextRequest) {
     status: 'CONFIRMED',
 
     client: {
-      name:             enquiry.client_name    || 'Valued Guest',
-      email:            enquiry.client_email   || '',
-      phone:            enquiry.client_phone   || '',
-      nationality:      enquiry.client_country || '',
-      passportNo:       '',
-      passportExpiry:   '',
+      name:            enquiry.client_name    || 'Valued Guest',
+      email:           enquiry.client_email   || '',
+      phone:           enquiry.client_phone   || '',
+      nationality:     enquiry.client_country || '',
+      passportNo:      '',
+      passportExpiry:  '',
       emergencyContact: '',
     },
 
     tour: {
       title:     tourTitle || enquiry.tour_interest || 'Custom Bhutan Package',
-      category:  'Cultural Tour',
+      category:  enquiry.tier ? `${enquiry.tier} Package` : 'Cultural Tour',
       duration:  `${nights + 1} Days / ${nights} Nights`,
       pax,
       startDate: start.toLocaleDateString('en-US', { dateStyle: 'medium' }),
       endDate:   end.toLocaleDateString('en-US', { dateStyle: 'medium' }),
-      guide:     'Licensed ATCB Guide',
-      vehicle:   'Private Vehicle & Driver',
+      guide:     guide || 'Licensed ATCB Guide',
+      vehicle:   vehicle || 'Private Vehicle & Driver',
     },
 
     pricing: {
-      pricePerPerson:       cost > 0 ? cost / pax : 0,
+      pricePerPerson:       pricing?.pricePerPerson       ?? 0,
       pax,
-      sdfPerPersonPerNight: 100,
+      sdfPerPersonPerNight: pricing?.sdfPerPersonPerNight ?? 100,
       nights,
-      serviceFeePerPax:     0,
-      gstRate:              0,
-      inrRate:              83.5,
+      serviceFeePerPax:     pricing?.serviceFeePerPax     ?? 0,
+      gstRate:              pricing?.gstRate               ?? 0,
+      inrRate:              pricing?.inrRate               ?? 83.5,
     },
 
-    inclusions: [
+    inclusions: inclusions?.filter(Boolean) ?? [
       'Bhutan Sustainable Development Fee (SDF)',
       'Bhutan visa & permit processing',
       'All accommodation per itinerary',
@@ -105,7 +124,7 @@ export async function POST(req: NextRequest) {
       'Arise Bhutan 24/7 in-country support',
     ],
 
-    exclusions: [
+    exclusions: exclusions?.filter(Boolean) ?? [
       'International airfare to/from Paro',
       'Travel & medical insurance',
       'Personal expenses & gratuities',
@@ -128,6 +147,11 @@ export async function POST(req: NextRequest) {
 
   // ── 6. Email PDF to client ─────────────────────────────────
   const filename = `Arise-Bhutan-${bookingRef}.pdf`
+
+  // Compute total for email preview
+  const { computePricing } = await import('@/utils/pdfGenerator')
+  const costs = computePricing(voucherData.pricing)
+
   const { error: emailErr } = await resend.emails.send({
     from:    'Arise Bhutan Tours <noreply@arisebhutan.com>',
     to:      [enquiry.client_email],
@@ -145,11 +169,12 @@ export async function POST(req: NextRequest) {
             Thank you for choosing Arise Bhutan Tours &amp; Travel. Please find your personalised travel voucher attached to this email.
           </p>
           <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 16px;">
-            <tr><td style="padding: 6px 0; color: #78716c; width: 140px;">Booking Reference</td><td style="padding: 6px 0; font-weight: bold; font-family: monospace;">${bookingRef}</td></tr>
+            <tr><td style="padding: 6px 0; color: #78716c; width: 160px;">Booking Reference</td><td style="padding: 6px 0; font-weight: bold; font-family: monospace;">${bookingRef}</td></tr>
             <tr><td style="padding: 6px 0; color: #78716c;">Tour</td><td style="padding: 6px 0;">${voucherData.tour.title}</td></tr>
             <tr><td style="padding: 6px 0; color: #78716c;">Travel Dates</td><td style="padding: 6px 0;">${voucherData.tour.startDate} – ${voucherData.tour.endDate}</td></tr>
             <tr><td style="padding: 6px 0; color: #78716c;">Duration</td><td style="padding: 6px 0;">${voucherData.tour.duration}</td></tr>
             <tr><td style="padding: 6px 0; color: #78716c;">Guests</td><td style="padding: 6px 0;">${pax} ${pax === 1 ? 'person' : 'people'}</td></tr>
+            ${costs.totalUSD > 0 ? `<tr><td style="padding: 6px 0; color: #78716c;">Total Cost</td><td style="padding: 6px 0; font-weight: bold; color: #92400e;">$${costs.totalUSD.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td></tr>` : ''}
           </table>
           <p style="font-size: 14px; line-height: 1.6; margin: 0 0 16px;">
             If you have any questions, please reply to this email or WhatsApp us at <strong>+975 17 288 286</strong>.
