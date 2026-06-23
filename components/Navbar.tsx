@@ -6,11 +6,12 @@ import { Menu, X, Phone, ChevronDown, LayoutDashboard, LogOut, User } from 'luci
 import { supabase } from '@/utils/supabase/client'
 
 const navLinks = [
-  { label: 'Home',     href: '/' },
-  { label: 'Tours',    href: '/tours' },
-  { label: 'Gallery',  href: '/gallery' },
-  { label: 'About Us', href: '/about' },
-  { label: 'Contact',  href: '/contact' },
+  { label: 'Home',           href: '/' },
+  { label: 'Tours',          href: '/tours' },
+  { label: 'Plan Your Trip', href: '/adventure-builder' },
+  { label: 'Gallery',        href: '/gallery' },
+  { label: 'About Us',       href: '/about' },
+  { label: 'Contact',        href: '/contact' },
 ]
 
 export default function Navbar() {

@@ -1,17 +1,16 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, ChevronRight, ChevronLeft, Check, Plane, Calendar, Users, Hotel, MapPin, DollarSign, Save, Loader2 } from 'lucide-react'
+import { X, ChevronRight, ChevronLeft, Check, Plane, Calendar, Users, Hotel, MapPin, Save, Loader2 } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
 
-// ─── Pricing constants ────────────────────────────────────────────────────────
-const SDF_PER_PERSON_PER_NIGHT = 100   // USD — Bhutan Sustainable Development Fee
-const GUIDE_PER_DAY            = 80    // USD — licensed guide + transport
+// SDF is a mandatory Royal Government of Bhutan levy — displayed to clients
+const SDF_PER_PERSON_PER_NIGHT = 100   // USD
 
 const HOTEL_RATES = {
-  '3-Star': { rate: 80,  label: '3-Star Heritage',  desc: 'Comfortable heritage hotels' },
-  '4-Star': { rate: 150, label: '4-Star Boutique',  desc: 'Premium boutique properties' },
-  '5-Star': { rate: 300, label: '5-Star Luxury',    desc: 'Amankora, Como Uma & equivalents' },
+  '3-Star': { label: '3-Star Heritage',  desc: 'Comfortable heritage hotels' },
+  '4-Star': { label: '4-Star Boutique',  desc: 'Premium boutique properties' },
+  '5-Star': { label: '5-Star Luxury',    desc: 'Amankora, Como Uma & equivalents' },
 }
 
 const TOUR_TEMPLATES = [
@@ -31,7 +30,7 @@ const CAT_COLOR = {
   Custom:    'border-stone-300  bg-stone-50  text-stone-600',
 }
 
-const STEP_LABELS = ['Template', 'Travel Details', 'Itinerary', 'Cost Review', 'Save']
+const STEP_LABELS = ['Template', 'Travel Details', 'Itinerary', 'Summary', 'Save']
 
 // ─── Flight schedules ─────────────────────────────────────────────────────────
 const INBOUND_FLIGHTS = [
@@ -77,40 +76,6 @@ function findFlight(list, flightNo, sector) {
 }
 
 const inputCls = 'w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors bg-white placeholder:text-stone-400'
-
-// ─── Cost calculator ──────────────────────────────────────────────────────────
-function calcCosts({ template, hotelTier, pax, nights, isCustom }) {
-  const days      = nights + 1
-  const hotel     = HOTEL_RATES[hotelTier] || HOTEL_RATES['3-Star']
-  const rooms     = Math.ceil(pax / 2)
-
-  let packageBase, sdf, guideTransport, subtotal, gst, total
-  const items = []
-
-  if (!isCustom && template.basePerPax > 0) {
-    packageBase    = template.basePerPax * pax
-    sdf            = SDF_PER_PERSON_PER_NIGHT * pax * nights
-    guideTransport = 0 // included in template
-
-    items.push({ label: `${template.title} (per-person rate)`, calc: `$${template.basePerPax.toLocaleString()} × ${pax} pax`, amount: packageBase })
-    items.push({ label: 'Sustainable Development Fee (SDF)', calc: `$${SDF_PER_PERSON_PER_NIGHT}/pax/night × ${nights}N × ${pax}`, amount: sdf })
-  } else {
-    const hotelTotal  = hotel.rate * rooms * nights
-    guideTransport    = GUIDE_PER_DAY * days
-    sdf               = SDF_PER_PERSON_PER_NIGHT * pax * nights
-    packageBase       = hotelTotal + guideTransport
-
-    items.push({ label: `Accommodation (${hotel.label})`, calc: `$${hotel.rate}/room/night × ${rooms} room(s) × ${nights}N`, amount: hotelTotal })
-    items.push({ label: 'Guide & Private Transport',      calc: `$${GUIDE_PER_DAY}/day × ${days} days`, amount: guideTransport })
-    items.push({ label: 'Sustainable Development Fee (SDF)', calc: `$${SDF_PER_PERSON_PER_NIGHT}/pax/night × ${nights}N × ${pax}`, amount: sdf })
-  }
-
-  subtotal = packageBase + sdf
-  gst      = parseFloat((subtotal * 0.05).toFixed(2))
-  total    = parseFloat((subtotal + gst).toFixed(2))
-
-  return { items, subtotal, gst, total }
-}
 
 // ─── Step indicator ───────────────────────────────────────────────────────────
 function StepBar({ current }) {
@@ -220,7 +185,7 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
     ? Math.max(0, Math.floor((new Date(returnDate) - new Date(arrivalDate)) / 86400000))
     : template.nights
   const totalDays  = nights + 1
-  const costs      = calcCosts({ template, hotelTier, pax, nights, isCustom })
+  const sdfTotal   = nights > 0 ? SDF_PER_PERSON_PER_NIGHT * pax * nights : null
 
   // Rebuild days array when night count or arrival date changes.
   // Uses functional updater so prevDays is always current (no stale closure).
@@ -294,10 +259,10 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
       arrival_date:    arrivalDate || null,
       return_date:     returnDate  || null,
       itinerary_days:  days,
-      cost_items:      costs.items,
-      subtotal:        costs.subtotal,
-      gst:             costs.gst,
-      total_cost:      costs.total,
+      cost_items:      [],
+      subtotal:        null,
+      gst:             null,
+      total_cost:      null,
       status:          'PENDING',
       payment_status:  'UNPAID',
     }
@@ -356,7 +321,7 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
                     <p className="text-sm text-stone-600 mb-3">{initialTourData.subtitle || ''}</p>
                     <div className="grid grid-cols-2 gap-2 text-xs text-stone-600">
                       <p>📅 {initialTourData.days}D / {initialTourData.nights}N</p>
-                      <p>💰 From ${(initialTourData.startingFrom || 0).toLocaleString()}/pax</p>
+                      <p>🏔 {initialTourData.categoryLabel || 'Cultural Tour'}</p>
                     </div>
                     <div className="mt-3 flex items-center gap-1 text-amber-600 text-xs font-medium">
                       <Check className="w-3 h-3" /> Pre-filled itinerary ready to review
@@ -389,8 +354,8 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
                           {t.category}
                         </span>
                       </div>
-                      {t.basePerPax > 0
-                        ? <p className="text-xs text-stone-500">{t.days}D / {t.nights}N · from ${t.basePerPax.toLocaleString()}/pax</p>
+                      {t.days > 0
+                        ? <p className="text-xs text-stone-500">{t.days}D / {t.nights}N</p>
                         : <p className="text-xs text-stone-500">Fully custom — set your own parameters</p>
                       }
                       {template.id === t.id && (
@@ -548,7 +513,6 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
                             : 'border-stone-200 hover:border-stone-300'
                         }`}>
                         <p className="font-semibold text-stone-900 text-sm">{tier}</p>
-                        <p className="text-xs text-stone-500 mt-0.5">${info.rate}/room/night</p>
                         <p className="text-[10px] text-stone-400 mt-0.5 line-clamp-1">{info.desc}</p>
                         {hotelTier === tier && <Check className="w-3 h-3 text-amber-600 mt-1" />}
                       </button>
@@ -637,80 +601,70 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
             </div>
           )}
 
-          {/* ── Step 3: Cost Review ── */}
+          {/* ── Step 3: Booking Summary ── */}
           {step === 3 && (
             <div className="space-y-5">
               <div>
-                <h3 className="font-semibold text-stone-900 mb-1">Cost Breakdown</h3>
-                <p className="text-stone-400 text-sm">Auto-calculated for {pax} pax · {nights} nights · {hotelTier}</p>
+                <h3 className="font-semibold text-stone-900 mb-1">Booking Summary</h3>
+                <p className="text-stone-400 text-sm">Review your selections — our team will prepare a personalised quote.</p>
               </div>
 
-              {/* Cost matrix */}
-              <div className="rounded-2xl border border-stone-200 overflow-hidden">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-stone-800 text-white">
-                      <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide">Cost Item</th>
-                      <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide">Calculation</th>
-                      <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide">USD</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {costs.items.map((row, i) => (
-                      <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-stone-50'}>
-                        <td className="px-4 py-3 text-sm text-stone-700 font-medium">{row.label}</td>
-                        <td className="px-4 py-3 text-xs text-stone-400 text-right">{row.calc}</td>
-                        <td className="px-4 py-3 text-sm text-stone-900 font-semibold text-right">
-                          ${row.amount.toLocaleString()}
-                        </td>
-                      </tr>
-                    ))}
-                    <tr className="bg-amber-50">
-                      <td className="px-4 py-3 font-semibold text-stone-800 text-sm">Sub-total</td>
-                      <td />
-                      <td className="px-4 py-3 font-bold text-stone-900 text-right">${costs.subtotal.toLocaleString()}</td>
-                    </tr>
-                    <tr className="bg-white">
-                      <td className="px-4 py-3 text-sm text-stone-600">GST (5%)</td>
-                      <td className="px-4 py-3 text-xs text-stone-400 text-right">5% on sub-total</td>
-                      <td className="px-4 py-3 text-sm font-medium text-stone-900 text-right">${costs.gst.toLocaleString()}</td>
-                    </tr>
-                  </tbody>
-                  <tfoot>
-                    <tr className="bg-stone-900">
-                      <td colSpan={2} className="px-4 py-4 text-white font-bold text-sm uppercase tracking-wide">
-                        Grand Total (USD)
-                      </td>
-                      <td className="px-4 py-4 text-right">
-                        <span className="text-amber-400 font-bold text-xl">${costs.total.toLocaleString()}</span>
-                      </td>
-                    </tr>
-                    <tr className="bg-amber-700">
-                      <td colSpan={2} className="px-4 py-3 text-white font-semibold text-xs uppercase tracking-wide">
-                        Equivalent (INR @ ₹83.50)
-                      </td>
-                      <td className="px-4 py-3 text-right text-white font-bold text-base">
-                        ₹{Math.round(costs.total * 83.5).toLocaleString('en-IN')}
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-
-              {/* Notes */}
-              <div className="text-xs text-stone-400 space-y-1 px-1">
-                <p>• SDF ($100/person/night) is a mandatory Royal Govt. of Bhutan levy, non-negotiable.</p>
-                <p>• INR rate for reference only. All billing in USD.</p>
-                <p>• Quote valid 14 days from save date. Final pricing confirmed on booking approval.</p>
-              </div>
-
-              {/* Summary pill */}
-              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-amber-600 font-semibold uppercase tracking-wider">{template.title}</p>
-                  <p className="text-stone-700 text-sm mt-0.5">{pax} pax · {nights}N · {hotelTier}</p>
+              {/* Trip overview */}
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 space-y-3">
+                <p className="text-xs text-amber-700 font-semibold uppercase tracking-wider">{template.title}</p>
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="bg-white rounded-xl py-3 px-2 border border-amber-100">
+                    <p className="text-2xl font-bold text-stone-900">{pax}</p>
+                    <p className="text-[10px] text-stone-400 uppercase tracking-wide mt-0.5">Guests</p>
+                  </div>
+                  <div className="bg-white rounded-xl py-3 px-2 border border-amber-100">
+                    <p className="text-2xl font-bold text-stone-900">{nights || template.nights}</p>
+                    <p className="text-[10px] text-stone-400 uppercase tracking-wide mt-0.5">Nights</p>
+                  </div>
+                  <div className="bg-white rounded-xl py-3 px-2 border border-amber-100">
+                    <p className="text-sm font-bold text-stone-900 leading-tight">{hotelTier}</p>
+                    <p className="text-[10px] text-stone-400 uppercase tracking-wide mt-0.5">Hotel</p>
+                  </div>
                 </div>
-                <p className="text-2xl font-bold text-stone-900">${costs.total.toLocaleString()}</p>
+                {arrivalDate && (
+                  <p className="text-xs text-stone-500 text-center">
+                    {arrivalDate}{returnDate ? ` → ${returnDate}` : ''}
+                  </p>
+                )}
+              </div>
+
+              {/* SDF info — mandatory government levy */}
+              <div className="rounded-2xl border border-stone-200 overflow-hidden">
+                <div className="bg-stone-800 px-4 py-3">
+                  <p className="text-white text-xs font-semibold uppercase tracking-wide">Mandatory Government Levy</p>
+                </div>
+                <div className="bg-white px-4 py-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-stone-800">Sustainable Development Fee (SDF)</p>
+                    <p className="text-xs text-stone-400 mt-0.5">$100 USD per person per night — Royal Government of Bhutan</p>
+                  </div>
+                  {sdfTotal !== null && (
+                    <p className="text-lg font-bold text-amber-700">${sdfTotal.toLocaleString()}</p>
+                  )}
+                </div>
+                <div className="bg-stone-50 px-4 py-3 border-t border-stone-100">
+                  <p className="text-xs text-stone-400">
+                    SDF is a non-negotiable government fee and the only fixed cost we can confirm upfront.
+                    All other rates (accommodation, guide, vehicle) will be included in your personalised quote.
+                  </p>
+                </div>
+              </div>
+
+              {/* Quote note */}
+              <div className="bg-blue-50 border border-blue-200 rounded-2xl px-4 py-4 flex gap-3 items-start">
+                <span className="text-blue-500 text-lg mt-0.5">ℹ</span>
+                <div>
+                  <p className="text-sm font-semibold text-blue-900">Personalised Quote to Follow</p>
+                  <p className="text-xs text-blue-600 mt-1 leading-relaxed">
+                    After you save this booking, our specialist will review your itinerary and send a
+                    complete, itemised quote to your email address within 24 hours.
+                  </p>
+                </div>
               </div>
             </div>
           )}
@@ -739,7 +693,6 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
                   ['Dates',      arrivalDate ? `${arrivalDate} → ${returnDate || '—'}` : 'Not set'],
                   ['Flight In',  (() => { const f = INBOUND_FLIGHTS.find((x) => x.id === inboundFlightId); return f ? `${f.flightNo} · ${f.sector} · Dep ${f.depart}` : customFlightIn || '—' })()],
                   ['Flight Out', (() => { const f = OUTBOUND_FLIGHTS.find((x) => x.id === outboundFlightId); return f ? `${f.flightNo} · ${f.sector} · Dep ${f.depart}` : customFlightOut || '—' })()],
-                  ['Total USD',  `$${costs.total.toLocaleString()}`],
                 ].map(([label, val]) => (
                   <div key={label} className="flex items-center justify-between px-4 py-3">
                     <span className="text-xs text-stone-400 font-medium uppercase tracking-wide">{label}</span>

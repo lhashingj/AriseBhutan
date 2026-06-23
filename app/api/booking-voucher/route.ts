@@ -120,7 +120,8 @@ export async function GET(req: NextRequest) {
   let pdfBuffer: Buffer
   try {
     pdfBuffer = await renderToBuffer(
-      createElement(VoucherDocument, { booking: voucherData })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      createElement(VoucherDocument, { booking: voucherData }) as any
     )
   } catch (renderErr) {
     console.error('PDF render error:', renderErr)
