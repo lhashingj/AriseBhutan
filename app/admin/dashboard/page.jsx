@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { Users, Clock, DollarSign, CheckCircle2, Search, ChevronUp, ChevronDown, RefreshCw } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
 import AdminBookingDrawer from '@/components/AdminBookingDrawer'
+import AdminEnquirySection from '@/components/AdminEnquirySection'
 
 const STATUS_BADGE = {
   PENDING:   'bg-amber-100 text-amber-700',
@@ -16,6 +17,7 @@ const STATUS_BADGE = {
 export default function AdminDashboard() {
   const [profiles, setProfiles]     = useState([])
   const [bookings, setBookings]     = useState([])
+  const [enquiries, setEnquiries]   = useState([])
   const [loading, setLoading]       = useState(true)
   const [search, setSearch]         = useState('')
   const [sortKey, setSortKey]       = useState('created_at')
@@ -25,12 +27,14 @@ export default function AdminDashboard() {
 
   async function load() {
     setRefreshing(true)
-    const [{ data: prof }, { data: bks }] = await Promise.all([
+    const [{ data: prof }, { data: bks }, { data: enqs }] = await Promise.all([
       supabase.from('profiles').select('*').order('created_at', { ascending: false }),
       supabase.from('bookings').select('*').order('created_at', { ascending: false }),
+      supabase.from('itinerary_requests').select('*').order('submitted_at', { ascending: false }),
     ])
     setProfiles(prof || [])
     setBookings(bks  || [])
+    setEnquiries(enqs || [])
     setLoading(false)
     setRefreshing(false)
   }
@@ -154,6 +158,9 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {/* ── Enquiries ── */}
+      <AdminEnquirySection enquiries={enquiries} onRefresh={load} />
 
       {/* ── Global Client Directory ── */}
       <div>

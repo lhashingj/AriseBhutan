@@ -1,10 +1,11 @@
 'use client'
 import { useState } from 'react'
-import { Check, ChevronRight, AlertCircle } from 'lucide-react'
+import { Check, ChevronRight, AlertCircle, Minus, Plus } from 'lucide-react'
 
 interface FormData {
   name: string; email: string; phone: string; country: string
-  tourInterest: string; travelDate: string; groupSize: string; duration: string
+  tourInterest: string; travelDate: string; groupSize: string
+  nights: number; hotelTier: string
   interests: string[]; message: string
 }
 
@@ -13,7 +14,13 @@ const INTERESTS = [
   'Wellness & Meditation', 'Luxury Travel', 'Wildlife & Nature', 'Spiritual Journey',
 ]
 
-const STEPS = ['Contact', 'Travel Details', 'Preferences']
+const HOTEL_TIERS = [
+  { id: '3-Star',       label: '3-Star Heritage',  desc: 'Comfortable heritage hotels' },
+  { id: '4-Star',       label: '4-Star Boutique',  desc: 'Premium boutique properties' },
+  { id: '5-Star Luxury', label: '5-Star Luxury',   desc: 'Amankora, Como Uma & equivalents' },
+]
+
+const STEPS = ['Contact', 'Trip Details', 'Preferences']
 
 const inputCls = 'w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors bg-white placeholder:text-stone-400'
 
@@ -24,11 +31,12 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
   const [submitError, setSubmitError] = useState('')
   const [data, setData] = useState<FormData>({
     name: '', email: '', phone: '', country: '',
-    tourInterest: defaultTour, travelDate: '', groupSize: '2', duration: '',
+    tourInterest: defaultTour, travelDate: '', groupSize: '2',
+    nights: 5, hotelTier: '4-Star',
     interests: [], message: '',
   })
 
-  const set = (k: keyof FormData, v: string | string[]) =>
+  const set = <K extends keyof FormData>(k: K, v: FormData[K]) =>
     setData((d) => ({ ...d, [k]: v }))
 
   const toggleInterest = (i: string) =>
@@ -42,9 +50,9 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <Check className="w-8 h-8 text-green-600" />
         </div>
-        <h3 className="font-serif text-2xl font-bold text-stone-900 mb-2">Inquiry Received!</h3>
+        <h3 className="font-serif text-2xl font-bold text-stone-900 mb-2">Enquiry Received!</h3>
         <p className="text-stone-600 max-w-md mx-auto text-sm sm:text-base">
-          Thank you, <strong>{data.name}</strong>! Our Bhutan travel specialist will contact you within 24 hours to craft your perfect itinerary.
+          Thank you, <strong>{data.name}</strong>! Our Bhutan travel specialist will contact you within 24 hours with a personalised quote.
         </p>
       </div>
     )
@@ -52,7 +60,7 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
 
   return (
     <div>
-      {/* Step indicator — compact on mobile, full labels on sm+ */}
+      {/* Step indicator */}
       <div className="flex items-center mb-7 sm:mb-8">
         {STEPS.map((s, i) => (
           <div key={s} className={`flex items-center ${i < STEPS.length - 1 ? 'flex-1' : ''}`}>
@@ -82,12 +90,13 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
           if (!res.ok) throw new Error('Failed')
           setSubmitted(true)
         } catch {
-          setSubmitError('Something went wrong sending your enquiry. Please email us directly at arisebhutan@gmail.com.')
+          setSubmitError('Something went wrong. Please email us directly at arisebhutan@gmail.com.')
         } finally {
           setSubmitting(false)
         }
       }}>
-        {/* Step 0: Contact */}
+
+        {/* ── Step 0: Contact ── */}
         {step === 0 && (
           <div className="space-y-4">
             <div className="grid sm:grid-cols-2 gap-4">
@@ -122,9 +131,10 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
           </div>
         )}
 
-        {/* Step 1: Travel Details */}
+        {/* ── Step 1: Trip Details ── */}
         {step === 1 && (
-          <div className="space-y-4">
+          <div className="space-y-5">
+            {/* Tour of Interest */}
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-1.5">Tour of Interest</label>
               <select value={data.tourInterest} onChange={(e) => set('tourInterest', e.target.value)} className={inputCls}>
@@ -143,12 +153,27 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
                 <option>Custom itinerary (please describe)</option>
               </select>
             </div>
+
+            {/* Nights + Group Size */}
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1.5">Preferred Travel Date</label>
-                <input type="date" value={data.travelDate} onChange={(e) => set('travelDate', e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
-                  className={inputCls} />
+                <label className="block text-sm font-medium text-stone-700 mb-1.5">Number of Nights</label>
+                <div className="flex items-center gap-0">
+                  <button type="button"
+                    onClick={() => set('nights', Math.max(1, data.nights - 1))}
+                    className="w-11 h-11 flex items-center justify-center rounded-l-xl border border-r-0 border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-600 transition-colors">
+                    <Minus className="w-3.5 h-3.5" />
+                  </button>
+                  <div className="flex-1 h-11 border border-stone-200 flex items-center justify-center text-sm font-bold text-stone-900">
+                    {data.nights}
+                  </div>
+                  <button type="button"
+                    onClick={() => set('nights', Math.min(30, data.nights + 1))}
+                    className="w-11 h-11 flex items-center justify-center rounded-r-xl border border-l-0 border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-600 transition-colors">
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <p className="text-xs text-stone-400 mt-1">Minimum 3 nights recommended</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-1.5">Group Size</label>
@@ -159,6 +184,38 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
                 </select>
               </div>
             </div>
+
+            {/* Hotel Tier */}
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-2">Preferred Accommodation</label>
+              <div className="grid grid-cols-3 gap-2">
+                {HOTEL_TIERS.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => set('hotelTier', t.id)}
+                    className={`text-left p-3 rounded-xl border text-xs transition-all ${
+                      data.hotelTier === t.id
+                        ? 'border-amber-500 bg-amber-50 text-amber-800'
+                        : 'border-stone-200 text-stone-600 hover:border-amber-300 hover:bg-amber-50/40'
+                    }`}
+                  >
+                    <p className="font-semibold leading-snug mb-0.5">{t.label}</p>
+                    <p className="text-stone-400 text-[10px] leading-tight">{t.desc}</p>
+                    {data.hotelTier === t.id && <Check className="w-3 h-3 text-amber-600 mt-1" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Travel Date */}
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1.5">Preferred Travel Date</label>
+              <input type="date" value={data.travelDate} onChange={(e) => set('travelDate', e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                className={inputCls} />
+            </div>
+
             <div className="flex gap-3">
               <button type="button" onClick={() => setStep(0)} className="btn-outline flex-1">Back</button>
               <button type="button" onClick={() => setStep(2)} className="btn-primary flex-1">
@@ -168,7 +225,7 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
           </div>
         )}
 
-        {/* Step 2: Preferences */}
+        {/* ── Step 2: Preferences ── */}
         {step === 2 && (
           <div className="space-y-5">
             <div>
@@ -207,7 +264,7 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
               <button type="submit" className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed" disabled={submitting}>
                 {submitting
                   ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Sending…</>
-                  : <><Check className="w-4 h-4" /> Submit Inquiry</>
+                  : <><Check className="w-4 h-4" /> Submit Enquiry</>
                 }
               </button>
             </div>

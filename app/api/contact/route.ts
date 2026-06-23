@@ -1,18 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { createClient } from '@supabase/supabase-js'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+)
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { name, email, phone, country, tourInterest, travelDate, groupSize, interests, message } = body
+    const {
+      name, email, phone, country,
+      tourInterest, travelDate, groupSize,
+      nights, hotelTier,
+      interests, message,
+    } = body
 
+    // ── 1. Send email notification ─────────────────────────────
     const { error } = await resend.emails.send({
       from: 'Arise Bhutan Enquiries <noreply@arisebhutan.com>',
       to:   ['arisebhutan@gmail.com'],
       replyTo: email,
-      subject: `New Enquiry from ${name} — ${tourInterest || 'General Inquiry'}`,
+      subject: `New Enquiry from ${name} — ${tourInterest || 'Custom Bhutan Trip'}`,
       html: `
         <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; color: #1c1917;">
           <div style="background: #78350f; padding: 24px 32px; border-radius: 12px 12px 0 0;">
@@ -32,11 +44,13 @@ export async function POST(req: NextRequest) {
 
             <hr style="border: none; border-top: 1px solid #fde68a; margin: 20px 0;" />
 
-            <h2 style="color: #78350f; font-size: 16px; margin: 0 0 16px;">Travel Details</h2>
+            <h2 style="color: #78350f; font-size: 16px; margin: 0 0 16px;">Trip Details</h2>
             <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-              ${tourInterest ? `<tr><td style="padding: 6px 0; color: #78716c; width: 140px;">Tour Interest</td><td style="padding: 6px 0;">${tourInterest}</td></tr>` : ''}
+              ${tourInterest ? `<tr><td style="padding: 6px 0; color: #78716c; width: 140px;">Tour</td><td style="padding: 6px 0;">${tourInterest}</td></tr>` : ''}
+              <tr><td style="padding: 6px 0; color: #78716c;">Nights</td><td style="padding: 6px 0; font-weight: bold;">${nights || '—'} nights</td></tr>
+              <tr><td style="padding: 6px 0; color: #78716c;">Group Size</td><td style="padding: 6px 0;">${groupSize || '—'}</td></tr>
+              <tr><td style="padding: 6px 0; color: #78716c;">Hotel Tier</td><td style="padding: 6px 0;">${hotelTier || '—'}</td></tr>
               ${travelDate  ? `<tr><td style="padding: 6px 0; color: #78716c;">Travel Date</td><td style="padding: 6px 0;">${travelDate}</td></tr>` : ''}
-              ${groupSize   ? `<tr><td style="padding: 6px 0; color: #78716c;">Group Size</td><td style="padding: 6px 0;">${groupSize}</td></tr>` : ''}
             </table>
 
             ${interests?.length ? `
@@ -62,7 +76,32 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       console.error('Resend error:', error)
-      return NextResponse.json({ error: 'Failed to send email' }, { status: 500 })
+      // Don't block the submission — still save to DB
+    }
+
+    // ── 2. Save enquiry to itinerary_requests ──────────────────
+    const parsedNights  = typeof nights === 'number' ? nights : (parseInt(nights) || 5)
+    const parsedGuests  = parseInt((groupSize || '2').split(/[\s–]/)[0]) || 2
+    const normalizedTier = (['3-Star', '4-Star', '5-Star Luxury'] as const)
+      .includes(hotelTier) ? hotelTier : '4-Star'
+
+    const { error: dbErr } = await supabase.from('itinerary_requests').insert({
+      nights:               parsedNights,
+      guests:               parsedGuests,
+      tier:                 normalizedTier,
+      selected_activities:  interests ?? [],
+      client_name:          name,
+      client_email:         email,
+      client_phone:         phone         || null,
+      client_country:       country,
+      tour_interest:        tourInterest  || null,
+      travel_date:          travelDate    || null,
+      message:              message       || null,
+      interests:            interests     ?? [],
+    })
+
+    if (dbErr) {
+      console.error('Supabase insert error:', dbErr)
     }
 
     return NextResponse.json({ success: true })
