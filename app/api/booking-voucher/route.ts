@@ -130,7 +130,7 @@ export async function GET(req: NextRequest) {
 
   // ── 6. Stream PDF response ──────────────────────────────────
   const filename = `Arise-Bhutan-${voucherData.bookingRef}.pdf`
-  return new NextResponse(pdfBuffer, {
+  return new NextResponse(new Uint8Array(pdfBuffer), {
     status: 200,
     headers: {
       'Content-Type':        'application/pdf',
