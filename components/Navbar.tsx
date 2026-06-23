@@ -17,8 +17,9 @@ export default function Navbar() {
   const [scrolled, setScrolled]     = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [user, setUser]             = useState<{ name: string; role: string } | null>(null)
-  const [userMenuOpen, setUserMenu] = useState(false)
-  const userMenuRef                 = useRef<HTMLDivElement>(null)
+  const [userMenuOpen, setUserMenu]       = useState(false)
+  const [showLogoutConfirm, setLogoutConfirm] = useState(false)
+  const userMenuRef                       = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -74,6 +75,7 @@ export default function Navbar() {
   const solid = scrolled || mobileOpen
 
   return (
+    <>
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         solid
@@ -162,7 +164,7 @@ export default function Navbar() {
                       Dashboard
                     </Link>
                     <button
-                      onClick={handleLogout}
+                      onClick={() => { setUserMenu(false); setLogoutConfirm(true) }}
                       className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
                     >
                       <LogOut className="w-4 h-4" />
@@ -249,7 +251,7 @@ export default function Navbar() {
                   Dashboard
                 </Link>
                 <button
-                  onClick={handleLogout}
+                  onClick={() => { setMobileOpen(false); setLogoutConfirm(true) }}
                   className="flex items-center justify-center gap-2 py-3 text-sm font-semibold text-red-600 bg-red-50 rounded-2xl hover:bg-red-100 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
@@ -278,5 +280,33 @@ export default function Navbar() {
         </div>
       </div>
     </header>
+
+      {/* Logout confirmation modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <LogOut className="w-5 h-5 text-red-600" />
+            </div>
+            <h3 className="text-lg font-serif font-bold text-stone-900 text-center">Sign out?</h3>
+            <p className="text-stone-500 text-sm text-center mt-1 mb-6">You'll need to sign in again to access your account.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setLogoutConfirm(false)}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 text-stone-700 text-sm font-semibold hover:bg-stone-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => { await handleLogout(); setLogoutConfirm(false) }}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors"
+              >
+                Yes, Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }

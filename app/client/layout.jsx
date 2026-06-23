@@ -17,7 +17,8 @@ export default function ClientLayout({ children }) {
   const router = useRouter()
   const [profile, setProfile]     = useState(null)
   const [checking, setChecking]   = useState(true)
-  const [sidebarOpen, setSidebar] = useState(false)
+  const [sidebarOpen, setSidebar]     = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
   const [resendSent, setResendSent]   = useState(false)
   const [resendError, setResendError] = useState('')
 
@@ -109,7 +110,7 @@ export default function ClientLayout({ children }) {
             <p className="text-stone-500 text-xs truncate">{profile?.email}</p>
           </div>
           <button
-            onClick={signOut}
+            onClick={() => setShowConfirm(true)}
             className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-stone-400 hover:text-red-400 hover:bg-red-500/10 transition-all text-sm font-medium"
           >
             <LogOut className="w-4 h-4" /> Sign Out
@@ -166,6 +167,33 @@ export default function ClientLayout({ children }) {
           {children}
         </main>
       </div>
+
+      {/* Logout confirmation modal */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <LogOut className="w-5 h-5 text-red-600" />
+            </div>
+            <h3 className="text-lg font-serif font-bold text-stone-900 text-center">Sign out?</h3>
+            <p className="text-stone-500 text-sm text-center mt-1 mb-6">You'll need to sign in again to access your portal.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 text-stone-700 text-sm font-semibold hover:bg-stone-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={signOut}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors"
+              >
+                Yes, Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
