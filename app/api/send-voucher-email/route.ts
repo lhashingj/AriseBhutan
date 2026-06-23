@@ -30,30 +30,20 @@ export async function POST(req: NextRequest) {
   const {
     enquiryId,
     tourTitle,
+    category,
     arrivalDate,
     returnDate,
     guide,
     vehicle,
+    clientExtras,
+    flights,
+    itinerary,
     pricing,
+    accommodation,
     inclusions,
     exclusions,
-  } = body as {
-    enquiryId:   string
-    tourTitle:   string
-    arrivalDate: string
-    returnDate:  string
-    guide?:      string
-    vehicle?:    string
-    pricing?: {
-      pricePerPerson:       number
-      sdfPerPersonPerNight: number
-      serviceFeePerPax:     number
-      gstRate:              number
-      inrRate:              number
-    }
-    inclusions?: string[]
-    exclusions?: string[]
-  }
+    cancellationPolicy,
+  } = body
 
   if (!enquiryId || !arrivalDate || !returnDate) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -65,16 +55,15 @@ export async function POST(req: NextRequest) {
   if (fetchErr || !enquiry) {
     return NextResponse.json({ error: 'Enquiry not found' }, { status: 404 })
   }
-
   if (!enquiry.client_email) {
     return NextResponse.json({ error: 'No client email on this enquiry' }, { status: 400 })
   }
 
   // ── 4. Build voucher data ──────────────────────────────────
-  const start  = new Date(arrivalDate)
-  const end    = new Date(returnDate)
-  const nights = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / 86_400_000))
-  const pax    = enquiry.guests || 2
+  const start   = new Date(arrivalDate)
+  const end     = new Date(returnDate)
+  const nights  = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / 86_400_000))
+  const pax     = enquiry.guests || 2
   const bookingRef = `ARB-${enquiry.id.slice(0, 8).toUpperCase()}`
 
   const voucherData = {
@@ -83,25 +72,30 @@ export async function POST(req: NextRequest) {
     status: 'CONFIRMED',
 
     client: {
-      name:            enquiry.client_name    || 'Valued Guest',
-      email:           enquiry.client_email   || '',
-      phone:           enquiry.client_phone   || '',
-      nationality:     enquiry.client_country || '',
-      passportNo:      '',
-      passportExpiry:  '',
-      emergencyContact: '',
+      name:             enquiry.client_name    || 'Valued Guest',
+      email:            enquiry.client_email   || '',
+      phone:            enquiry.client_phone   || '',
+      nationality:      enquiry.client_country || '',
+      passportNo:       clientExtras?.passportNo       || '',
+      passportExpiry:   clientExtras?.passportExpiry   || '',
+      emergencyContact: clientExtras?.emergencyContact || '',
     },
 
     tour: {
-      title:     tourTitle || enquiry.tour_interest || 'Custom Bhutan Package',
-      category:  enquiry.tier ? `${enquiry.tier} Package` : 'Cultural Tour',
+      title:     tourTitle    || enquiry.tour_interest || 'Custom Bhutan Package',
+      category:  category     || (enquiry.tier ? `${enquiry.tier} Package` : 'Cultural Tour'),
       duration:  `${nights + 1} Days / ${nights} Nights`,
       pax,
       startDate: start.toLocaleDateString('en-US', { dateStyle: 'medium' }),
       endDate:   end.toLocaleDateString('en-US', { dateStyle: 'medium' }),
-      guide:     guide || 'Licensed ATCB Guide',
+      guide:     guide   || 'Licensed ATCB Guide',
       vehicle:   vehicle || 'Private Vehicle & Driver',
     },
+
+    flights:           Array.isArray(flights)            ? flights.filter((f: any) => f.sector || f.flightNo)  : [],
+    itinerary:         Array.isArray(itinerary)          ? itinerary          : [],
+    accommodation:     Array.isArray(accommodation)      ? accommodation.filter((h: any) => h.hotel)           : [],
+    cancellationPolicy: Array.isArray(cancellationPolicy) ? cancellationPolicy : [],
 
     pricing: {
       pricePerPerson:       pricing?.pricePerPerson       ?? 0,
@@ -145,12 +139,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'PDF generation failed' }, { status: 500 })
   }
 
-  // ── 6. Email PDF to client ─────────────────────────────────
-  const filename = `Arise-Bhutan-${bookingRef}.pdf`
-
-  // Compute total for email preview
+  // ── 6. Compute totals for email preview ───────────────────
   const { computePricing } = await import('@/utils/pdfGenerator')
   const costs = computePricing(voucherData.pricing)
+
+  // ── 7. Email PDF to client ─────────────────────────────────
+  const filename = `Arise-Bhutan-${bookingRef}.pdf`
 
   const { error: emailErr } = await resend.emails.send({
     from:    'Arise Bhutan Tours <noreply@arisebhutan.com>',
@@ -177,7 +171,7 @@ export async function POST(req: NextRequest) {
             ${costs.totalUSD > 0 ? `<tr><td style="padding: 6px 0; color: #78716c;">Total Cost</td><td style="padding: 6px 0; font-weight: bold; color: #92400e;">$${costs.totalUSD.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td></tr>` : ''}
           </table>
           <p style="font-size: 14px; line-height: 1.6; margin: 0 0 16px;">
-            If you have any questions, please reply to this email or WhatsApp us at <strong>+975 17 288 286</strong>.
+            Please review the attached PDF for your full itinerary, flight details, and booking terms. If you have any questions, please reply to this email or WhatsApp us at <strong>+975 17 288 286</strong>.
           </p>
           <p style="font-size: 13px; color: #78716c; margin: 0;">
             Warm regards,<br /><strong>Arise Bhutan Tours &amp; Travel</strong><br />Paro Town, Bhutan
@@ -193,11 +187,42 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to send voucher email' }, { status: 500 })
   }
 
-  // ── 7. Mark enquiry as quoted ──────────────────────────────
+  // ── 8. Mark enquiry as quoted ──────────────────────────────
   await supabaseAdmin
     .from('itinerary_requests')
     .update({ status: 'quoted' })
     .eq('id', enquiryId)
+
+  // ── 9. Save to client account if registered ────────────────
+  try {
+    const { data: clientProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('email', enquiry.client_email)
+      .single()
+
+    if (clientProfile) {
+      await supabaseAdmin.from('bookings').insert({
+        user_id:                clientProfile.id,
+        client_name:            enquiry.client_name  || '',
+        client_email:           enquiry.client_email || '',
+        client_phone:           enquiry.client_phone || '',
+        tour_title:             voucherData.tour.title,
+        group_size:             String(pax),
+        hotel_tier:             enquiry.tier || '4-Star',
+        arrival_date:           arrivalDate,
+        return_date:            returnDate,
+        total_cost:             costs.totalUSD,
+        subtotal:               costs.subtotal,
+        gst:                    costs.gst,
+        status:                 'CONFIRMED',
+        final_calculated_price: costs.totalUSD,
+        itinerary_details:      voucherData,
+      })
+    }
+  } catch (e) {
+    console.error('Non-blocking: failed to create booking for registered client:', e)
+  }
 
   return NextResponse.json({ success: true, ref: bookingRef })
 }
