@@ -46,7 +46,7 @@ function adapt(v, booking) {
       pax,
       startDate: arrivalDate,
       endDate:   returnDate,
-      guide:     'Licensed ATCB Guide',
+      guide:     'Licensed DOT Guide',
       vehicle:   'Private Vehicle & Driver',
     },
 
@@ -100,7 +100,7 @@ function adapt(v, booking) {
       'Bhutan visa & permit processing',
       'All accommodation per itinerary',
       'All meals as specified',
-      'Licensed English-speaking ATCB guide',
+      'Licensed English-speaking DOT-certified guide',
       'Private vehicle & dedicated driver',
       'All monument & dzong entry fees',
       'Arise Bhutan 24/7 in-country support',

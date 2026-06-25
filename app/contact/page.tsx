@@ -5,11 +5,11 @@ const MAPS_EMBED_SRC =
   'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3541.543822755736!2d89.4225462!3d27.4211577!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39e19db6bc9e290d%3A0x423ce3020a2693d1!2sArise%20Bhutan%20Tours%20%26%20Travels!5e0!3m2!1sen!2sbt!4v1782362871699!5m2!1sen!2sbt'
 
 const contactInfo = [
-  { icon: Phone,         label: 'Phone / WhatsApp',  value: '+975 77 319 405',       href: 'tel:+97577319405' },
+  { icon: Phone,         label: 'Phone',              value: '+975 77 319 405',       href: 'tel:+97577319405' },
+  { icon: MessageCircle, label: 'WhatsApp',           value: 'Message us directly',   href: 'https://wa.me/97577319405' },
   { icon: Mail,          label: 'Email',              value: 'arisebhutan@gmail.com', href: 'mailto:arisebhutan@gmail.com' },
   { icon: MapPin,        label: 'Office',             value: 'Nyamaizampa, Paro 12001', href: undefined },
   { icon: Clock,         label: 'Response Time',      value: 'Within 24 hours',       href: undefined },
-  { icon: MessageCircle, label: 'WeChat / LINE',      value: 'AriseBhutan',           href: undefined },
 ]
 
 export default function ContactPage() {

@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
       pax,
       startDate: start.toLocaleDateString('en-US', { dateStyle: 'medium' }),
       endDate:   end.toLocaleDateString('en-US', { dateStyle: 'medium' }),
-      guide:     guide   || 'Licensed ATCB Guide',
+      guide:     guide   || 'Licensed DOT Guide',
       vehicle:   vehicle || 'Private Vehicle & Driver',
     },
 
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
       'Bhutan visa & permit processing',
       'All accommodation per itinerary',
       'All meals as specified',
-      'Licensed English-speaking ATCB guide',
+      'Licensed English-speaking DOT-certified guide',
       'Private vehicle & dedicated driver',
       'All monument & dzong entry fees',
       'Arise Bhutan 24/7 in-country support',

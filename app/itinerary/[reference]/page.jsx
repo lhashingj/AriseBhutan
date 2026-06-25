@@ -24,7 +24,7 @@ const DEFAULT_INCLUSIONS = [
   'Bhutan visa and entry permit processing',
   'All accommodation per the confirmed itinerary',
   'All meals as specified (B = Breakfast, L = Lunch, D = Dinner)',
-  'Licensed English-speaking ATCB-certified guide',
+  'Licensed English-speaking DOT-certified guide',
   'Private air-conditioned vehicle with dedicated driver',
   'All monument, dzong and protected-area entry fees',
   'Arise Bhutan 24/7 in-country emergency support',
@@ -200,7 +200,7 @@ export default function ItineraryVoucherPage() {
 
             <div className="text-right shrink-0">
               <div className="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 rounded-full px-3 py-1 text-[10px] font-semibold text-amber-700 uppercase tracking-wider mb-2">
-                ✦ Licensed ATCB Operator
+                ✦ Licensed DOT Operator
               </div>
               <p className="font-mono font-bold text-stone-900 text-lg tracking-wider">
                 {it.booking_reference}

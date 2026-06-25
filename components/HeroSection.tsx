@@ -53,7 +53,7 @@ export default function HeroSection() {
         {/* Badge */}
         <div className="mb-5 sm:mb-6 inline-flex items-center gap-2 bg-amber-600/90 backdrop-blur-sm text-white text-[10px] sm:text-xs font-semibold px-4 py-2 rounded-full tracking-widest uppercase">
           <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
-          Licensed by ATCB · Kingdom of Bhutan
+          Licensed by DOT · Kingdom of Bhutan
         </div>
 
         {/* Headline */}

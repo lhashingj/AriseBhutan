@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
       pax:       Number(booking.group_size) || 1,
       startDate: booking.arrival_date  ? new Date(booking.arrival_date).toLocaleDateString('en-US', { dateStyle: 'medium' })  : '',
       endDate:   booking.return_date   ? new Date(booking.return_date).toLocaleDateString('en-US', { dateStyle: 'medium' })   : '',
-      guide:     booking.guide         ?? 'Licensed ATCB Guide',
+      guide:     booking.guide         ?? 'Licensed DOT Guide',
       vehicle:   booking.vehicle       ?? 'Private Vehicle & Driver',
     },
 
@@ -101,7 +101,7 @@ export async function GET(req: NextRequest) {
       'Bhutan visa & permit processing',
       'All accommodation per itinerary',
       'All meals as specified',
-      'Licensed English-speaking ATCB guide',
+      'Licensed English-speaking DOT-certified guide',
       'Private vehicle & dedicated driver',
       'All monument & dzong entry fees',
       'Arise Bhutan 24/7 in-country support',

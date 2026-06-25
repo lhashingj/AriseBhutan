@@ -150,7 +150,7 @@ export function VoucherDocument({ booking }: { booking: any }) {
             <Image src={LOGO_URL} style={s.logo} />
             <View>
               <Text style={s.brandName}>Arise Bhutan</Text>
-              <Text style={s.brandSub}>TOURS & TRAVELS · ATCB LICENSED</Text>
+              <Text style={s.brandSub}>TOURS & TRAVELS · DOT LICENSED</Text>
               <Text style={[s.brandSub, { marginTop: 2, opacity: 0.7 }]}>Booking Confirmation & Itinerary Voucher</Text>
             </View>
           </View>
@@ -458,7 +458,7 @@ export function VoucherDocument({ booking }: { booking: any }) {
 
         {/* ── BRAND STRIP ── */}
         <View style={s.brandStrip}>
-          {['100% ATCB Compliant', 'SDF Directly Remitted', '24/7 In-Country Support', 'Licensed Guides Only'].map(label => (
+          {['100% DOT Compliant', 'SDF Directly Remitted', '24/7 In-Country Support', 'Licensed Guides Only'].map(label => (
             <View key={label} style={s.stripBadge}>
               <Text style={s.stripCheck}>✓</Text>
               <Text style={s.stripText}>{label}</Text>
@@ -471,10 +471,9 @@ export function VoucherDocument({ booking }: { booking: any }) {
           <View style={s.footerGrid}>
             <View style={s.footerCol}>
               <Text style={s.footerTitle}>Arise Bhutan Tours & Travels</Text>
-              <Text style={s.footerText}>ATCB License No: ATCB/TA-2024/1047</Text>
-              <Text style={s.footerText}>Tourism Council of Bhutan — Registered</Text>
-              <Text style={s.footerText}>Main Street, Paro, Kingdom of Bhutan</Text>
-              <Text style={s.footerText}>P.O. Box 1234, Paro 11001</Text>
+              <Text style={s.footerText}>DOT License No: 50001567</Text>
+              <Text style={s.footerText}>Dept. of Industry, Royal Govt. of Bhutan</Text>
+              <Text style={s.footerText}>Nyamaizampa, Paro 12001, Bhutan</Text>
             </View>
             <View style={s.footerCol}>
               <Text style={s.footerTitle}>Contact & Support</Text>

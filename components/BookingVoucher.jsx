@@ -497,7 +497,7 @@ export default function BookingVoucher({ booking }) {
             </div>
             <div style={{ background: 'rgba(217,119,6,0.15)', borderTop: '1px solid rgba(217,119,6,0.25)' }} className="px-7 py-3 flex items-center gap-6">
               {[
-                ['100% ATCB Compliant', '✓'],
+                ['100% DOT Compliant', '✓'],
                 ['SDF Directly Remitted', '✓'],
                 ['24/7 In-Country Support', '✓'],
                 ['Licensed Guides Only', '✓'],
@@ -516,9 +516,9 @@ export default function BookingVoucher({ booking }) {
           <div className="grid grid-cols-3 gap-6 mb-5">
             <div>
               <p style={{ fontSize: 10, letterSpacing: '0.14em' }} className="text-amber-400 font-bold uppercase mb-2">Arise Bhutan Tours &amp; Travels</p>
-              <p style={{ fontSize: 10 }} className="text-stone-400">ATCB License No: ATCB/TA-2024/1047</p>
-              <p style={{ fontSize: 10 }} className="text-stone-400">Tourism Council of Bhutan — Registered</p>
-              <p style={{ fontSize: 10 }} className="text-stone-400">Main Street, Paro, Kingdom of Bhutan</p>
+              <p style={{ fontSize: 10 }} className="text-stone-400">DOT License No: 50001567</p>
+              <p style={{ fontSize: 10 }} className="text-stone-400">Dept. of Industry, Royal Govt. of Bhutan</p>
+              <p style={{ fontSize: 10 }} className="text-stone-400">Nyamaizampa, Paro 12001, Bhutan</p>
               <p style={{ fontSize: 10 }} className="text-stone-400">P.O. Box 1234, Paro 11001</p>
             </div>
             <div>

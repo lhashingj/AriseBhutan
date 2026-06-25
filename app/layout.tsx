@@ -10,7 +10,7 @@ const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfa
 
 export const metadata: Metadata = {
   title: 'Arise Bhutan Tours & Travels — Discover the Kingdom of Happiness',
-  description: 'Experience authentic Bhutan with Arise Bhutan Tours & Travels. Cultural tours, trekking adventures, festival experiences, and luxury wellness retreats in the Kingdom of Happiness. Licensed by ATCB.',
+  description: 'Experience authentic Bhutan with Arise Bhutan Tours & Travels. Cultural tours, trekking adventures, festival experiences, and luxury wellness retreats in the Kingdom of Happiness. Licensed by DOT.',
   keywords: "Bhutan tours, Bhutan travel, Tiger's Nest hike, Bhutan trekking, Bhutan festivals, Tshechu, Paro, Thimphu, Punakha",
   icons: {
     icon: '/images/logo.jpeg',

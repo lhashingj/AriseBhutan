@@ -30,7 +30,7 @@ export default function Footer() {
             <p className="text-sm text-stone-400 leading-relaxed mb-5">
               To &ldquo;Arise&rdquo; is to awaken. We invite you to discover, awaken to, and experience the ancient spirit and profound beauty of Bhutan.
             </p>
-            <p className="text-xs text-stone-500 mb-4">Licensed by ATCB (Bhutan)</p>
+            <p className="text-xs text-stone-500 mb-4">Licensed by DOT · Lic. No. 50001567</p>
             <div className="flex gap-3">
               {[
                 { Icon: Facebook, label: 'Facebook' },

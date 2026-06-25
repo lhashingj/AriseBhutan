@@ -105,7 +105,7 @@ export function buildVoucherData(booking, profile) {
 
     inclusions: [
       `Accommodation (${booking.hotel_tier || '3-Star'}) — ${nights} nights`,
-      'Licensed English-speaking ATCB guide',
+      'Licensed English-speaking DOT-certified guide',
       'Private vehicle & dedicated driver',
       `Sustainable Development Fee (SDF) — $100/person/night`,
       'All monument & dzong entry fees',
