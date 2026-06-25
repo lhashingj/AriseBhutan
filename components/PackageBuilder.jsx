@@ -167,13 +167,13 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
   })
   const [customFlightIn, setCustomIn]   = useState(editBooking?.flight_arrival || '')
   const [customFlightOut, setCustomOut] = useState(editBooking?.flight_return  || '')
-  const [clientName, setClientName]     = useState(editBooking?.client_name    || profile?.name  || '')
-  const [passportNum, setPassport]      = useState(editBooking?.passport_number || '')
-  const [nationality, setNationality]   = useState(editBooking?.nationality    || '')
-  const [clientEmail, setClientEmail]   = useState(editBooking?.client_email   || profile?.email || '')
-  const [clientPhone, setClientPhone]       = useState(editBooking?.client_phone     || '')
-  const [passportExpiry, setPassportExpiry] = useState(editBooking?.passport_expiry  || '')
-  const [emergencyContact, setEmergency]    = useState(editBooking?.emergency_contact || '')
+  const [clientName, setClientName]     = useState(editBooking?.client_name    || profile?.name             || '')
+  const [passportNum, setPassport]      = useState(editBooking?.passport_number || profile?.passport_number  || '')
+  const [nationality, setNationality]   = useState(editBooking?.nationality    || profile?.nationality       || '')
+  const [clientEmail, setClientEmail]   = useState(editBooking?.client_email   || profile?.email             || '')
+  const [clientPhone, setClientPhone]       = useState(editBooking?.client_phone     || profile?.phone            || '')
+  const [passportExpiry, setPassportExpiry] = useState(editBooking?.passport_expiry  || profile?.passport_expiry  || '')
+  const [emergencyContact, setEmergency]    = useState(editBooking?.emergency_contact || profile?.emergency_contact || '')
   const [days, setDays]                 = useState(() =>
     isEditing
       ? (editBooking.itinerary_days || [])
@@ -209,6 +209,24 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
 
   function updateDay(i, k, v) {
     setDays((prev) => prev.map((d, idx) => idx === i ? { ...d, [k]: v } : d))
+  }
+
+  // Silently save travel details to the user's profile when they complete Step 1
+  async function saveProfileDetails() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+      await supabase.from('profiles').update({
+        name:              clientName.trim()       || undefined,
+        phone:             clientPhone.trim()      || undefined,
+        nationality:       nationality.trim()      || undefined,
+        passport_number:   passportNum.trim()      || undefined,
+        passport_expiry:   passportExpiry          || null,
+        emergency_contact: emergencyContact.trim() || undefined,
+      }).eq('id', session.user.id)
+    } catch (_) {
+      // non-blocking — ignore errors
+    }
   }
 
   // Validation per step
@@ -741,7 +759,10 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
 
           {step < STEP_LABELS.length - 1 ? (
             <button
-              onClick={() => setStep((s) => s + 1)}
+              onClick={() => {
+                if (step === 1) saveProfileDetails()
+                setStep((s) => s + 1)
+              }}
               disabled={!valid[step]}
               className="btn-primary text-sm disabled:opacity-40 disabled:cursor-not-allowed"
             >

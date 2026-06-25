@@ -4,13 +4,13 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { LayoutDashboard, FileText, LogOut, Menu, X, MailWarning, RefreshCw } from 'lucide-react'
+import { LayoutDashboard, UserCircle, LogOut, Menu, MailWarning, RefreshCw } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
 import { useEmailVerified } from '@/utils/useEmailVerified'
 
 const navItems = [
   { label: 'Dashboard',  href: '/client/dashboard', icon: LayoutDashboard },
-  { label: 'My Vouchers', href: '/client/dashboard', icon: FileText },
+  { label: 'My Profile', href: '/client/profile',   icon: UserCircle },
 ]
 
 export default function ClientLayout({ children }) {
@@ -90,25 +90,36 @@ export default function ClientLayout({ children }) {
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-5 space-y-1">
-          {navItems.map(({ label, href, icon: Icon }) => (
-            <Link
-              key={label}
-              href={href}
-              onClick={() => setSidebar(false)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-400 hover:text-white hover:bg-white/10 transition-all text-sm font-medium"
-            >
-              <Icon className="w-4 h-4 flex-shrink-0" />
-              {label}
-            </Link>
-          ))}
+          {navItems.map(({ label, href, icon: Icon }) => {
+            const active = typeof window !== 'undefined' && window.location.pathname === href
+            return (
+              <Link
+                key={label}
+                href={href}
+                onClick={() => setSidebar(false)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-400 hover:text-white hover:bg-white/10 transition-all text-sm font-medium"
+              >
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                {label}
+              </Link>
+            )
+          })}
         </nav>
 
         {/* Profile + Sign Out */}
         <div className="px-3 py-4 border-t border-white/10 space-y-2">
-          <div className="px-3 py-2">
-            <p className="text-white text-sm font-medium truncate">{profile?.name || 'Client'}</p>
-            <p className="text-stone-500 text-xs truncate">{profile?.email}</p>
-          </div>
+          <Link href="/client/profile" onClick={() => setSidebar(false)}
+            className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-colors">
+            <div className="w-8 h-8 rounded-full overflow-hidden bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+              {profile?.avatar_url
+                ? <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                : <span className="text-amber-400 font-bold text-xs">{profile?.name?.[0]?.toUpperCase() || '?'}</span>}
+            </div>
+            <div className="min-w-0">
+              <p className="text-white text-sm font-medium truncate">{profile?.name || 'Client'}</p>
+              <p className="text-stone-500 text-xs truncate">{profile?.email}</p>
+            </div>
+          </Link>
           <button
             onClick={() => setShowConfirm(true)}
             className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-stone-400 hover:text-red-400 hover:bg-red-500/10 transition-all text-sm font-medium"

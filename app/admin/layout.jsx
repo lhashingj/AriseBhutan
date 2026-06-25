@@ -4,13 +4,14 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { LayoutDashboard, Users, Map, LogOut, Shield, Menu } from 'lucide-react'
+import { LayoutDashboard, Users, Map, LogOut, Shield, Menu, UserCircle } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
 
 const navItems = [
   { label: 'Overview',    href: '/admin/dashboard',   icon: LayoutDashboard },
   { label: 'Itineraries', href: '/admin/itineraries', icon: Map },
   { label: 'Clients',     href: '/admin/users',       icon: Users },
+  { label: 'My Profile',  href: '/admin/profile',     icon: UserCircle },
 ]
 
 export default function AdminLayout({ children }) {
@@ -104,10 +105,18 @@ export default function AdminLayout({ children }) {
 
         {/* Profile + Sign out */}
         <div className="px-3 py-4 border-t border-white/10 space-y-2">
-          <div className="px-3 py-2">
-            <p className="text-white text-sm font-medium truncate">{profile?.name}</p>
-            <p className="text-stone-500 text-xs truncate">{profile?.email}</p>
-          </div>
+          <Link href="/admin/profile" onClick={() => setSideOpen(false)}
+            className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-colors">
+            <div className="w-8 h-8 rounded-full overflow-hidden bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+              {profile?.avatar_url
+                ? <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                : <span className="text-amber-400 font-bold text-xs">{profile?.name?.[0]?.toUpperCase() || 'A'}</span>}
+            </div>
+            <div className="min-w-0">
+              <p className="text-white text-sm font-medium truncate">{profile?.name}</p>
+              <p className="text-stone-500 text-xs truncate">{profile?.email}</p>
+            </div>
+          </Link>
           <button onClick={() => setShowConfirm(true)}
             className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-stone-400 hover:text-red-400 hover:bg-red-500/10 transition-all text-sm font-medium">
             <LogOut className="w-4 h-4" /> Sign Out

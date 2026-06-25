@@ -166,7 +166,15 @@ function BookingCard({ booking }) {
 // ─── Main drawer component ─────────────────────────────────────────────────────
 export default function AdminUserDrawer({ profile, bookings, onClose, onDelete, onUpdate }) {
   const [editing, setEditing]     = useState(false)
-  const [form, setForm]           = useState({ name: profile.name || '', role: profile.role || 'CLIENT' })
+  const [form, setForm]           = useState({
+    name:              profile.name              || '',
+    role:              profile.role              || 'CLIENT',
+    phone:             profile.phone             || '',
+    nationality:       profile.nationality       || '',
+    passport_number:   profile.passport_number   || '',
+    passport_expiry:   profile.passport_expiry   || '',
+    emergency_contact: profile.emergency_contact || '',
+  })
   const [saving, setSaving]       = useState(false)
   const [saveErr, setSaveErr]     = useState('')
   const [confirmDelete, setConfDel] = useState(false)
@@ -180,13 +188,21 @@ export default function AdminUserDrawer({ profile, bookings, onClose, onDelete, 
     setSaveErr('')
     const { error } = await supabase
       .from('profiles')
-      .update({ name: form.name.trim(), role: form.role })
+      .update({
+        name:              form.name.trim(),
+        role:              form.role,
+        phone:             form.phone.trim()             || null,
+        nationality:       form.nationality.trim()       || null,
+        passport_number:   form.passport_number.trim()   || null,
+        passport_expiry:   form.passport_expiry          || null,
+        emergency_contact: form.emergency_contact.trim() || null,
+      })
       .eq('id', profile.id)
 
     setSaving(false)
     if (error) { setSaveErr(error.message); return }
     setEditing(false)
-    onUpdate({ ...profile, name: form.name.trim(), role: form.role })
+    onUpdate({ ...profile, ...form, name: form.name.trim() })
   }
 
   async function handleDelete() {
@@ -289,29 +305,82 @@ export default function AdminUserDrawer({ profile, bookings, onClose, onDelete, 
 
               {editing ? (
                 <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-stone-400 mb-1">Full Name</label>
+                      <input
+                        value={form.name}
+                        onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                        className={inputCls}
+                        placeholder="Full name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-stone-400 mb-1">Role</label>
+                      <select
+                        value={form.role}
+                        onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
+                        className={inputCls}
+                      >
+                        <option value="CLIENT">CLIENT</option>
+                        <option value="ADMIN">ADMIN</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-stone-400 mb-1">Phone</label>
+                      <input
+                        value={form.phone}
+                        onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                        className={inputCls}
+                        placeholder="+91 98765 43210"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-stone-400 mb-1">Nationality</label>
+                      <input
+                        value={form.nationality}
+                        onChange={(e) => setForm((f) => ({ ...f, nationality: e.target.value }))}
+                        className={inputCls}
+                        placeholder="e.g. Indian"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-stone-400 mb-1">Passport Number</label>
+                      <input
+                        value={form.passport_number}
+                        onChange={(e) => setForm((f) => ({ ...f, passport_number: e.target.value }))}
+                        className={inputCls}
+                        placeholder="A1234567"
+                        autoComplete="off"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-stone-400 mb-1">Passport Expiry</label>
+                      <input
+                        type="date"
+                        value={form.passport_expiry}
+                        onChange={(e) => setForm((f) => ({ ...f, passport_expiry: e.target.value }))}
+                        className={inputCls}
+                      />
+                    </div>
+                  </div>
                   <div>
-                    <label className="block text-xs font-medium text-stone-400 mb-1">Full Name</label>
+                    <label className="block text-xs font-medium text-stone-400 mb-1">Emergency Contact</label>
                     <input
-                      value={form.name}
-                      onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                      value={form.emergency_contact}
+                      onChange={(e) => setForm((f) => ({ ...f, emergency_contact: e.target.value }))}
                       className={inputCls}
+                      placeholder="Name & phone number"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-stone-400 mb-1">Role</label>
-                    <select
-                      value={form.role}
-                      onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
-                      className={inputCls}
-                    >
-                      <option value="CLIENT">CLIENT</option>
-                      <option value="ADMIN">ADMIN</option>
-                    </select>
-                  </div>
-                  <div>
                     <label className="block text-xs font-medium text-stone-400 mb-1">Email (read-only)</label>
-                    <input value={profile.email} disabled className={`${inputCls} opacity-50 cursor-not-allowed`} />
-                    <p className="text-[10px] text-stone-500 mt-1">Email changes require Supabase Admin API.</p>
+                    <input value={profile.email} disabled className={`${inputCls} opacity-40 cursor-not-allowed`} />
+                    <p className="text-[10px] text-stone-500 mt-1">Email & password changes are only available to the user themselves.</p>
                   </div>
                 </>
               ) : (
@@ -346,12 +415,21 @@ export default function AdminUserDrawer({ profile, bookings, onClose, onDelete, 
                       <p className="text-sm text-stone-200">{fmtDate(profile.created_at)}</p>
                     </div>
                   </div>
-                  {latest?.client_phone && (
+                  {(profile.phone || latest?.client_phone) && (
                     <div className="flex items-center gap-3 py-1">
                       <Phone className="w-4 h-4 text-stone-500 shrink-0" />
                       <div>
-                        <p className="text-[10px] text-stone-500 uppercase tracking-wider">Phone (from latest booking)</p>
-                        <p className="text-sm text-stone-200">{latest.client_phone}</p>
+                        <p className="text-[10px] text-stone-500 uppercase tracking-wider">Phone</p>
+                        <p className="text-sm text-stone-200">{profile.phone || latest?.client_phone}</p>
+                      </div>
+                    </div>
+                  )}
+                  {profile.nationality && (
+                    <div className="flex items-center gap-3 py-1">
+                      <CreditCard className="w-4 h-4 text-stone-500 shrink-0" />
+                      <div>
+                        <p className="text-[10px] text-stone-500 uppercase tracking-wider">Nationality</p>
+                        <p className="text-sm text-stone-200">{profile.nationality}</p>
                       </div>
                     </div>
                   )}
@@ -360,18 +438,21 @@ export default function AdminUserDrawer({ profile, bookings, onClose, onDelete, 
             </div>
           </div>
 
-          {/* Travel documents */}
-          {latest && (latest.passport_number || latest.nationality || latest.passport_expiry || latest.emergency_contact) && (
+          {/* Travel documents — prefer profile data, fall back to latest booking */}
+          {(profile.passport_number || profile.passport_expiry || profile.emergency_contact ||
+            latest?.passport_number || latest?.nationality || latest?.passport_expiry || latest?.emergency_contact) && (
             <div className="bg-stone-800 rounded-2xl border border-white/5 overflow-hidden">
               <div className="px-4 py-3 border-b border-white/5">
                 <p className="font-semibold text-white text-sm">Travel Documents</p>
-                <p className="text-[10px] text-stone-500 mt-0.5">From most recent booking</p>
+                <p className="text-[10px] text-stone-500 mt-0.5">
+                  {profile.passport_number ? 'From client profile' : 'From most recent booking'}
+                </p>
               </div>
               <div className="px-4 py-3">
-                <InfoRow label="Passport Number"   value={latest.passport_number}  mono />
-                <InfoRow label="Passport Expiry"   value={fmtDate(latest.passport_expiry)} />
-                <InfoRow label="Nationality"       value={latest.nationality} />
-                <InfoRow label="Emergency Contact" value={latest.emergency_contact} />
+                <InfoRow label="Passport Number"   value={profile.passport_number   || latest?.passport_number}  mono />
+                <InfoRow label="Passport Expiry"   value={fmtDate(profile.passport_expiry   || latest?.passport_expiry)} />
+                <InfoRow label="Nationality"       value={profile.nationality       || latest?.nationality} />
+                <InfoRow label="Emergency Contact" value={profile.emergency_contact || latest?.emergency_contact} />
               </div>
             </div>
           )}
