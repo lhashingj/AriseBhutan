@@ -128,7 +128,7 @@ export default function BookingVoucher({ booking }) {
                   Arise Bhutan
                 </p>
                 <p style={{ fontSize: 10, letterSpacing: '0.22em' }} className="uppercase opacity-70 font-semibold mt-0.5">
-                  Tours &amp; Travels · ATCB Licensed
+                  Tours &amp; Travels · DOT Certified
                 </p>
                 <p style={{ fontSize: 10 }} className="opacity-55 mt-1">
                   Booking Confirmation &amp; Itinerary Voucher
@@ -531,9 +531,9 @@ export default function BookingVoucher({ booking }) {
             </div>
             <div>
               <p style={{ fontSize: 10, letterSpacing: '0.14em' }} className="text-amber-400 font-bold uppercase mb-2">Travel Assurance</p>
-              <p style={{ fontSize: 10 }} className="text-stone-400">✓ ATCB Licensed &amp; Inspected</p>
+              <p style={{ fontSize: 10 }} className="text-stone-400">✓ DOT Certified &amp; Licensed</p>
               <p style={{ fontSize: 10 }} className="text-stone-400">✓ SDF Remitted to Royal Govt.</p>
-              <p style={{ fontSize: 10 }} className="text-stone-400">✓ All Guides ATCB Certified</p>
+              <p style={{ fontSize: 10 }} className="text-stone-400">✓ All Guides DOT Certified</p>
               <p style={{ fontSize: 10 }} className="text-stone-400">✓ Comprehensive In-Country Support</p>
               <p style={{ fontSize: 10 }} className="text-stone-400">✓ Emergency Evacuation Protocol</p>
             </div>

@@ -486,9 +486,9 @@ export function VoucherDocument({ booking }: { booking: any }) {
             </View>
             <View style={s.footerCol}>
               <Text style={s.footerTitle}>Travel Assurance</Text>
-              <Text style={s.footerText}>✓ ATCB Licensed & Inspected</Text>
+              <Text style={s.footerText}>✓ DOT Certified & Licensed</Text>
               <Text style={s.footerText}>✓ SDF Remitted to Royal Govt.</Text>
-              <Text style={s.footerText}>✓ All Guides ATCB Certified</Text>
+              <Text style={s.footerText}>✓ All Guides DOT Certified</Text>
               <Text style={s.footerText}>✓ Comprehensive In-Country Support</Text>
               <Text style={s.footerText}>✓ Emergency Evacuation Protocol</Text>
             </View>

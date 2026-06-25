@@ -41,7 +41,7 @@ export default function AuthLayout({ children }) {
             Manage your Bhutan journey — from custom itinerary building to booking confirmation, all in one place.
           </p>
           <div className="flex items-center gap-4 pt-2">
-            {['ATCB Licensed', 'SDF Compliant', '24/7 Support'].map((b) => (
+            {['DOT Certified', 'SDF Compliant', '24/7 Support'].map((b) => (
               <span key={b} className="text-amber-400 text-[10px] font-semibold tracking-wider uppercase flex items-center gap-1">
                 <span className="w-1 h-1 rounded-full bg-amber-400" />{b}
               </span>

@@ -1,8 +1,8 @@
 import { Shield, Users, Star, Clock } from 'lucide-react'
 
 const badges = [
-  { icon: Shield, value: 'ATCB Licensed',    label: 'Certified by Bhutan Tourism' },
-  { icon: Users,  value: '1,000+ Travelers', label: 'Happy clients since 2012' },
+  { icon: Shield, value: 'DOT Certified',     label: 'Licensed by Bhutan Tourism' },
+  { icon: Users,  value: '1,000+ Travelers', label: 'Happy clients since 2026' },
   { icon: Star,   value: '4.9 / 5 Stars',    label: 'Average tour rating' },
   { icon: Clock,  value: '24/7 Support',     label: 'Before & during your trip' },
 ]

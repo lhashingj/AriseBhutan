@@ -26,7 +26,7 @@ export default function AboutPage() {
             More Than a Tour Company — We&apos;re Your Gateway to Bhutan
           </h1>
           <p className="text-white/80 text-base sm:text-lg">
-            Founded by Bhutanese guides with a passion for sharing their extraordinary kingdom, Arise Bhutan Tours & Travel has been crafting life-changing journeys since 2012.
+            Founded by Bhutanese guides with a passion for sharing their extraordinary kingdom, Arise Bhutan Tours & Travel has been crafting life-changing journeys since 2026.
           </p>
         </div>
       </section>
