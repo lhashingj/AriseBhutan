@@ -1,34 +1,43 @@
 import { Star, Quote } from 'lucide-react'
 import Image from 'next/image'
 
-// ── Fallback reviews shown when Google API is not yet configured ──────────────
+// ── Real Google reviews (shown when API is not configured) ────────────────────
 const STATIC_REVIEWS = [
   {
-    author_name: 'Sarah & Mark Thompson',
-    countryFlag: '🇺🇸 United States',
-    tour: 'Classic Bhutan Cultural Tour',
-    rating: 5,
-    text: "Arise Bhutan exceeded every expectation. Our guide was knowledgeable, warm, and genuinely passionate about sharing his country. Tiger's Nest was transcendent — no photo prepares you for the real thing. We'll be back.",
-    relative_time_description: '',
-    profile_photo_url: null as string | null,
-  },
-  {
-    author_name: 'Mei Lin Chen',
-    countryFlag: '🇸🇬 Singapore',
-    tour: 'Paro Tshechu Festival Tour',
-    rating: 5,
-    text: "Witnessing the Thongdrel unveiling at dawn was the most powerful thing I've ever experienced. The Arise team arranged perfect front-row positions. Every detail was flawlessly organized. Bhutan changed my soul.",
-    relative_time_description: '',
-    profile_photo_url: null as string | null,
-  },
-  {
-    author_name: 'Dr. Raj & Priya Sharma',
+    author_name: 'Being Indian',
     countryFlag: '🇮🇳 India',
-    tour: 'Bhutan Wellness Retreat',
     rating: 5,
-    text: 'The wellness retreat was everything we needed after a hectic year. The hot stone bath, the monastery meditation, the organic food — all perfect. Our guide felt like a friend by the end. Highly recommend Arise Bhutan.',
-    relative_time_description: '',
+    text: 'Best tour guide in whole bhutan and he will arrange for your all needs taxis hotels and guide all will be taken care of',
+    relative_time_description: 'a year ago',
     profile_photo_url: null as string | null,
+    reviewPhoto: '/reviews/being-indian.jpg',
+  },
+  {
+    author_name: 'Divyesh Patel',
+    countryFlag: '🇮🇳 India',
+    rating: 5,
+    text: 'Just want to say missing Bhutan and missing our guide Kuenzang wangchuk. Must must visit bhutan',
+    relative_time_description: 'a year ago',
+    profile_photo_url: null as string | null,
+    reviewPhoto: '/reviews/divyesh-patel.jpg',
+  },
+  {
+    author_name: 'sujit kumar',
+    countryFlag: '🇮🇳 India',
+    rating: 5,
+    text: 'We have had an excellent trip to Bhutan. It was one of our best trip. All thanks to our tour guide Kunzang (DJ) who was very punctual, friendly and caring. He gave us lots of historical and cultural information about Bhutan. We really had an amazing time together. Hope to see you again!',
+    relative_time_description: 'a year ago',
+    profile_photo_url: null as string | null,
+    reviewPhoto: null as string | null,
+  },
+  {
+    author_name: 'K in Motion',
+    countryFlag: '',
+    rating: 5,
+    text: 'Wangchuk is a lively young man who will show you the best of his country and make sure you are taken care of. He\'s a wonderful human who goes above and beyond what is expected to ensure that your time in Bhutan is full of good times.',
+    relative_time_description: 'a year ago',
+    profile_photo_url: null as string | null,
+    reviewPhoto: null as string | null,
   },
 ]
 
@@ -114,21 +123,19 @@ export default async function Testimonials() {
             <span className="text-stone-600 ml-2 font-semibold text-sm sm:text-base">
               {avgStr} / 5 — Based on {totalStr} reviews
             </span>
-            {usingGoogle && (
-              <a
-                href={mapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="ml-2 flex items-center gap-1 text-xs text-stone-400 hover:text-stone-600 transition-colors"
-              >
-                <GoogleBadge /> Google
-              </a>
-            )}
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-2 flex items-center gap-1 text-xs text-stone-400 hover:text-stone-600 transition-colors"
+            >
+              <GoogleBadge /> Google
+            </a>
           </div>
         </div>
 
-        {/* Mobile: horizontal snap scroll | md+: 3-column grid */}
-        <div className="flex gap-5 overflow-x-auto scrollbar-hide snap-x snap-mandatory -mx-4 px-4 pb-4 md:grid md:grid-cols-3 md:overflow-visible md:pb-0 md:mx-0 md:px-0">
+        {/* Mobile: horizontal snap scroll | md+: 2-column grid | lg+: 4-column grid */}
+        <div className="flex gap-5 overflow-x-auto scrollbar-hide snap-x snap-mandatory -mx-4 px-4 pb-4 md:grid md:grid-cols-2 lg:grid-cols-4 md:overflow-visible md:pb-0 md:mx-0 md:px-0">
           {usingGoogle
             ? displayReviews.map((r, i) => (
                 <div
@@ -180,22 +187,54 @@ export default async function Testimonials() {
                   </div>
                 </div>
               ))
-            : STATIC_REVIEWS.map(({ author_name, countryFlag, tour, rating, text }) => (
+            : STATIC_REVIEWS.map(({ author_name, countryFlag, rating, text, relative_time_description, reviewPhoto }) => (
                 <div
                   key={author_name}
-                  className="flex-none w-[82vw] sm:w-[60vw] md:w-auto snap-start bg-stone-50 rounded-2xl p-6 sm:p-7 border border-stone-100 hover:shadow-lg transition-all duration-300 relative"
+                  className="flex-none w-[82vw] sm:w-[60vw] md:w-auto snap-start bg-stone-50 rounded-2xl border border-stone-100 hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col"
                 >
-                  <Quote className="w-7 h-7 text-amber-200 absolute top-5 right-5" />
-                  <div className="flex gap-1 mb-4">
-                    {[...Array(rating)].map((_, i) => (
-                      <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                    ))}
-                  </div>
-                  <p className="text-stone-700 text-sm leading-relaxed mb-5 italic">&ldquo;{text}&rdquo;</p>
-                  <div className="border-t border-stone-200 pt-4">
-                    <p className="font-semibold text-stone-900 text-sm">{author_name}</p>
-                    <p className="text-stone-500 text-xs mt-0.5">{countryFlag}</p>
-                    <p className="text-amber-600 text-xs font-medium mt-1">{tour}</p>
+                  {/* Tour photo */}
+                  {reviewPhoto && (
+                    <div className="relative w-full h-44 flex-shrink-0">
+                      <Image
+                        src={reviewPhoto}
+                        alt={`${author_name}'s Bhutan tour`}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 82vw, (max-width: 1024px) 50vw, 25vw"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+                    </div>
+                  )}
+                  <div className="p-6 sm:p-7 flex flex-col flex-1 relative">
+                    <Quote className="w-7 h-7 text-amber-200 absolute top-4 right-4" />
+                    <div className="flex gap-1 mb-3">
+                      {[...Array(rating)].map((_, i) => (
+                        <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                      ))}
+                    </div>
+                    <p className="text-stone-700 text-sm leading-relaxed mb-5 italic flex-1">&ldquo;{text}&rdquo;</p>
+                    <div className="border-t border-stone-200 pt-4 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-sm flex-shrink-0">
+                          {author_name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-stone-900 text-sm leading-tight">{author_name}</p>
+                          <p className="text-stone-400 text-xs mt-0.5">
+                            {countryFlag}{countryFlag && relative_time_description ? ' · ' : ''}{relative_time_description}
+                          </p>
+                        </div>
+                      </div>
+                      <a
+                        href="https://www.google.com/maps/place/Arise+Bhutan+Tours+%26+Travels/@27.4211577,89.4225462,17z"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity"
+                        title="View on Google"
+                      >
+                        <GoogleBadge />
+                      </a>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -204,19 +243,17 @@ export default async function Testimonials() {
         {/* Scroll hint — only visible on mobile */}
         <p className="text-center text-stone-400 text-xs mt-4 md:hidden">Swipe to read more →</p>
 
-        {usingGoogle && (
-          <div className="text-center mt-8">
-            <a
-              href={mapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm text-stone-500 hover:text-stone-700 border border-stone-200 rounded-full px-5 py-2.5 hover:border-stone-300 transition-all"
-            >
-              <GoogleBadge />
-              See all reviews on Google
-            </a>
-          </div>
-        )}
+        <div className="text-center mt-8">
+          <a
+            href={mapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-sm text-stone-500 hover:text-stone-700 border border-stone-200 rounded-full px-5 py-2.5 hover:border-stone-300 transition-all"
+          >
+            <GoogleBadge />
+            See all reviews on Google
+          </a>
+        </div>
       </div>
     </section>
   )
