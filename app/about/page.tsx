@@ -1,11 +1,11 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { Shield, Heart, Leaf, Award, Users, Globe } from 'lucide-react'
+import { Shield, Heart, Leaf, Award, Users, Globe, Download, FileCheck } from 'lucide-react'
 
 const values = [
   { icon: Heart,  title: 'Authentic Experiences',   desc: 'We go beyond the tourist trail, connecting you with real Bhutanese people, culture, and daily life.' },
   { icon: Leaf,   title: 'Sustainable Tourism',     desc: "Bhutan's unique 'High Value, Low Impact' philosophy guides every tour we design." },
-  { icon: Shield, title: 'Licensed & Trustworthy',  desc: 'Fully licensed by the Association of Bhutan Tour Operators (ATCB). Your safety and experience are our priority.' },
+  { icon: Shield, title: 'Licensed & Trustworthy',  desc: 'Fully certified by the Department of Tourism (DOT), Royal Government of Bhutan. License No. 50001567.' },
   { icon: Award,  title: 'Expert Local Guides',     desc: 'All guides are certified, local Bhutanese experts with deep knowledge of culture, history, and terrain.' },
   { icon: Users,  title: 'Personalized Service',    desc: 'No two trips are the same. We custom-craft every itinerary around your interests and travel style.' },
   { icon: Globe,  title: 'End-to-End Planning',     desc: 'From visa processing to airport pickup — we handle every detail so you can simply enjoy Bhutan.' },
@@ -104,6 +104,54 @@ export default function AboutPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* License & Credentials */}
+      <section className="py-16 sm:py-20 bg-amber-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10">
+            <span className="section-badge">Official Credentials</span>
+            <h2 className="section-title">Officially Licensed by the Royal Government of Bhutan</h2>
+            <p className="text-stone-500 text-sm sm:text-base mt-2">Arise Bhutan Tours &amp; Travel holds a valid business license issued by the Department of Industry, Ministry of Industry, Commerce and Employment.</p>
+          </div>
+          <div className="bg-white rounded-3xl border border-amber-100 shadow-sm overflow-hidden">
+            {/* Header bar */}
+            <div className="bg-stone-900 px-6 sm:px-8 py-5 flex items-center gap-3">
+              <FileCheck className="w-6 h-6 text-amber-400 flex-shrink-0" />
+              <div>
+                <p className="text-white font-bold text-sm sm:text-base">Business License — Arise Tours and Travels</p>
+                <p className="text-stone-400 text-xs mt-0.5">Department of Industry · Ministry of Industry, Commerce and Employment · Royal Government of Bhutan</p>
+              </div>
+            </div>
+            {/* License details grid */}
+            <div className="px-6 sm:px-8 py-6 grid grid-cols-2 sm:grid-cols-3 gap-5 sm:gap-6">
+              {[
+                { label: 'License No.',       value: '50001567' },
+                { label: 'Issued',            value: '22 June 2026' },
+                { label: 'Valid Until',        value: '23 June 2027' },
+                { label: 'Activity',          value: 'Tour Operator Activities (Tourism Services)' },
+                { label: 'Location',          value: 'Paro, Bhutan' },
+                { label: 'Owner',             value: 'Kuenzang Wangchuk' },
+              ].map(({ label, value }) => (
+                <div key={label}>
+                  <p className="text-stone-400 text-xs uppercase tracking-wider font-medium mb-1">{label}</p>
+                  <p className="text-stone-900 font-semibold text-sm sm:text-base leading-snug">{value}</p>
+                </div>
+              ))}
+            </div>
+            {/* Download button */}
+            <div className="px-6 sm:px-8 pb-6 pt-2 border-t border-stone-100">
+              <a
+                href="/arise-bhutan-license.pdf"
+                download="Arise-Bhutan-Business-License.pdf"
+                className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm px-6 py-3 rounded-full transition-colors shadow-sm"
+              >
+                <Download className="w-4 h-4" />
+                Download Official License (PDF)
+              </a>
+            </div>
           </div>
         </div>
       </section>
