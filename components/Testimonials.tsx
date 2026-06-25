@@ -96,19 +96,12 @@ function GoogleBadge() {
 }
 
 export default async function Testimonials() {
+  // Use Google API only for the live rating count — always show our curated reviews with photos
   const place = await fetchGooglePlaceDetails()
-  const usingGoogle = !!(place?.reviews?.length)
 
-  // Pick the 3 best Google reviews (prefer 5-star, fall back to any)
-  let displayReviews: GoogleReview[] = []
-  if (usingGoogle && place!.reviews) {
-    const fiveStars = place!.reviews.filter(r => r.rating === 5)
-    displayReviews = (fiveStars.length >= 2 ? fiveStars : place!.reviews).slice(0, 3)
-  }
-
-  const mapsUrl = place?.url ?? `https://www.google.com/maps/place/?q=place_id:${process.env.GOOGLE_PLACE_ID ?? ''}`
-  const totalStr = place?.user_ratings_total ? `${place.user_ratings_total.toLocaleString()}+` : '500+'
-  const avgStr   = place?.rating ? place.rating.toFixed(1) : '4.9'
+  const mapsUrl = place?.url ?? `https://www.google.com/maps/place/Arise+Bhutan+Tours+%26+Travels/@27.4211577,89.4225462,17z`
+  const totalStr = place?.user_ratings_total ? `${place.user_ratings_total.toLocaleString()}+` : '11+'
+  const avgStr   = place?.rating ? place.rating.toFixed(1) : '5.0'
 
   return (
     <section className="py-16 sm:py-20 bg-white overflow-hidden">
@@ -136,58 +129,7 @@ export default async function Testimonials() {
 
         {/* Mobile: horizontal snap scroll | md+: 2-column grid | lg+: 4-column grid */}
         <div className="flex gap-5 overflow-x-auto scrollbar-hide snap-x snap-mandatory -mx-4 px-4 pb-4 md:grid md:grid-cols-2 lg:grid-cols-4 md:overflow-visible md:pb-0 md:mx-0 md:px-0">
-          {usingGoogle
-            ? displayReviews.map((r, i) => (
-                <div
-                  key={i}
-                  className="flex-none w-[82vw] sm:w-[60vw] md:w-auto snap-start bg-stone-50 rounded-2xl p-6 sm:p-7 border border-stone-100 hover:shadow-lg transition-all duration-300 relative"
-                >
-                  <Quote className="w-7 h-7 text-amber-200 absolute top-5 right-5" />
-                  {/* Stars */}
-                  <div className="flex gap-1 mb-4">
-                    {[...Array(r.rating)].map((_, j) => (
-                      <Star key={j} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                    ))}
-                  </div>
-                  <p className="text-stone-700 text-sm leading-relaxed mb-5 italic line-clamp-6">
-                    &ldquo;{r.text}&rdquo;
-                  </p>
-                  <div className="border-t border-stone-200 pt-4 flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-2.5">
-                      {r.profile_photo_url ? (
-                        <Image
-                          src={r.profile_photo_url}
-                          alt={r.author_name}
-                          width={32}
-                          height={32}
-                          className="rounded-full"
-                          unoptimized
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-sm flex-shrink-0">
-                          {r.author_name.charAt(0)}
-                        </div>
-                      )}
-                      <div>
-                        <p className="font-semibold text-stone-900 text-sm">{r.author_name}</p>
-                        {r.relative_time_description && (
-                          <p className="text-stone-400 text-xs mt-0.5">{r.relative_time_description}</p>
-                        )}
-                      </div>
-                    </div>
-                    <a
-                      href={mapsUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-shrink-0 mt-1 opacity-60 hover:opacity-100 transition-opacity"
-                      title="View on Google"
-                    >
-                      <GoogleBadge />
-                    </a>
-                  </div>
-                </div>
-              ))
-            : STATIC_REVIEWS.map(({ author_name, countryFlag, rating, text, relative_time_description, reviewPhoto }) => (
+          {STATIC_REVIEWS.map(({ author_name, countryFlag, rating, text, relative_time_description, reviewPhoto }) => (
                 <div
                   key={author_name}
                   className="flex-none w-[82vw] sm:w-[60vw] md:w-auto snap-start bg-stone-50 rounded-2xl border border-stone-100 hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col"
