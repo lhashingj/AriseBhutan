@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
             Please review the attached PDF for your full itinerary, flight details, and booking terms. If you have any questions, please reply to this email or WhatsApp us at <strong>+975 77 319 405</strong>.
           </p>
           <p style="font-size: 13px; color: #78716c; margin: 0;">
-            Warm regards,<br /><strong>Arise Bhutan Tours &amp; Travel</strong><br />Paro Town, Bhutan
+            Warm regards,<br /><strong>Arise Bhutan Tours &amp; Travel</strong><br />Nyamaizampa, Paro 12001, Bhutan
           </p>
         </div>
       </div>

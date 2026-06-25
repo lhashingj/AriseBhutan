@@ -7,7 +7,7 @@ const MAPS_EMBED_SRC =
 const contactInfo = [
   { icon: Phone,         label: 'Phone / WhatsApp',  value: '+975 77 319 405',       href: 'tel:+97577319405' },
   { icon: Mail,          label: 'Email',              value: 'arisebhutan@gmail.com', href: 'mailto:arisebhutan@gmail.com' },
-  { icon: MapPin,        label: 'Office',             value: 'Paro Town, Bhutan',     href: undefined },
+  { icon: MapPin,        label: 'Office',             value: 'Nyamaizampa, Paro 12001', href: undefined },
   { icon: Clock,         label: 'Response Time',      value: 'Within 24 hours',       href: undefined },
   { icon: MessageCircle, label: 'WeChat / LINE',      value: 'AriseBhutan',           href: undefined },
 ]
