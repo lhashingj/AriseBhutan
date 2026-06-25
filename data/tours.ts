@@ -720,7 +720,7 @@ export const tours: Tour[] = [
     featured: true,
     bestSeason: 'March–May, September–November',
     rating: 5.0, reviews: 34,
-    image: '/images/couple-dzong.jpg',
+    image: '/images/tigers-nest-rhododendron.jpg',
     heroImage: '/images/sunrise-silhouette.jpg',
     gallery: ['/images/couple-dzong.jpg', '/images/sunrise-silhouette.jpg', '/images/river-temple.jpg', '/images/butter-lamps.jpg'],
     highlights: [

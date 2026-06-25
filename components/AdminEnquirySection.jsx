@@ -5,17 +5,18 @@ import {
   Inbox, Mail, Phone, MapPin, Moon, Users, Hotel,
   Send, AlertCircle, X, ChevronDown, ChevronUp,
   Loader2, Clock, CheckCircle2, Trash2, Download, Plus,
+  Save, FileEdit, FileCheck,
 } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
 import { computePricing } from '@/utils/pdfGenerator'
 
 // ── Status config ─────────────────────────────────────────────
 const STATUS_CFG = {
-  pending_review: { label: 'New',         cls: 'bg-amber-100 text-amber-700 border-amber-200' },
-  in_progress:    { label: 'In Progress', cls: 'bg-blue-100 text-blue-700 border-blue-200' },
-  quoted:         { label: 'Quoted',      cls: 'bg-green-100 text-green-700 border-green-200' },
-  confirmed:      { label: 'Confirmed',   cls: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-  declined:       { label: 'Declined',    cls: 'bg-stone-100 text-stone-500 border-stone-200' },
+  pending_review: { label: 'New',         cls: 'bg-amber-500/15 text-amber-400 border-amber-500/25' },
+  in_progress:    { label: 'In Progress', cls: 'bg-blue-500/15 text-blue-400 border-blue-500/25' },
+  quoted:         { label: 'Quoted',      cls: 'bg-green-500/15 text-green-400 border-green-500/25' },
+  confirmed:      { label: 'Confirmed',   cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25' },
+  declined:       { label: 'Declined',    cls: 'bg-stone-700 text-stone-400 border-white/10' },
 }
 
 function StatusBadge({ status }) {
@@ -47,69 +48,61 @@ const DEF_CANCELLATION = [
   { period: 'Under 30 days / No-show',      refund: 'Non-refundable' },
 ]
 
-// ── Input class helper ────────────────────────────────────────
-const inp = 'w-full border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors bg-white'
-const labelCls = 'block text-[11px] font-semibold text-stone-500 uppercase tracking-wider mb-1'
+const inp = 'w-full border border-white/10 rounded-xl px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-colors bg-stone-800'
+const labelCls = 'block text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1'
 
 // ── Voucher Modal ─────────────────────────────────────────────
-function SendVoucherModal({ enquiry, onClose, onSent }) {
+function SendVoucherModal({ enquiry, existingVoucher, onClose, onSent, onVoucherSaved, onVoucherDeleted }) {
   const pax = enquiry.guests || 2
-
-  const [tab, setTab]           = useState('details')
-  const [sending, setSending]   = useState(false)
-  const [downloading, setDownloading] = useState(false)
-  const [error, setError]       = useState('')
-  const [sent, setSent]         = useState(false)
-  const [ref, setRef]           = useState('')
-
   const arrivalGuess = enquiry.travel_date ? enquiry.travel_date.split('T')[0] : ''
 
-  const [form, setFormRaw] = useState({
-    // Details
-    tourTitle:        enquiry.tour_interest || '',
-    category:         enquiry.tier ? `${enquiry.tier} Package` : 'Cultural Tour',
-    arrivalDate:      arrivalGuess,
-    returnDate:       '',
-    guide:            'Licensed ATCB Guide',
-    vehicle:          'Private Vehicle & Driver',
-    passportNo:       '',
-    passportExpiry:   '',
-    emergencyContact: '',
+  const [tab, setTab]               = useState('details')
+  const [sending, setSending]       = useState(false)
+  const [downloading, setDownloading] = useState(false)
+  const [saveStatus, setSaveStatus] = useState(null) // null | 'saving' | 'saved' | 'error'
+  const [deletingDraft, setDeletingDraft] = useState(false)
+  const [confirmDiscardDraft, setConfirmDiscardDraft] = useState(false)
+  const [error, setError]           = useState('')
+  const [sent, setSent]             = useState(false)
+  const [ref, setRef]               = useState('')
 
-    // Flights — two blank rows to start
-    flights: [
-      { sector: '', date: '', flightNo: '', departs: '', arrives: '', airline: 'Bhutan Airlines' },
-      { sector: '', date: '', flightNo: '', departs: '', arrives: '', airline: 'Bhutan Airlines' },
-    ],
-
-    // Itinerary — empty, user generates
-    itinerary: [],
-
-    // Pricing
-    pricePerPerson: '',
-    sdfRate:        '100',
-    serviceFee:     '0',
-    gstRate:        '0',
-    inrRate:        '83.5',
-
-    // Hotels
-    accommodation: [],
-
-    // Package
-    inclusions:         [...DEF_INCLUSIONS],
-    exclusions:         [...DEF_EXCLUSIONS],
-    cancellationPolicy: [...DEF_CANCELLATION],
+  // Initialise form from saved draft or enquiry defaults
+  const [form, setFormRaw] = useState(() => {
+    if (existingVoucher?.form_data) return existingVoucher.form_data
+    return {
+      tourTitle:        enquiry.tour_interest || '',
+      category:         enquiry.tier ? `${enquiry.tier} Package` : 'Cultural Tour',
+      arrivalDate:      arrivalGuess,
+      returnDate:       '',
+      guide:            'Licensed ATCB Guide',
+      vehicle:          'Private Vehicle & Driver',
+      passportNo:       '',
+      passportExpiry:   '',
+      emergencyContact: '',
+      flights: [
+        { sector: '', date: '', flightNo: '', departs: '', arrives: '', airline: 'Bhutan Airlines' },
+        { sector: '', date: '', flightNo: '', departs: '', arrives: '', airline: 'Bhutan Airlines' },
+      ],
+      itinerary: [],
+      pricePerPerson: '',
+      sdfRate:        '100',
+      serviceFee:     '0',
+      gstRate:        '0',
+      inrRate:        '83.5',
+      accommodation:      [],
+      inclusions:         [...DEF_INCLUSIONS],
+      exclusions:         [...DEF_EXCLUSIONS],
+      cancellationPolicy: [...DEF_CANCELLATION],
+    }
   })
 
   function set(k, v) { setFormRaw(f => ({ ...f, [k]: v })) }
 
-  // ── Computed nights ───────────────────────────────────────
   const nights = useMemo(() => {
     if (!form.arrivalDate || !form.returnDate) return enquiry.nights || 5
     return Math.max(1, Math.ceil((new Date(form.returnDate) - new Date(form.arrivalDate)) / 86_400_000))
   }, [form.arrivalDate, form.returnDate, enquiry.nights])
 
-  // ── Live pricing ──────────────────────────────────────────
   const costs = useMemo(() => computePricing({
     pricePerPerson:       parseFloat(form.pricePerPerson) || 0,
     pax,
@@ -170,7 +163,7 @@ function SendVoucherModal({ enquiry, onClose, onSent }) {
   function addHotel() { setFormRaw(f => ({ ...f, accommodation: [...f.accommodation, { hotel: '', location: '', category: enquiry.tier || '4-Star', type: '', nights: '' }] })) }
   function removeHotel(i) { setFormRaw(f => ({ ...f, accommodation: f.accommodation.filter((_, idx) => idx !== i) })) }
 
-  // ── List helpers (inclusions/exclusions) ──────────────────
+  // ── List helpers ──────────────────────────────────────────
   function addItem(field) { setFormRaw(f => ({ ...f, [field]: [...f[field], ''] })) }
   function removeItem(field, i) { setFormRaw(f => ({ ...f, [field]: f[field].filter((_, idx) => idx !== i) })) }
   function editItem(field, i, v) { setFormRaw(f => { const a = [...f[field]]; a[i] = v; return { ...f, [field]: a } }) }
@@ -182,7 +175,7 @@ function SendVoucherModal({ enquiry, onClose, onSent }) {
   function addCancelRow() { setFormRaw(f => ({ ...f, cancellationPolicy: [...f.cancellationPolicy, { period: '', refund: '' }] })) }
   function removeCancelRow(i) { setFormRaw(f => ({ ...f, cancellationPolicy: f.cancellationPolicy.filter((_, idx) => idx !== i) })) }
 
-  // ── Build payload ─────────────────────────────────────────
+  // ── Build API payload ─────────────────────────────────────
   function buildPayload() {
     return {
       enquiryId:   enquiry.id,
@@ -197,8 +190,8 @@ function SendVoucherModal({ enquiry, onClose, onSent }) {
         passportExpiry:   form.passportExpiry,
         emergencyContact: form.emergencyContact,
       },
-      flights: form.flights.filter(f => f.sector || f.flightNo),
-      itinerary: form.itinerary.map(d => ({
+      flights:    form.flights.filter(f => f.sector || f.flightNo),
+      itinerary:  form.itinerary.map(d => ({
         day:           d.day,
         date:          d.date,
         title:         d.title,
@@ -226,6 +219,44 @@ function SendVoucherModal({ enquiry, onClose, onSent }) {
     return session.access_token
   }
 
+  // ── Save draft ────────────────────────────────────────────
+  async function handleSave() {
+    setSaveStatus('saving')
+    setError('')
+    try {
+      const jwt = await getJwt()
+      const res = await fetch('/api/admin/vouchers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${jwt}` },
+        body: JSON.stringify({ enquiryId: enquiry.id, formData: form }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Save failed')
+      setSaveStatus('saved')
+      onVoucherSaved(data.voucher)
+      setTimeout(() => setSaveStatus(null), 3000)
+    } catch (err) {
+      setSaveStatus('error')
+      setError(err.message)
+    }
+  }
+
+  // ── Discard / delete draft ────────────────────────────────
+  async function handleDiscardDraft() {
+    setDeletingDraft(true)
+    try {
+      const jwt = await getJwt()
+      await fetch('/api/admin/vouchers', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${jwt}` },
+        body: JSON.stringify({ enquiryId: enquiry.id }),
+      })
+      onVoucherDeleted(enquiry.id)
+      onClose()
+    } catch { setDeletingDraft(false); setConfirmDiscardDraft(false) }
+  }
+
+  // ── Download PDF ──────────────────────────────────────────
   async function handleDownload() {
     setDownloading(true); setError('')
     try {
@@ -247,6 +278,7 @@ function SendVoucherModal({ enquiry, onClose, onSent }) {
     finally { setDownloading(false) }
   }
 
+  // ── Send to client ────────────────────────────────────────
   async function handleSend() {
     setSending(true); setError('')
     try {
@@ -278,38 +310,66 @@ function SendVoucherModal({ enquiry, onClose, onSent }) {
   ]
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 px-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col" style={{ maxHeight: '94vh' }}>
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
+      <div className="bg-stone-900 border border-white/5 rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col" style={{ maxHeight: '94vh' }}>
 
         {/* Header */}
         <div className="bg-stone-900 px-6 py-4 flex items-center justify-between flex-shrink-0 rounded-t-2xl">
           <div>
-            <p className="font-bold text-white text-base">Booking Voucher Editor</p>
+            <div className="flex items-center gap-2">
+              <p className="font-bold text-white text-base">Booking Voucher Editor</p>
+              {existingVoucher && (
+                <span className="text-[10px] font-bold bg-amber-600 text-white px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Draft saved
+                </span>
+              )}
+            </div>
             <p className="text-stone-400 text-xs mt-0.5">{enquiry.client_name || 'Guest'} · {enquiry.client_email}</p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl text-stone-400 hover:text-white hover:bg-white/10 transition-colors">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {existingVoucher && !confirmDiscardDraft && (
+              <button onClick={() => setConfirmDiscardDraft(true)}
+                className="text-xs text-stone-500 hover:text-red-400 transition-colors flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-white/10">
+                <Trash2 className="w-3.5 h-3.5" /> Discard Draft
+              </button>
+            )}
+            {confirmDiscardDraft && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-red-400">Delete this draft?</span>
+                <button onClick={handleDiscardDraft} disabled={deletingDraft}
+                  className="text-xs font-bold text-white bg-red-600 hover:bg-red-700 px-2.5 py-1 rounded-lg disabled:opacity-50">
+                  {deletingDraft ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Delete'}
+                </button>
+                <button onClick={() => setConfirmDiscardDraft(false)}
+                  className="text-xs text-stone-400 hover:text-white px-2 py-1 rounded-lg hover:bg-white/10">
+                  Cancel
+                </button>
+              </div>
+            )}
+            <button onClick={onClose} className="p-2 rounded-xl text-stone-400 hover:text-white hover:bg-white/10 transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {sent ? (
           <div className="p-10 text-center flex-1">
-            <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle2 className="w-7 h-7 text-green-600" />
+            <div className="w-14 h-14 bg-emerald-500/15 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 className="w-7 h-7 text-emerald-400" />
             </div>
-            <h3 className="font-serif text-xl font-bold text-stone-900 mb-2">Voucher Sent!</h3>
-            <p className="text-stone-500 text-sm mb-1">PDF emailed to <strong>{enquiry.client_email}</strong></p>
-            {ref && <p className="font-mono text-xs text-stone-400 mb-6">{ref}</p>}
+            <h3 className="font-serif text-xl font-bold text-white mb-2">Voucher Sent!</h3>
+            <p className="text-stone-400 text-sm mb-1">PDF emailed to <strong className="text-stone-200">{enquiry.client_email}</strong></p>
+            {ref && <p className="font-mono text-xs text-stone-500 mb-6">{ref}</p>}
             <button onClick={onClose} className="btn-primary text-sm px-6">Done</button>
           </div>
         ) : (
           <>
             {/* Tabs */}
-            <div className="flex border-b border-stone-100 flex-shrink-0 overflow-x-auto">
+            <div className="flex border-b border-white/5 flex-shrink-0 overflow-x-auto bg-stone-950/50">
               {TABS.map(([id, label]) => (
                 <button key={id} onClick={() => setTab(id)}
                   className={`px-5 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors flex-shrink-0 ${
-                    tab === id ? 'text-amber-700 border-amber-600' : 'text-stone-500 border-transparent hover:text-stone-700'
+                    tab === id ? 'text-amber-400 border-amber-500' : 'text-stone-500 border-transparent hover:text-stone-300'
                   }`}>
                   {label}
                 </button>
@@ -320,12 +380,12 @@ function SendVoucherModal({ enquiry, onClose, onSent }) {
             <div className="overflow-y-auto flex-1 p-5">
 
               {/* Enquiry context strip */}
-              <div className="bg-stone-50 border border-stone-100 rounded-xl px-4 py-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-500 mb-4">
-                <span><span className="text-stone-400">Enquiry from:</span> {enquiry.client_name || '—'}</span>
-                <span><span className="text-stone-400">Nights:</span> {enquiry.nights}</span>
-                <span><span className="text-stone-400">Guests:</span> {pax}</span>
-                <span><span className="text-stone-400">Tier:</span> {enquiry.tier || '—'}</span>
-                {enquiry.interests?.length > 0 && <span className="text-amber-700">{enquiry.interests.join(', ')}</span>}
+              <div className="bg-stone-800 border border-white/5 rounded-xl px-4 py-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-400 mb-4">
+                <span><span className="text-stone-500">Enquiry from:</span> {enquiry.client_name || '—'}</span>
+                <span><span className="text-stone-500">Nights:</span> {enquiry.nights}</span>
+                <span><span className="text-stone-500">Guests:</span> {pax}</span>
+                <span><span className="text-stone-500">Tier:</span> {enquiry.tier || '—'}</span>
+                {enquiry.interests?.length > 0 && <span className="text-amber-400">{enquiry.interests.join(', ')}</span>}
               </div>
 
               {/* ══ TAB: Details ══ */}
@@ -362,8 +422,8 @@ function SendVoucherModal({ enquiry, onClose, onSent }) {
                       <input value={form.vehicle} onChange={e => set('vehicle', e.target.value)} className={inp} />
                     </div>
                   </div>
-                  <hr className="border-stone-100" />
-                  <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Client Passport Details</p>
+                  <hr className="border-white/5" />
+                  <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider">Client Passport Details</p>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className={labelCls}>Passport Number</label>
@@ -384,11 +444,11 @@ function SendVoucherModal({ enquiry, onClose, onSent }) {
               {/* ══ TAB: Flights ══ */}
               {tab === 'flights' && (
                 <div className="space-y-3">
-                  <p className="text-xs text-stone-500">Add each flight sector. Leave blank rows and they will be omitted from the voucher.</p>
+                  <p className="text-xs text-stone-500">Add each flight sector. Blank rows are omitted from the voucher.</p>
                   {form.flights.map((fl, i) => (
-                    <div key={i} className="bg-stone-50 border border-stone-100 rounded-xl p-3 space-y-2">
+                    <div key={i} className="bg-stone-800 border border-white/5 rounded-xl p-3 space-y-2">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-bold text-stone-600 uppercase tracking-wider">Flight {i + 1}</span>
+                        <span className="text-xs font-bold text-stone-400 uppercase tracking-wider">Flight {i + 1}</span>
                         <button onClick={() => removeFlight(i)} className="text-stone-300 hover:text-red-500 transition-colors">
                           <X className="w-4 h-4" />
                         </button>
@@ -422,7 +482,7 @@ function SendVoucherModal({ enquiry, onClose, onSent }) {
                     </div>
                   ))}
                   <button onClick={addFlight}
-                    className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-stone-200 rounded-xl py-3 text-sm text-stone-500 hover:border-amber-400 hover:text-amber-700 transition-colors">
+                    className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-white/10 rounded-xl py-3 text-sm text-stone-500 hover:border-amber-500/40 hover:text-amber-400 transition-colors">
                     <Plus className="w-4 h-4" /> Add Flight
                   </button>
                 </div>
@@ -437,15 +497,15 @@ function SendVoucherModal({ enquiry, onClose, onSent }) {
                       Generate {nights + 1}-Day Skeleton
                     </button>
                     <button onClick={addDay}
-                      className="flex items-center gap-1 text-xs font-semibold text-stone-600 border border-stone-200 px-3 py-2 rounded-xl hover:bg-stone-50 transition-colors">
+                      className="flex items-center gap-1 text-xs font-semibold text-stone-400 border border-white/10 px-3 py-2 rounded-xl hover:bg-white/5 hover:text-stone-200 transition-colors">
                       <Plus className="w-3 h-3" /> Add Day Manually
                     </button>
                     {!canProceed && <p className="text-xs text-stone-400">Set arrival & return dates first</p>}
                   </div>
 
                   {form.itinerary.map((day, i) => (
-                    <div key={i} className="border border-stone-100 rounded-xl overflow-hidden">
-                      <div className="bg-stone-800 px-4 py-2.5 flex items-center justify-between">
+                    <div key={i} className="border border-white/5 rounded-xl overflow-hidden">
+                      <div className="bg-stone-950 px-4 py-2.5 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <span className="w-7 h-7 rounded-full bg-amber-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                             {String(day.day).padStart(2, '0')}
@@ -458,13 +518,13 @@ function SendVoucherModal({ enquiry, onClose, onSent }) {
                           <X className="w-4 h-4" />
                         </button>
                       </div>
-                      <div className="p-3 space-y-2 bg-white">
+                      <div className="p-3 space-y-2 bg-stone-800/50">
                         <div>
                           <label className={labelCls}>Day Title</label>
                           <input value={day.title} onChange={e => setDay(i, 'title', e.target.value)} className={inp} placeholder="e.g. Exclusive Tiger's Nest Experience" />
                         </div>
                         <div>
-                          <label className={labelCls}>Activities (one per line → becomes bullet points)</label>
+                          <label className={labelCls}>Activities (one per line → bullet points in PDF)</label>
                           <textarea value={day.activitiesText} onChange={e => setDay(i, 'activitiesText', e.target.value)}
                             rows={3} className={`${inp} resize-none`}
                             placeholder="Private 6 AM trail access&#10;Tiger's Nest in solitude&#10;Exclusive lama ceremony" />
@@ -482,7 +542,7 @@ function SendVoucherModal({ enquiry, onClose, onSent }) {
                                   <input type="checkbox" checked={!!day.meals[code]}
                                     onChange={e => setMeal(i, code, e.target.checked)}
                                     className="w-4 h-4 accent-amber-600 rounded" />
-                                  <span className="text-xs font-semibold text-stone-600">{code}</span>
+                                  <span className="text-xs font-semibold text-stone-300">{code}</span>
                                   <span className="text-xs text-stone-400 hidden sm:inline">{name}</span>
                                 </label>
                               ))}
@@ -494,7 +554,7 @@ function SendVoucherModal({ enquiry, onClose, onSent }) {
                   ))}
 
                   {form.itinerary.length === 0 && (
-                    <div className="text-center py-8 text-stone-400 text-sm border-2 border-dashed border-stone-200 rounded-xl">
+                    <div className="text-center py-8 text-stone-500 text-sm border-2 border-dashed border-white/10 rounded-xl">
                       Click "Generate Skeleton" to auto-fill days from your dates, or add days manually.
                     </div>
                   )}
@@ -597,9 +657,9 @@ function SendVoucherModal({ enquiry, onClose, onSent }) {
                 <div className="space-y-3">
                   <p className="text-xs text-stone-500">Add each hotel used in the itinerary.</p>
                   {form.accommodation.map((h, i) => (
-                    <div key={i} className="bg-stone-50 border border-stone-100 rounded-xl p-3 space-y-2">
+                    <div key={i} className="bg-stone-800 border border-white/5 rounded-xl p-3 space-y-2">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-bold text-stone-600 uppercase tracking-wider">Hotel {i + 1}</span>
+                        <span className="text-xs font-bold text-stone-400 uppercase tracking-wider">Hotel {i + 1}</span>
                         <button onClick={() => removeHotel(i)} className="text-stone-300 hover:text-red-500 transition-colors">
                           <X className="w-4 h-4" />
                         </button>
@@ -629,7 +689,7 @@ function SendVoucherModal({ enquiry, onClose, onSent }) {
                     </div>
                   ))}
                   <button onClick={addHotel}
-                    className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-stone-200 rounded-xl py-3 text-sm text-stone-500 hover:border-amber-400 hover:text-amber-700 transition-colors">
+                    className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-white/10 rounded-xl py-3 text-sm text-stone-500 hover:border-amber-500/40 hover:text-amber-400 transition-colors">
                     <Plus className="w-4 h-4" /> Add Hotel
                   </button>
                 </div>
@@ -641,16 +701,16 @@ function SendVoucherModal({ enquiry, onClose, onSent }) {
                   {/* Inclusions */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs font-bold text-stone-700 uppercase tracking-wider">Inclusions</p>
+                      <p className="text-xs font-bold text-stone-400 uppercase tracking-wider">Inclusions</p>
                       <button onClick={() => addItem('inclusions')}
-                        className="flex items-center gap-1 text-xs font-semibold text-green-700 hover:text-green-800">
+                        className="flex items-center gap-1 text-xs font-semibold text-emerald-400 hover:text-emerald-300">
                         <Plus className="w-3 h-3" /> Add
                       </button>
                     </div>
                     <div className="space-y-1.5">
                       {form.inclusions.map((item, i) => (
                         <div key={i} className="flex items-center gap-2">
-                          <span className="text-green-600 font-bold text-sm w-4 flex-shrink-0">✓</span>
+                          <span className="text-emerald-400 font-bold text-sm w-4 flex-shrink-0">✓</span>
                           <input value={item} onChange={e => editItem('inclusions', i, e.target.value)} className={`${inp} flex-1`} />
                           <button onClick={() => removeItem('inclusions', i)} className="text-stone-300 hover:text-red-500 flex-shrink-0">
                             <X className="w-3.5 h-3.5" />
@@ -663,16 +723,16 @@ function SendVoucherModal({ enquiry, onClose, onSent }) {
                   {/* Exclusions */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs font-bold text-stone-700 uppercase tracking-wider">Exclusions</p>
+                      <p className="text-xs font-bold text-stone-400 uppercase tracking-wider">Exclusions</p>
                       <button onClick={() => addItem('exclusions')}
-                        className="flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700">
+                        className="flex items-center gap-1 text-xs font-semibold text-red-400 hover:text-red-300">
                         <Plus className="w-3 h-3" /> Add
                       </button>
                     </div>
                     <div className="space-y-1.5">
                       {form.exclusions.map((item, i) => (
                         <div key={i} className="flex items-center gap-2">
-                          <span className="text-red-500 font-bold text-sm w-4 flex-shrink-0">✗</span>
+                          <span className="text-red-400 font-bold text-sm w-4 flex-shrink-0">✗</span>
                           <input value={item} onChange={e => editItem('exclusions', i, e.target.value)} className={`${inp} flex-1`} />
                           <button onClick={() => removeItem('exclusions', i)} className="text-stone-300 hover:text-red-500 flex-shrink-0">
                             <X className="w-3.5 h-3.5" />
@@ -685,24 +745,24 @@ function SendVoucherModal({ enquiry, onClose, onSent }) {
                   {/* Cancellation Policy */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs font-bold text-stone-700 uppercase tracking-wider">Cancellation Policy</p>
+                      <p className="text-xs font-bold text-stone-400 uppercase tracking-wider">Cancellation Policy</p>
                       <button onClick={addCancelRow}
-                        className="flex items-center gap-1 text-xs font-semibold text-stone-600 hover:text-stone-800">
+                        className="flex items-center gap-1 text-xs font-semibold text-stone-400 hover:text-stone-200">
                         <Plus className="w-3 h-3" /> Add Row
                       </button>
                     </div>
-                    <div className="border border-stone-100 rounded-xl overflow-hidden">
-                      <div className="grid grid-cols-2 bg-stone-800 px-3 py-2 text-[11px] font-bold text-stone-300 uppercase tracking-wider gap-3">
+                    <div className="border border-white/5 rounded-xl overflow-hidden">
+                      <div className="grid grid-cols-2 bg-stone-950 px-3 py-2 text-[11px] font-bold text-stone-400 uppercase tracking-wider gap-3">
                         <span>Cancellation Period</span><span>Refund Terms</span>
                       </div>
                       {form.cancellationPolicy.map((row, i) => (
-                        <div key={i} className="grid grid-cols-2 gap-2 px-3 py-2 border-t border-stone-50 items-start">
+                        <div key={i} className="grid grid-cols-2 gap-2 px-3 py-2 border-t border-white/5 items-start">
                           <input value={row.period} onChange={e => setCancelRow(i, 'period', e.target.value)}
-                            className="border border-stone-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500 bg-white" />
+                            className="border border-white/10 rounded-lg px-2 py-1.5 text-xs text-stone-100 focus:outline-none focus:border-amber-500/50 bg-stone-800" />
                           <div className="flex gap-2">
                             <input value={row.refund} onChange={e => setCancelRow(i, 'refund', e.target.value)}
-                              className="flex-1 border border-stone-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500 bg-white" />
-                            <button onClick={() => removeCancelRow(i)} className="text-stone-300 hover:text-red-500 flex-shrink-0 mt-0.5">
+                              className="flex-1 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-stone-100 focus:outline-none focus:border-amber-500/50 bg-stone-800" />
+                            <button onClick={() => removeCancelRow(i)} className="text-stone-500 hover:text-red-400 flex-shrink-0 mt-0.5">
                               <X className="w-3.5 h-3.5" />
                             </button>
                           </div>
@@ -714,22 +774,43 @@ function SendVoucherModal({ enquiry, onClose, onSent }) {
               )}
 
               {error && (
-                <div className="mt-4 flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
+                <div className="mt-4 flex items-start gap-2 bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3 rounded-xl">
                   <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" /><span>{error}</span>
                 </div>
               )}
             </div>
 
             {/* Footer */}
-            <div className="border-t border-stone-100 bg-stone-50 px-5 py-4 flex items-center gap-3 flex-shrink-0 rounded-b-2xl">
-              <div className="flex-1 text-xs">
-                {canProceed
-                  ? <span className="text-amber-700 font-semibold">{usd(costs.totalUSD)} · {nights} nights · {pax} pax</span>
-                  : <span className="text-stone-400">Set arrival &amp; return dates to continue</span>}
+            <div className="border-t border-white/5 bg-stone-950/50 px-5 py-4 flex items-center gap-2 flex-shrink-0 rounded-b-2xl flex-wrap">
+              <div className="flex-1 min-w-0 text-xs">
+                {saveStatus === 'saved' && (
+                  <span className="text-emerald-400 font-medium flex items-center gap-1">
+                    <FileCheck className="w-3 h-3" /> Draft saved
+                  </span>
+                )}
+                {saveStatus === 'saving' && (
+                  <span className="text-stone-400 flex items-center gap-1">
+                    <Loader2 className="w-3 h-3 animate-spin" /> Saving…
+                  </span>
+                )}
+                {saveStatus !== 'saved' && saveStatus !== 'saving' && (
+                  canProceed
+                    ? <span className="text-amber-400 font-semibold">{usd(costs.totalUSD)} · {nights} nights · {pax} pax</span>
+                    : <span className="text-stone-500">Set arrival &amp; return dates to continue</span>
+                )}
               </div>
               <button onClick={onClose} className="btn-outline text-sm px-4">Cancel</button>
+              <button onClick={handleSave} disabled={saveStatus === 'saving'}
+                className="flex items-center gap-1.5 text-sm font-semibold text-stone-300 border border-white/10 bg-stone-800 hover:bg-stone-700 rounded-xl px-4 py-2 disabled:opacity-40 transition-colors">
+                {saveStatus === 'saving'
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : saveStatus === 'saved'
+                    ? <FileCheck className="w-4 h-4 text-emerald-400" />
+                    : <Save className="w-4 h-4" />}
+                {saveStatus === 'saved' ? 'Saved ✓' : 'Save Draft'}
+              </button>
               <button onClick={handleDownload} disabled={!canProceed || downloading}
-                className="flex items-center gap-1.5 text-sm font-semibold text-stone-700 border border-stone-300 bg-white rounded-xl px-4 py-2 hover:bg-stone-100 disabled:opacity-40 transition-colors">
+                className="flex items-center gap-1.5 text-sm font-semibold text-stone-300 border border-white/10 bg-stone-800 hover:bg-stone-700 rounded-xl px-4 py-2 disabled:opacity-40 transition-colors">
                 {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                 Download PDF
               </button>
@@ -746,7 +827,7 @@ function SendVoucherModal({ enquiry, onClose, onSent }) {
 }
 
 // ── Enquiry Row ───────────────────────────────────────────────
-function EnquiryRow({ enquiry, onStatusChange, onDelete, onSendVoucher }) {
+function EnquiryRow({ enquiry, existingVoucher, onStatusChange, onDelete, onSendVoucher }) {
   const [open, setOpen]             = useState(false)
   const [updating, setUpdating]     = useState(false)
   const [deleting, setDeleting]     = useState(false)
@@ -780,32 +861,32 @@ function EnquiryRow({ enquiry, onStatusChange, onDelete, onSendVoucher }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden">
+    <div className="bg-stone-800 rounded-2xl border border-white/5 overflow-hidden">
       <div className="px-5 py-4">
         <div className="flex items-start justify-between gap-3 mb-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="font-semibold text-stone-900 text-sm">{enquiry.client_name || 'Unknown'}</p>
+              <p className="font-semibold text-white text-sm">{enquiry.client_name || 'Unknown'}</p>
               <StatusBadge status={enquiry.status} />
             </div>
-            <p className="text-xs text-stone-400 mt-0.5">{date}</p>
+            <p className="text-xs text-stone-500 mt-0.5">{date}</p>
           </div>
           <button onClick={() => setOpen(!open)}
-            className="p-1.5 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-50 transition-colors flex-shrink-0">
+            className="p-1.5 rounded-lg text-stone-400 hover:text-white hover:bg-white/10 transition-colors flex-shrink-0">
             {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
         </div>
 
-        <div className="flex flex-wrap gap-3 text-xs text-stone-500 mb-2">
-          {enquiry.client_email && <span className="flex items-center gap-1"><Mail className="w-3 h-3 text-stone-400" />{enquiry.client_email}</span>}
-          {enquiry.client_phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3 text-stone-400" />{enquiry.client_phone}</span>}
-          {enquiry.client_country && <span className="flex items-center gap-1"><MapPin className="w-3 h-3 text-stone-400" />{enquiry.client_country}</span>}
+        <div className="flex flex-wrap gap-3 text-xs text-stone-400 mb-2">
+          {enquiry.client_email && <span className="flex items-center gap-1"><Mail className="w-3 h-3 text-stone-500" />{enquiry.client_email}</span>}
+          {enquiry.client_phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3 text-stone-500" />{enquiry.client_phone}</span>}
+          {enquiry.client_country && <span className="flex items-center gap-1"><MapPin className="w-3 h-3 text-stone-500" />{enquiry.client_country}</span>}
         </div>
-        <div className="flex flex-wrap gap-3 text-xs text-stone-500 mb-3">
-          <span className="flex items-center gap-1"><Moon className="w-3 h-3 text-stone-400" />{enquiry.nights}N</span>
-          <span className="flex items-center gap-1"><Users className="w-3 h-3 text-stone-400" />{enquiry.guests} guests</span>
-          <span className="flex items-center gap-1"><Hotel className="w-3 h-3 text-stone-400" />{enquiry.tier}</span>
-          {enquiry.tour_interest && <span className="text-amber-700 font-medium">{enquiry.tour_interest}</span>}
+        <div className="flex flex-wrap gap-3 text-xs text-stone-400 mb-3">
+          <span className="flex items-center gap-1"><Moon className="w-3 h-3 text-stone-500" />{enquiry.nights}N</span>
+          <span className="flex items-center gap-1"><Users className="w-3 h-3 text-stone-500" />{enquiry.guests} guests</span>
+          <span className="flex items-center gap-1"><Hotel className="w-3 h-3 text-stone-500" />{enquiry.tier}</span>
+          {enquiry.tour_interest && <span className="text-amber-400 font-medium">{enquiry.tour_interest}</span>}
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
@@ -817,48 +898,59 @@ function EnquiryRow({ enquiry, onStatusChange, onDelete, onSendVoucher }) {
             </button>
           )}
           <button onClick={() => onSendVoucher(enquiry)}
-            className="flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold py-1.5 px-3 rounded-xl shadow-sm transition-colors">
-            <Send className="w-3 h-3" /> Create Voucher
+            className={`flex items-center gap-1.5 text-white text-xs font-semibold py-1.5 px-3 rounded-xl shadow-sm transition-colors ${
+              existingVoucher
+                ? 'bg-blue-600 hover:bg-blue-700'
+                : 'bg-amber-600 hover:bg-amber-700'
+            }`}>
+            {existingVoucher
+              ? <><FileEdit className="w-3 h-3" /> Edit Voucher</>
+              : <><Send className="w-3 h-3" /> Create Voucher</>}
           </button>
+          {existingVoucher && (
+            <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <FileCheck className="w-2.5 h-2.5" /> Draft saved
+            </span>
+          )}
         </div>
       </div>
 
       {open && (
-        <div className="border-t border-stone-100 px-5 py-4 bg-stone-50 space-y-3">
+        <div className="border-t border-white/5 px-5 py-4 bg-stone-900/40 space-y-3">
           {enquiry.tour_interest && (
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Tour Interest</p>
-              <p className="text-sm text-stone-700">{enquiry.tour_interest}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500 mb-1">Tour Interest</p>
+              <p className="text-sm text-stone-300">{enquiry.tour_interest}</p>
             </div>
           )}
           {enquiry.travel_date && (
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Preferred Travel Date</p>
-              <p className="text-sm text-stone-700">{new Date(enquiry.travel_date).toLocaleDateString('en-US', { dateStyle: 'medium' })}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500 mb-1">Preferred Travel Date</p>
+              <p className="text-sm text-stone-300">{new Date(enquiry.travel_date).toLocaleDateString('en-US', { dateStyle: 'medium' })}</p>
             </div>
           )}
           {Array.isArray(enquiry.interests) && enquiry.interests.length > 0 && (
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Special Interests</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500 mb-1">Special Interests</p>
               <div className="flex flex-wrap gap-1.5">
                 {enquiry.interests.map(i => (
-                  <span key={i} className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">{i}</span>
+                  <span key={i} className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-medium">{i}</span>
                 ))}
               </div>
             </div>
           )}
           {enquiry.message && (
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Client Notes</p>
-              <p className="text-sm text-stone-600 whitespace-pre-wrap leading-relaxed">{enquiry.message}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500 mb-1">Client Notes</p>
+              <p className="text-sm text-stone-400 whitespace-pre-wrap leading-relaxed">{enquiry.message}</p>
             </div>
           )}
 
           <div className="flex items-center justify-between gap-3 pt-1">
             <div className="flex items-center gap-2">
-              <p className="text-xs text-stone-400 font-medium">Status:</p>
+              <p className="text-xs text-stone-500 font-medium">Status:</p>
               <select value={enquiry.status} onChange={e => updateStatus(e.target.value)} disabled={updating}
-                className="text-xs border border-stone-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:border-amber-500 disabled:opacity-50">
+                className="text-xs border border-white/10 rounded-lg px-2 py-1.5 bg-stone-900 text-white focus:outline-none focus:border-amber-500 disabled:opacity-50">
                 <option value="pending_review">New</option>
                 <option value="in_progress">In Progress</option>
                 <option value="quoted">Quoted</option>
@@ -870,18 +962,18 @@ function EnquiryRow({ enquiry, onStatusChange, onDelete, onSendVoucher }) {
 
             {!confirmDel ? (
               <button onClick={() => setConfirmDel(true)}
-                className="flex items-center gap-1 text-xs text-stone-400 hover:text-red-600 transition-colors font-medium">
+                className="flex items-center gap-1 text-xs text-stone-500 hover:text-red-400 transition-colors font-medium">
                 <Trash2 className="w-3.5 h-3.5" /> Delete
               </button>
             ) : (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-red-600 font-medium">Delete this enquiry?</span>
+                <span className="text-xs text-red-400 font-medium">Delete this enquiry?</span>
                 <button onClick={handleDelete} disabled={deleting}
                   className="text-xs font-bold text-white bg-red-600 hover:bg-red-700 px-2.5 py-1 rounded-lg disabled:opacity-50 transition-colors">
                   {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Yes, delete'}
                 </button>
                 <button onClick={() => setConfirmDel(false)}
-                  className="text-xs font-medium text-stone-500 hover:text-stone-700 px-2.5 py-1 rounded-lg border border-stone-200 transition-colors">
+                  className="text-xs font-medium text-stone-400 hover:text-white px-2.5 py-1 rounded-lg border border-white/10 transition-colors">
                   Cancel
                 </button>
               </div>
@@ -894,11 +986,21 @@ function EnquiryRow({ enquiry, onStatusChange, onDelete, onSendVoucher }) {
 }
 
 // ── Main Section ──────────────────────────────────────────────
-export default function AdminEnquirySection({ enquiries: initialEnquiries, onRefresh }) {
-  const [enquiries, setEnquiries]       = useState(initialEnquiries)
+export default function AdminEnquirySection({ enquiries: initialEnquiries, vouchers: initialVouchers, onRefresh }) {
+  const [enquiries, setEnquiries] = useState(initialEnquiries)
+  const [voucherMap, setVoucherMap] = useState(() => {
+    const map = {}
+    for (const v of initialVouchers || []) map[v.enquiry_id] = v
+    return map
+  })
   const [voucherTarget, setVoucherTarget] = useState(null)
 
   useMemo(() => setEnquiries(initialEnquiries), [initialEnquiries])
+  useMemo(() => {
+    const map = {}
+    for (const v of initialVouchers || []) map[v.enquiry_id] = v
+    setVoucherMap(map)
+  }, [initialVouchers])
 
   const newCount = enquiries.filter(e => e.status === 'pending_review').length
 
@@ -907,12 +1009,20 @@ export default function AdminEnquirySection({ enquiries: initialEnquiries, onRef
     onRefresh()
   }
 
+  function handleVoucherSaved(voucher) {
+    setVoucherMap(m => ({ ...m, [voucher.enquiry_id]: voucher }))
+  }
+
+  function handleVoucherDeleted(enquiryId) {
+    setVoucherMap(m => { const n = { ...m }; delete n[enquiryId]; return n })
+  }
+
   if (enquiries.length === 0) {
     return (
       <div>
-        <h2 className="text-lg font-serif font-bold text-stone-900 mb-4">Enquiries</h2>
-        <div className="bg-white rounded-2xl border border-stone-100 shadow-sm flex flex-col items-center justify-center py-16 text-stone-400">
-          <Inbox className="w-10 h-10 mb-3 opacity-30" />
+        <h2 className="text-lg font-serif font-bold text-white mb-4">Enquiries</h2>
+        <div className="bg-stone-800 rounded-2xl border border-white/5 flex flex-col items-center justify-center py-16 text-stone-500">
+          <Inbox className="w-10 h-10 mb-3 opacity-25" />
           <p className="text-sm">No enquiries yet. They appear here when visitors submit the contact form.</p>
         </div>
       </div>
@@ -922,9 +1032,9 @@ export default function AdminEnquirySection({ enquiries: initialEnquiries, onRef
   return (
     <div>
       <div className="flex items-center gap-3 mb-4">
-        <h2 className="text-lg font-serif font-bold text-stone-900">Enquiries</h2>
+        <h2 className="text-lg font-serif font-bold text-white">Enquiries</h2>
         {newCount > 0 && (
-          <span className="text-xs bg-amber-100 text-amber-700 font-bold px-2.5 py-1 rounded-full border border-amber-200">
+          <span className="text-xs bg-amber-500/20 text-amber-400 font-bold px-2.5 py-1 rounded-full border border-amber-500/20">
             {newCount} new
           </span>
         )}
@@ -936,6 +1046,7 @@ export default function AdminEnquirySection({ enquiries: initialEnquiries, onRef
           <EnquiryRow
             key={enq.id}
             enquiry={enq}
+            existingVoucher={voucherMap[enq.id]}
             onStatusChange={onRefresh}
             onDelete={handleDelete}
             onSendVoucher={setVoucherTarget}
@@ -946,8 +1057,11 @@ export default function AdminEnquirySection({ enquiries: initialEnquiries, onRef
       {voucherTarget && (
         <SendVoucherModal
           enquiry={voucherTarget}
+          existingVoucher={voucherMap[voucherTarget.id]}
           onClose={() => setVoucherTarget(null)}
           onSent={() => { setVoucherTarget(null); onRefresh() }}
+          onVoucherSaved={handleVoucherSaved}
+          onVoucherDeleted={handleVoucherDeleted}
         />
       )}
     </div>

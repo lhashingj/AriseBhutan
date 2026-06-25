@@ -200,7 +200,7 @@ export default function ClientDashboard() {
                             <p className="font-semibold text-amber-800 mb-1">💳 Payment Required to Confirm Your Trip</p>
                             <p className="text-amber-700">Amount: <strong>${Number(booking.total_cost).toLocaleString()} USD</strong></p>
                             <p className="text-stone-600 mt-1.5">Transfer to our account and contact us with your booking reference: <span className="font-mono font-bold">{booking.id?.slice(0, 8).toUpperCase()}</span></p>
-                            <p className="text-stone-500 mt-1">📞 +975 17 288 286 &nbsp;·&nbsp; ✉ arisebhutan@gmail.com</p>
+                            <p className="text-stone-500 mt-1">📞 +975 77 319 405 &nbsp;·&nbsp; ✉ arisebhutan@gmail.com</p>
                           </>
                         )}
                       </div>

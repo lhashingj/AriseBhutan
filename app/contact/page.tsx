@@ -1,13 +1,15 @@
-import Image from 'next/image'
 import { Mail, Phone, MapPin, Clock, MessageCircle } from 'lucide-react'
 import BookingForm from '@/components/BookingForm'
 
+const MAPS_EMBED_SRC =
+  'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3541.543822755736!2d89.4225462!3d27.4211577!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39e19db6bc9e290d%3A0x423ce3020a2693d1!2sArise%20Bhutan%20Tours%20%26%20Travels!5e0!3m2!1sen!2sbt!4v1782362871699!5m2!1sen!2sbt'
+
 const contactInfo = [
-  { icon: Phone,         label: 'Phone / WhatsApp',  value: '+975 17 288 286',          href: 'tel:+97517288286' },
-  { icon: Mail,          label: 'Email',              value: 'arisebhutan@gmail.com',     href: 'mailto:arisebhutan@gmail.com' },
-  { icon: MapPin,        label: 'Office',             value: 'Paro Town, Bhutan',         href: undefined },
-  { icon: Clock,         label: 'Response Time',      value: 'Within 24 hours',           href: undefined },
-  { icon: MessageCircle, label: 'WeChat / LINE',       value: 'AriseBhutan',               href: undefined },
+  { icon: Phone,         label: 'Phone / WhatsApp',  value: '+975 77 319 405',       href: 'tel:+97577319405' },
+  { icon: Mail,          label: 'Email',              value: 'arisebhutan@gmail.com', href: 'mailto:arisebhutan@gmail.com' },
+  { icon: MapPin,        label: 'Office',             value: 'Paro Town, Bhutan',     href: undefined },
+  { icon: Clock,         label: 'Response Time',      value: 'Within 24 hours',       href: undefined },
+  { icon: MessageCircle, label: 'WeChat / LINE',      value: 'AriseBhutan',           href: undefined },
 ]
 
 export default function ContactPage() {
@@ -33,7 +35,7 @@ export default function ContactPage() {
       <section className="py-14 sm:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-3 gap-10 sm:gap-12">
-            {/* Booking Form — first on mobile */}
+            {/* Form */}
             <div className="lg:col-span-2 order-1 lg:order-2">
               <div className="bg-white rounded-3xl shadow-lg border border-stone-100 p-6 sm:p-8 md:p-10">
                 <div className="mb-7 sm:mb-8">
@@ -46,7 +48,7 @@ export default function ContactPage() {
               </div>
             </div>
 
-            {/* Contact info sidebar — below form on mobile */}
+            {/* Sidebar */}
             <div className="space-y-8 order-2 lg:order-1">
               <div>
                 <h2 className="font-serif text-2xl font-bold text-stone-900 mb-5">Get in Touch</h2>
@@ -71,12 +73,18 @@ export default function ContactPage() {
                 </div>
               </div>
 
-              {/* Office photo */}
-              <div className="relative h-48 sm:h-52 rounded-2xl overflow-hidden">
-                <Image src="/images/old-man-chorten.jpg" alt="Local Bhutanese guide" fill className="object-cover" />
+              {/* Sidebar map */}
+              <div className="rounded-2xl overflow-hidden border border-stone-100 shadow-sm">
+                <iframe
+                  src={MAPS_EMBED_SRC}
+                  className="w-full h-52 border-0 block"
+                  loading="lazy"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  title="Arise Bhutan office location"
+                  allowFullScreen
+                />
               </div>
 
-              {/* FAQs */}
               <div>
                 <h3 className="font-serif font-bold text-lg text-stone-900 mb-4">Quick Answers</h3>
                 <div className="space-y-4">
@@ -93,6 +101,26 @@ export default function ContactPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Full-width Google Map */}
+      <section className="border-t border-stone-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+          <div className="mb-6">
+            <span className="text-amber-600 font-semibold text-xs tracking-widest uppercase block mb-1">Find Us</span>
+            <h2 className="font-serif text-2xl font-bold text-stone-900">Our Office in Paro, Bhutan</h2>
+          </div>
+          <div className="rounded-3xl overflow-hidden shadow-md border border-stone-100" style={{ height: '420px' }}>
+            <iframe
+              src={MAPS_EMBED_SRC}
+              className="w-full h-full border-0 block"
+              loading="lazy"
+              referrerPolicy="strict-origin-when-cross-origin"
+              title="Arise Bhutan Tours & Travels — Paro office"
+              allowFullScreen
+            />
           </div>
         </div>
       </section>

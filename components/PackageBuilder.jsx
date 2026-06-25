@@ -273,6 +273,14 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
       saved = { ...editBooking, ...payload }
     } else {
       ;({ data: saved, error } = await supabase.from('bookings').insert(payload).select().single())
+      if (!error && saved) {
+        // Mirror booking into admin Itineraries (fire-and-forget)
+        fetch('/api/booking/sync-itinerary', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ booking: saved }),
+        }).catch(console.error)
+      }
     }
     if (error) { setSaveErr(error.message); setSaving(false); return }
 

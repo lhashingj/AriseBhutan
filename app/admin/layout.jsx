@@ -1,20 +1,21 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { LayoutDashboard, Users, FileText, LogOut, Shield, Menu } from 'lucide-react'
+import { LayoutDashboard, Users, Map, LogOut, Shield, Menu } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
 
 const navItems = [
-  { label: 'Overview',  href: '/admin/dashboard', icon: LayoutDashboard },
-  { label: 'Clients',   href: '/admin/users',     icon: Users },
-  { label: 'Bookings',  href: '/admin/dashboard', icon: FileText },
+  { label: 'Overview',    href: '/admin/dashboard',   icon: LayoutDashboard },
+  { label: 'Itineraries', href: '/admin/itineraries', icon: Map },
+  { label: 'Clients',     href: '/admin/users',       icon: Users },
 ]
 
 export default function AdminLayout({ children }) {
-  const router = useRouter()
+  const router   = useRouter()
+  const pathname = usePathname()
   const [profile, setProfile]   = useState(null)
   const [checking, setChecking] = useState(true)
   const [sideOpen, setSideOpen]       = useState(false)
@@ -86,12 +87,19 @@ export default function AdminLayout({ children }) {
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-5 space-y-1">
-          {navItems.map(({ label, href, icon: Icon }) => (
-            <Link key={label} href={href} onClick={() => setSideOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-400 hover:text-white hover:bg-white/10 transition-all text-sm font-medium">
-              <Icon className="w-4 h-4 flex-shrink-0" />{label}
-            </Link>
-          ))}
+          {navItems.map(({ label, href, icon: Icon }) => {
+            const active = pathname === href || (href !== '/admin/dashboard' && pathname.startsWith(href))
+            return (
+              <Link key={label} href={href} onClick={() => setSideOpen(false)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm font-medium ${
+                  active
+                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                    : 'text-stone-400 hover:text-white hover:bg-white/10'
+                }`}>
+                <Icon className="w-4 h-4 flex-shrink-0" />{label}
+              </Link>
+            )
+          })}
         </nav>
 
         {/* Profile + Sign out */}
@@ -111,7 +119,7 @@ export default function AdminLayout({ children }) {
       {sideOpen && <div className="fixed inset-0 z-30 bg-black/60 lg:hidden" onClick={() => setSideOpen(false)} />}
 
       {/* Main */}
-      <div className="flex-1 flex flex-col min-w-0 bg-stone-50">
+      <div className="flex-1 flex flex-col min-w-0 bg-stone-950">
         {/* Mobile topbar */}
         <div className="lg:hidden sticky top-0 z-20 flex items-center gap-3 px-4 py-3 bg-stone-900 border-b border-white/10">
           <button onClick={() => setSideOpen(true)} className="p-2 rounded-xl text-stone-400 hover:text-white">
@@ -127,17 +135,17 @@ export default function AdminLayout({ children }) {
 
       {/* Logout confirmation modal */}
       {showConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
-            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <LogOut className="w-5 h-5 text-red-600" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <div className="bg-stone-800 border border-white/10 rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+            <div className="w-12 h-12 bg-red-500/15 rounded-full flex items-center justify-center mx-auto mb-4">
+              <LogOut className="w-5 h-5 text-red-400" />
             </div>
-            <h3 className="text-lg font-serif font-bold text-stone-900 text-center">Sign out?</h3>
-            <p className="text-stone-500 text-sm text-center mt-1 mb-6">You'll be signed out of the admin panel.</p>
+            <h3 className="text-lg font-serif font-bold text-white text-center">Sign out?</h3>
+            <p className="text-stone-400 text-sm text-center mt-1 mb-6">You'll be signed out of the admin panel.</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowConfirm(false)}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 text-stone-700 text-sm font-semibold hover:bg-stone-50 transition-colors"
+                className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 text-stone-300 text-sm font-semibold hover:bg-white/5 transition-colors"
               >
                 Cancel
               </button>

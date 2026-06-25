@@ -1,122 +1,9 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useState } from 'react'
+
 import { Download, Loader2 } from 'lucide-react'
 import { generateVoucherPDF, computePricing } from '@/utils/pdfGenerator'
-
-// ─── Sample / demo booking ────────────────────────────────────────────────────
-export const SAMPLE_BOOKING = {
-  bookingRef:  'ARB-2025-001247',
-  issueDate:   'June 3, 2025',
-  status:      'CONFIRMED',
-
-  client: {
-    name:             'Jonathan & Sarah Mitchell',
-    email:            'j.mitchell@email.com',
-    phone:            '+1 650 555 0199',
-    nationality:      'American',
-    passportNo:       'US4892017X',
-    passportExpiry:   'March 14, 2029',
-    emergencyContact: 'Robert Mitchell — +1 650 555 0188',
-  },
-
-  tour: {
-    title:    'Classic Bhutan Cultural Tour',
-    category: 'Cultural Tour',
-    duration: '5 Days / 4 Nights',
-    pax:       2,
-    startDate: 'November 15, 2025',
-    endDate:   'November 19, 2025',
-    guide:     'Karma Wangchuk (Licensed ATCB Guide)',
-    vehicle:   'Private Toyota Fortuner + Driver',
-  },
-
-  flights: [
-    { sector: 'New Delhi (DEL) → Paro (PBH)', date: 'Nov 15, 2025', flightNo: 'KB-211', depart: '08:30', arrive: '10:45', airline: 'Druk Air' },
-    { sector: 'Paro (PBH) → New Delhi (DEL)', date: 'Nov 19, 2025', flightNo: 'KB-212', depart: '11:30', arrive: '13:45', airline: 'Druk Air' },
-  ],
-
-  itinerary: [
-    {
-      day: 1, date: 'Nov 15', title: 'Arrival Paro → Thimphu',
-      activities: ['Airport pick-up & kata welcome scarf', 'Motithang Takin Preserve (national animal)', 'Buddha Dordenma — 169-ft gilded bronze statue', 'Thimphu orientation walk', 'Welcome dinner at local restaurant'],
-      hotel: 'Hotel Zhingkham, Thimphu ★★★', meals: 'L · D',
-    },
-    {
-      day: 2, date: 'Nov 16', title: 'Thimphu Culture & Crafts Day',
-      activities: ['National Textile Museum', 'Jungshi Handmade Paper Factory', 'Folk Heritage Museum', 'Tashichho Dzong (seat of the King)', 'National Memorial Chorten'],
-      hotel: 'Hotel Zhingkham, Thimphu ★★★', meals: 'B · L · D',
-    },
-    {
-      day: 3, date: 'Nov 17', title: 'Thimphu → Punakha via Dochu La',
-      activities: ['Dochu La pass (3,150 m) — 108 memorial chortens', 'Punakha Dzong (1637) — Royal Wedding site', 'Chimi Lhakhang — Temple of the Divine Madman', 'Hanging bridge over Mo Chhu river', 'Traditional farmhouse lunch with local family'],
-      hotel: 'Damchen Resort, Punakha ★★★', meals: 'B · L · D',
-    },
-    {
-      day: 4, date: 'Nov 18', title: "Punakha → Paro · Tiger's Nest Hike",
-      activities: ["Tiger's Nest Monastery hike (4 hrs, 900 m ascent)", 'Viewpoint café — authentic butter tea', 'Sacred inner shrines & meditation cave tour', 'Drukgyal Dzong ruins (repelled Tibetan invasions, 1647)', 'Traditional hot stone bath (dotsho) — herbal soak'],
-      hotel: 'Tenzinling Resort, Paro ★★★', meals: 'B · L · D',
-    },
-    {
-      day: 5, date: 'Nov 19', title: 'Departure Day',
-      activities: ['Kichu Lhakhang Temple (founded 7th century)', 'Paro Bazaar — souvenir & handicraft shopping', 'Airport drop-off for flight KB-212'],
-      hotel: '—', meals: 'B',
-    },
-  ],
-
-  hotels: [
-    { name: 'Hotel Zhingkham',  location: 'Thimphu', stars: 3, nights: 2, type: 'Heritage Boutique' },
-    { name: 'Damchen Resort',   location: 'Punakha', stars: 3, nights: 1, type: 'River-view Resort' },
-    { name: 'Tenzinling Resort',location: 'Paro',    stars: 3, nights: 1, type: 'Valley-view Hotel' },
-  ],
-
-  pricing: {
-    pricePerPerson:       1850,
-    pax:                  2,
-    sdfPerPersonPerNight: 200,
-    nights:               4,
-    serviceFeePerPax:     150,
-    gstRate:              0.05,
-    inrRate:              83.5,
-  },
-
-  inclusions: [
-    'Bhutan Sustainable Development Fee (SDF) — $200/person/night',
-    'Bhutan visa & permit processing',
-    'All accommodation per itinerary (3-star heritage hotels)',
-    'All meals as specified (B = Breakfast, L = Lunch, D = Dinner)',
-    'Licensed English-speaking ATCB guide (throughout)',
-    'Private vehicle & dedicated driver (throughout)',
-    'All monument, museum & dzong entry fees',
-    'Traditional welcome scarf (kata)',
-    'Arise Bhutan 24/7 in-country emergency support',
-  ],
-
-  exclusions: [
-    'International airfare to/from Paro (DEL–PBH–DEL)',
-    'Druk Air / Bhutan Airlines tickets',
-    'Travel & medical insurance (strongly recommended)',
-    'Personal expenses & minibar charges',
-    'Gratuities for guide and driver',
-    'Alcoholic & premium beverages',
-    'Laundry & room service',
-    'Optional adventure activities (paragliding, rafting, biking)',
-  ],
-
-  cancellation: [
-    { period: '60+ days before departure',    refund: 'Full refund less $150 processing fee' },
-    { period: '30–59 days before departure',  refund: '50% refund of total package cost' },
-    { period: '15–29 days before departure',  refund: '25% refund of total package cost' },
-    { period: 'Under 15 days / No-show',      refund: 'No refund — non-refundable' },
-  ],
-
-  payment: [
-    '30% deposit required to confirm & hold reservation',
-    'Full balance due 30 days prior to departure',
-    'Bank transfer (SWIFT) or major credit card accepted',
-    'All payments in USD; INR transfers by prior arrangement',
-  ],
-}
 
 // ─── Formatting helpers ───────────────────────────────────────────────────────
 const usd = (n) =>
@@ -180,7 +67,7 @@ function InfoGrid({ rows }) {
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export default function BookingVoucher({ booking = SAMPLE_BOOKING }) {
+export default function BookingVoucher({ booking }) {
   const [loading, setLoading] = useState(false)
   const { pricePerPerson, pax, sdfPerPersonPerNight, nights, serviceFeePerPax, gstRate, inrRate } = booking.pricing
   const costs = computePricing(booking.pricing)
@@ -636,11 +523,11 @@ export default function BookingVoucher({ booking = SAMPLE_BOOKING }) {
             </div>
             <div>
               <p style={{ fontSize: 10, letterSpacing: '0.14em' }} className="text-amber-400 font-bold uppercase mb-2">Contact &amp; Support</p>
-              <p style={{ fontSize: 10 }} className="text-stone-400">📞 +975 17 288 286</p>
+              <p style={{ fontSize: 10 }} className="text-stone-400">📞 +975 77 319 405</p>
               <p style={{ fontSize: 10 }} className="text-stone-400">📞 +975 2 272 929 (Office)</p>
               <p style={{ fontSize: 10 }} className="text-stone-400">✉ arisebhutan@gmail.com</p>
               <p style={{ fontSize: 10 }} className="text-stone-400">🌐 www.arisebhutan.com</p>
-              <p style={{ fontSize: 10 }} className="text-stone-400">💬 WhatsApp: +975 17 288 286</p>
+              <p style={{ fontSize: 10 }} className="text-stone-400">💬 WhatsApp: +975 77 319 405</p>
             </div>
             <div>
               <p style={{ fontSize: 10, letterSpacing: '0.14em' }} className="text-amber-400 font-bold uppercase mb-2">Travel Assurance</p>

@@ -48,11 +48,11 @@ export default function FaqSection() {
               Ask a Specialist
             </Link>
             <a
-              href="tel:+97517288286"
+              href="tel:+97577319405"
               className="btn-outline border-stone-600 text-stone-300 hover:bg-stone-700 hover:text-white hover:border-stone-700"
             >
               <Phone className="w-4 h-4" />
-              +975 17 288 286
+              +975 77 319 405
             </a>
           </div>
         </div>

@@ -171,7 +171,7 @@ export async function POST(req: NextRequest) {
             ${costs.totalUSD > 0 ? `<tr><td style="padding: 6px 0; color: #78716c;">Total Cost</td><td style="padding: 6px 0; font-weight: bold; color: #92400e;">$${costs.totalUSD.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td></tr>` : ''}
           </table>
           <p style="font-size: 14px; line-height: 1.6; margin: 0 0 16px;">
-            Please review the attached PDF for your full itinerary, flight details, and booking terms. If you have any questions, please reply to this email or WhatsApp us at <strong>+975 17 288 286</strong>.
+            Please review the attached PDF for your full itinerary, flight details, and booking terms. If you have any questions, please reply to this email or WhatsApp us at <strong>+975 77 319 405</strong>.
           </p>
           <p style="font-size: 13px; color: #78716c; margin: 0;">
             Warm regards,<br /><strong>Arise Bhutan Tours &amp; Travel</strong><br />Paro Town, Bhutan
