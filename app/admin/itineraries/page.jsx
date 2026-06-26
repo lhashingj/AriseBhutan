@@ -7,7 +7,7 @@ import {
   RefreshCw, Search, X, ChevronRight, ChevronDown, Plane, MapPin,
   User, Calendar, DollarSign, Loader2, CheckCircle2,
   Clock, FileText, AlertTriangle, ExternalLink, Mail,
-  Plus, Trash2,
+  Plus, Trash2, BedDouble, ListChecks, ShieldAlert,
 } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/utils/supabase/client'
@@ -99,16 +99,17 @@ function StatusBadge({ status }) {
 }
 
 // ── Pricing computation (pure) ────────────────────────────────
-function computePricing(packageRate, serviceFee, nights, guests) {
+function computePricing(packageRate, serviceFee, nights, guests, inrRate) {
   const rate  = Number(packageRate) || 0
   const fee   = Number(serviceFee)  || 0
   const n     = Number(nights)      || 1
   const g     = Number(guests)      || 1
+  const fx    = Number(inrRate)     || 83.5
   const sdf   = 100 * n * g
   const sub   = (rate * g) + sdf + fee
   const gst   = sub * 0.05
   const total = sub + gst
-  const inr   = total * 83.5
+  const inr   = total * fx
   return { sdfTotal: sdf, subtotal: sub, gst, grandTotal: total, equivalentInr: inr }
 }
 
@@ -128,7 +129,7 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
     email:             itinerary.client_info?.email             || '',
     phone:             itinerary.client_info?.phone             || '',
     nationality:       itinerary.client_info?.nationality       || '',
-    passport_no:       itinerary.client_info?.passport_no       || '',
+    passport_no:       itinerary.client_info?.passport_no || itinerary.client_info?.passport_number || '',
     passport_expiry:   itinerary.client_info?.passport_expiry   || '',
     emergency_contact: itinerary.client_info?.emergency_contact || '',
   })
@@ -155,8 +156,43 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
     (itinerary.day_by_day || []).map(d => ({ ...d }))
   )
 
+  const [accommodations, setAccommodations] = useState(
+    (itinerary.tour_summary?.accommodations || []).map(a => ({ ...a }))
+  )
+
   const [packageRate, setPackageRate] = useState(itinerary.pricing?.package_rate_per_pax ?? '')
   const [serviceFee,  setServiceFee]  = useState(itinerary.pricing?.service_fee          ?? '')
+  const [inrRate,     setInrRate]     = useState(itinerary.pricing?.inr_rate             ?? 83.5)
+
+  const DEFAULT_INCLUSIONS = [
+    'Accommodation as per itinerary',
+    'Licensed English-speaking DOT-certified guide',
+    'Private vehicle & dedicated driver',
+    'Sustainable Development Fee (SDF) — $100/person/night',
+    'All monument & dzong entry fees',
+    'Meals as per itinerary',
+  ]
+  const DEFAULT_EXCLUSIONS = [
+    'International flights (DEL ↔ PBH)',
+    'Travel & medical insurance',
+    'Personal expenses',
+    'Gratuities for guide & driver',
+  ]
+  const DEFAULT_CANCELLATION = [
+    { period: '60+ days before departure',   refund: 'Full refund less $150 processing fee' },
+    { period: '30–59 days before departure', refund: '50% refund' },
+    { period: 'Under 30 days / No-show',     refund: 'Non-refundable' },
+  ]
+
+  const [inclusions, setInclusions]             = useState(
+    itinerary.tour_summary?.inclusions || DEFAULT_INCLUSIONS
+  )
+  const [exclusions, setExclusions]             = useState(
+    itinerary.tour_summary?.exclusions || DEFAULT_EXCLUSIONS
+  )
+  const [cancellationPolicy, setCancellation]   = useState(
+    itinerary.tour_summary?.cancellation || DEFAULT_CANCELLATION
+  )
 
   const [activeTab, setActiveTab] = useState('client')
   const [saving,    setSaving]    = useState(false)
@@ -166,8 +202,8 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
   const guests = Number(tourSummary.group_size)      || 1
 
   const calc = useMemo(
-    () => computePricing(packageRate, serviceFee, nights, guests),
-    [packageRate, serviceFee, nights, guests]
+    () => computePricing(packageRate, serviceFee, nights, guests, inrRate),
+    [packageRate, serviceFee, nights, guests, inrRate]
   )
 
   const fmt = n => Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -197,6 +233,17 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
     setDays(prev => prev.filter((_, i) => i !== idx).map((d, i) => ({ ...d, day: i + 1 })))
   }
 
+  // ── accommodation helpers ──────────────────────────────────
+  function addAccom() {
+    setAccommodations(prev => [...prev, { hotel: '', city: '', tier: '', check_in: '', check_out: '', room_type: '' }])
+  }
+  function updateAccom(idx, field, val) {
+    setAccommodations(prev => prev.map((a, i) => i === idx ? { ...a, [field]: val } : a))
+  }
+  function removeAccom(idx) {
+    setAccommodations(prev => prev.filter((_, i) => i !== idx))
+  }
+
   // ── save ───────────────────────────────────────────────────
   async function handleSave(nextStatus) {
     setSaving(true)
@@ -209,6 +256,7 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
       subtotal:             calc.subtotal,
       gst:                  calc.gst,
       grand_total:          calc.grandTotal,
+      inr_rate:             Number(inrRate)     || 83.5,
       equivalent_inr:       calc.equivalentInr,
     }
 
@@ -219,6 +267,10 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
         tour_summary: {
           ...itinerary.tour_summary,
           ...tourSummary,
+          accommodations:  accommodations,
+          inclusions:      inclusions,
+          exclusions:      exclusions,
+          cancellation:    cancellationPolicy,
           duration_nights: Number(tourSummary.duration_nights) || itinerary.tour_summary?.duration_nights || 1,
           group_size:      Number(tourSummary.group_size)      || itinerary.tour_summary?.group_size      || 1,
         },
@@ -238,11 +290,14 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
 
   // ── tabs ───────────────────────────────────────────────────
   const TABS = [
-    { id: 'client',    label: 'Client',    icon: User },
-    { id: 'tour',      label: 'Tour',      icon: MapPin },
-    { id: 'flights',   label: 'Flights',   icon: Plane },
-    { id: 'itinerary', label: 'Itinerary', icon: Calendar },
-    { id: 'pricing',   label: 'Pricing',   icon: DollarSign },
+    { id: 'client',      label: 'Client',      icon: User },
+    { id: 'tour',        label: 'Tour',         icon: MapPin },
+    { id: 'flights',     label: 'Flights',      icon: Plane },
+    { id: 'itinerary',   label: 'Itinerary',    icon: Calendar },
+    { id: 'hotels',      label: 'Hotels',       icon: BedDouble },
+    { id: 'pricing',     label: 'Pricing',      icon: DollarSign },
+    { id: 'inclusions',  label: 'Incl./Excl.',  icon: ListChecks },
+    { id: 'policy',      label: 'Policy',       icon: ShieldAlert },
   ]
 
   return (
@@ -769,6 +824,123 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
             </div>
           )}
 
+          {/* ── Hotels Tab ── */}
+          {activeTab === 'hotels' && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs text-stone-500">List all hotels in the tour. This appears on the client voucher.</p>
+                {days.some(d => d.accommodation_name) && accommodations.length === 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const seen = new Set()
+                      const auto = days
+                        .filter(d => d.accommodation_name && !seen.has(d.accommodation_name) && seen.add(d.accommodation_name))
+                        .map(d => ({ hotel: d.accommodation_name, city: '', tier: tourSummary.hotel_tier || '', check_in: d.date || '', check_out: '', room_type: '' }))
+                      setAccommodations(auto)
+                    }}
+                    className="text-xs font-semibold text-amber-400 hover:text-amber-300 border border-amber-500/30 hover:bg-amber-500/10 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    Auto-fill from itinerary
+                  </button>
+                )}
+              </div>
+
+              {accommodations.length === 0 && (
+                <p className="text-stone-600 text-sm text-center py-8">No hotels yet. Add hotels below or auto-fill from the Itinerary tab.</p>
+              )}
+
+              {accommodations.map((a, idx) => (
+                <div key={idx} className="bg-stone-800/60 rounded-2xl border border-white/5 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold text-stone-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <BedDouble className="w-3.5 h-3.5 text-amber-500" /> Hotel {idx + 1}
+                      {a.hotel && <span className="text-stone-300 normal-case font-semibold">— {a.hotel}</span>}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => removeAccom(idx)}
+                      className="w-6 h-6 flex items-center justify-center rounded-lg text-red-400 hover:bg-red-500/20 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="col-span-2">
+                      <label className={lbl}>Hotel / Property Name</label>
+                      <input
+                        type="text"
+                        value={a.hotel}
+                        onChange={e => updateAccom(idx, 'hotel', e.target.value)}
+                        placeholder="e.g. Taj Tashi Thimphu"
+                        className={inp}
+                      />
+                    </div>
+                    <div>
+                      <label className={lbl}>City / Location</label>
+                      <input
+                        type="text"
+                        value={a.city}
+                        onChange={e => updateAccom(idx, 'city', e.target.value)}
+                        placeholder="e.g. Thimphu"
+                        className={inp}
+                      />
+                    </div>
+                    <div>
+                      <label className={lbl}>Tier</label>
+                      <select
+                        value={a.tier}
+                        onChange={e => updateAccom(idx, 'tier', e.target.value)}
+                        className={inp}
+                      >
+                        <option value="">Select tier</option>
+                        <option value="3-Star">3-Star Heritage</option>
+                        <option value="4-Star">4-Star Boutique</option>
+                        <option value="5-Star Luxury">5-Star Luxury</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={lbl}>Check-in</label>
+                      <input
+                        type="date"
+                        value={a.check_in}
+                        onChange={e => updateAccom(idx, 'check_in', e.target.value)}
+                        className={inp}
+                      />
+                    </div>
+                    <div>
+                      <label className={lbl}>Check-out</label>
+                      <input
+                        type="date"
+                        value={a.check_out}
+                        onChange={e => updateAccom(idx, 'check_out', e.target.value)}
+                        className={inp}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className={lbl}>Room Type</label>
+                      <input
+                        type="text"
+                        value={a.room_type}
+                        onChange={e => updateAccom(idx, 'room_type', e.target.value)}
+                        placeholder="e.g. Deluxe Double Room"
+                        className={inp}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              <button
+                onClick={addAccom}
+                className="w-full py-3 rounded-xl border border-dashed border-white/20 text-stone-500 hover:text-stone-300 hover:border-white/40 text-sm font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                <Plus className="w-4 h-4" /> Add Hotel
+              </button>
+            </div>
+          )}
+
           {/* ── Pricing Tab ── */}
           {activeTab === 'pricing' && (
             <div className="space-y-4">
@@ -826,19 +998,148 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
                   <span>GST (5%)</span>
                   <span className="font-mono text-stone-200">${fmt(calc.gst)}</span>
                 </div>
-                <div className="border-t border-amber-500/30 pt-3 flex justify-between text-amber-400 font-bold text-base">
-                  <span>Grand Total (USD)</span>
-                  <span className="font-mono">${fmt(calc.grandTotal)}</span>
-                </div>
-                <div className="flex justify-between text-stone-500 text-xs">
-                  <span>Equivalent INR (@ ₹83.5)</span>
-                  <span className="font-mono text-stone-400">
-                    ₹{calc.equivalentInr.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-                  </span>
+
+                {/* Grand Total — premium glow row */}
+                <div className="rounded-xl overflow-hidden mt-2"
+                  style={{ background: 'linear-gradient(135deg, #1C1007, #2D1A08)', boxShadow: '0 0 20px 2px rgba(217,119,6,0.18), inset 0 1px 0 rgba(245,158,11,0.2)' }}>
+                  <div className="flex items-center justify-between px-4 py-3.5">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600/70">Grand Total</p>
+                      <p className="text-white text-sm font-bold mt-0.5">USD · All inclusive</p>
+                    </div>
+                    <p className="font-black text-2xl tracking-tight"
+                      style={{ color: '#F59E0B', fontFamily: 'monospace', textShadow: '0 0 24px rgba(245,158,11,0.6)' }}>
+                      ${fmt(calc.grandTotal)}
+                    </p>
+                  </div>
+                  <div className="border-t border-amber-900/40 px-4 py-2 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-amber-700/60 whitespace-nowrap">INR Rate ₹</span>
+                      <input
+                        type="number"
+                        min="1"
+                        step="0.5"
+                        value={inrRate}
+                        onChange={e => setInrRate(e.target.value)}
+                        className="w-20 bg-transparent border border-amber-900/50 rounded-lg px-2 py-0.5 text-xs text-amber-600 font-mono focus:outline-none focus:border-amber-600/60 text-center"
+                      />
+                    </div>
+                    <span className="font-mono text-amber-600 text-xs font-semibold">
+                      ₹{calc.equivalentInr.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                    </span>
+                  </div>
                 </div>
               </div>
               <p className="text-xs text-stone-600">
                 Nights ({nights}) and group size ({guests}) are synced from the Tour tab.
+              </p>
+            </div>
+          )}
+
+          {/* ── Inclusions / Exclusions Tab ── */}
+          {activeTab === 'inclusions' && (
+            <div className="space-y-5">
+
+              {/* Inclusions */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-bold uppercase tracking-widest text-green-400">Inclusions</p>
+                  <button onClick={() => setInclusions(p => [...p, ''])}
+                    className="flex items-center gap-1 text-xs text-green-400 hover:text-green-300 bg-green-500/10 hover:bg-green-500/20 border border-green-500/25 px-2.5 py-1.5 rounded-lg transition-colors">
+                    <Plus className="w-3.5 h-3.5" /> Add Item
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {inclusions.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <span className="text-green-500 text-sm shrink-0 font-bold">✓</span>
+                      <input
+                        value={item}
+                        onChange={e => setInclusions(p => p.map((v, i) => i === idx ? e.target.value : v))}
+                        placeholder="Included item..."
+                        className="flex-1 bg-stone-800 border border-white/10 rounded-xl px-3 py-2 text-sm text-stone-200 placeholder-stone-600 focus:outline-none focus:border-green-500/50"
+                      />
+                      <button onClick={() => setInclusions(p => p.filter((_, i) => i !== idx))}
+                        className="p-1.5 rounded-lg text-stone-600 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t border-white/10" />
+
+              {/* Exclusions */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-bold uppercase tracking-widest text-red-400">Exclusions</p>
+                  <button onClick={() => setExclusions(p => [...p, ''])}
+                    className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/25 px-2.5 py-1.5 rounded-lg transition-colors">
+                    <Plus className="w-3.5 h-3.5" /> Add Item
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {exclusions.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <span className="text-red-500 text-sm shrink-0 font-bold">✗</span>
+                      <input
+                        value={item}
+                        onChange={e => setExclusions(p => p.map((v, i) => i === idx ? e.target.value : v))}
+                        placeholder="Excluded item..."
+                        className="flex-1 bg-stone-800 border border-white/10 rounded-xl px-3 py-2 text-sm text-stone-200 placeholder-stone-600 focus:outline-none focus:border-red-500/50"
+                      />
+                      <button onClick={() => setExclusions(p => p.filter((_, i) => i !== idx))}
+                        className="p-1.5 rounded-lg text-stone-600 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Cancellation Policy Tab ── */}
+          {activeTab === 'policy' && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs font-bold uppercase tracking-widest text-amber-400">Cancellation &amp; Refund Policy</p>
+                <button
+                  onClick={() => setCancellation(p => [...p, { period: '', refund: '' }])}
+                  className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 px-2.5 py-1.5 rounded-lg transition-colors">
+                  <Plus className="w-3.5 h-3.5" /> Add Row
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                {cancellationPolicy.map((row, idx) => (
+                  <div key={idx} className="bg-stone-800 border border-white/5 rounded-xl p-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-stone-500">Row {idx + 1}</p>
+                      <button onClick={() => setCancellation(p => p.filter((_, i) => i !== idx))}
+                        className="p-1 rounded text-stone-600 hover:text-red-400 transition-colors">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <input
+                      value={row.period}
+                      onChange={e => setCancellation(p => p.map((r, i) => i === idx ? { ...r, period: e.target.value } : r))}
+                      placeholder="Cancellation period (e.g. 60+ days before departure)"
+                      className="w-full bg-stone-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-stone-200 placeholder-stone-600 focus:outline-none focus:border-amber-500/50"
+                    />
+                    <input
+                      value={row.refund}
+                      onChange={e => setCancellation(p => p.map((r, i) => i === idx ? { ...r, refund: e.target.value } : r))}
+                      placeholder="Refund terms (e.g. Full refund less $150 processing fee)"
+                      className="w-full bg-stone-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-stone-200 placeholder-stone-600 focus:outline-none focus:border-amber-500/50"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-xs text-stone-600 mt-2">
+                These terms appear in the cancellation section of the client voucher PDF.
               </p>
             </div>
           )}

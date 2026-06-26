@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { X, ChevronRight, ChevronLeft, Check, Plane, Calendar, Users, Hotel, MapPin, Save, Loader2 } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
+import { tours } from '@/data/tours'
 
 // SDF is a mandatory Royal Government of Bhutan levy — displayed to clients
 const SDF_PER_PERSON_PER_NIGHT = 100   // USD
@@ -21,6 +22,20 @@ const TOUR_TEMPLATES = [
   { id: 'luxury',    title: 'Luxury Bhutan Escape',    days: 7, nights: 6, basePerPax: 4500, category: 'Luxury' },
   { id: 'custom',    title: 'Custom Package',          days: 0, nights: 0, basePerPax:    0, category: 'Custom' },
 ]
+
+// Maps template IDs to tour IDs in data/tours.ts
+const TEMPLATE_TOUR_MAP = {
+  classic:  'classic-bhutan-cultural',
+  heritage: 'bhutan-heritage-trail',
+  festival: 'paro-tshechu-festival',
+  luxury:   'bhutan-luxury-escape',
+}
+
+function getTourItinerary(templateId) {
+  const tourId = TEMPLATE_TOUR_MAP[templateId]
+  if (!tourId) return null
+  return tours.find((t) => t.id === tourId) || null
+}
 
 const CAT_COLOR = {
   Cultural:  'border-blue-300  bg-blue-50  text-blue-700',
@@ -174,11 +189,12 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
   const [clientPhone, setClientPhone]       = useState(editBooking?.client_phone     || profile?.phone            || '')
   const [passportExpiry, setPassportExpiry] = useState(editBooking?.passport_expiry  || profile?.passport_expiry  || '')
   const [emergencyContact, setEmergency]    = useState(editBooking?.emergency_contact || profile?.emergency_contact || '')
-  const [days, setDays]                 = useState(() =>
-    isEditing
-      ? (editBooking.itinerary_days || [])
-      : buildInitialDays(initialTourData)
-  )
+  const [days, setDays]                 = useState(() => {
+    if (isEditing) return editBooking.itinerary_days || []
+    if (initialTourData) return buildInitialDays(initialTourData)
+    // Pre-fill from the default (first) template's real tour itinerary
+    return buildInitialDays(getTourItinerary(TOUR_TEMPLATES[0].id))
+  })
 
   const isCustom   = template.id === 'custom'
   const nights     = arrivalDate && returnDate
@@ -232,7 +248,7 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
   // Validation per step
   const valid = [
     true,
-    clientName && passportNum && nationality && clientEmail && clientPhone && pax >= 1 && (isCustom ? (arrivalDate && returnDate && nights > 0) : true),
+    clientName && passportNum && nationality && clientEmail && clientPhone && pax >= 1,
     days.every((d) => d.title.trim()),
     true,
     true,
@@ -367,7 +383,11 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
                     <button
                       key={t.id}
                       type="button"
-                      onClick={() => setTemplate(t)}
+                      onClick={() => {
+                        setTemplate(t)
+                        const tourData = getTourItinerary(t.id)
+                        if (tourData) setDays(buildInitialDays(tourData))
+                      }}
                       className={`text-left p-4 rounded-2xl border-2 transition-all ${
                         template.id === t.id
                           ? 'border-amber-500 bg-amber-50 shadow-md shadow-amber-100'
@@ -458,75 +478,9 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
                   </div>
                 </div>
 
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1.5">
-                      Arrival Date {isCustom && '*'}
-                    </label>
-                    <input type="date" value={arrivalDate}
-                      onChange={(e) => setArrival(e.target.value)}
-                      className={inputCls} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1.5">
-                      Return Date {isCustom && '*'}
-                    </label>
-                    <input type="date" value={returnDate}
-                      min={arrivalDate}
-                      onChange={(e) => setReturn(e.target.value)}
-                      className={inputCls} />
-                  </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+                  <p className="text-xs text-blue-700 font-medium">✈ Travel dates and flight details will be confirmed by our team after reviewing your booking.</p>
                 </div>
-
-                {nights > 0 && (
-                  <p className="text-xs text-amber-700 bg-amber-50 px-3 py-2 rounded-lg font-medium">
-                    ✓ {totalDays} Days / {nights} Nights detected
-                  </p>
-                )}
-
-                {/* ── Flight picker ── */}
-                {[
-                  { label: 'Inbound Flight (→ Paro)', list: INBOUND_FLIGHTS, id: inboundFlightId, setId: setInboundId, custom: customFlightIn, setCustom: setCustomIn, placeholder: 'e.g. Delhi → Paro' },
-                  { label: 'Outbound Flight (Paro →)', list: OUTBOUND_FLIGHTS, id: outboundFlightId, setId: setOutboundId, custom: customFlightOut, setCustom: setCustomOut, placeholder: 'e.g. Paro → Delhi' },
-                ].map(({ label, list, id, setId, custom, setCustom, placeholder }) => {
-                  const drukFlights   = list.filter((f) => f.airline === 'Druk Air')
-                  const bhutanFlights = list.filter((f) => f.airline === 'Bhutan Airlines')
-                  const selected      = list.find((f) => f.id === id) || null
-                  return (
-                    <div key={label}>
-                      <label className="block text-sm font-medium text-stone-700 mb-1.5">{label}</label>
-                      <select value={id} onChange={(e) => setId(e.target.value)} className={inputCls}>
-                        <option value="custom">— Enter manually —</option>
-                        <optgroup label="Druk Air (KB)">
-                          {drukFlights.map((f) => (
-                            <option key={f.id} value={f.id}>
-                              {f.flightNo} · {f.sector} · Dep {f.depart} → Arr {f.arrive}
-                            </option>
-                          ))}
-                        </optgroup>
-                        <optgroup label="Bhutan Airlines (B3)">
-                          {bhutanFlights.map((f) => (
-                            <option key={f.id} value={f.id}>
-                              {f.flightNo} · {f.sector} · Dep {f.depart} → Arr {f.arrive}
-                            </option>
-                          ))}
-                        </optgroup>
-                      </select>
-                      {id === 'custom' ? (
-                        <input value={custom} onChange={(e) => setCustom(e.target.value)}
-                          className={`${inputCls} mt-2`} placeholder={placeholder} />
-                      ) : selected ? (
-                        <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
-                          <span className="text-stone-500">Flight</span>   <span className="font-semibold text-stone-800">{selected.flightNo} · {selected.airline}</span>
-                          <span className="text-stone-500">Sector</span>   <span className="font-semibold text-stone-800">{selected.sector}</span>
-                          <span className="text-stone-500">Departure</span><span className="font-semibold text-stone-800">{selected.depart}</span>
-                          <span className="text-stone-500">Arrival</span>  <span className="font-semibold text-stone-800">{selected.arrive}</span>
-                          <span className="text-stone-500">Days</span>     <span className="text-stone-600">{selected.days}</span>
-                        </div>
-                      ) : null}
-                    </div>
-                  )
-                })}
 
                 <div>
                   <label className="block text-sm font-medium text-stone-700 mb-2">Hotel Tier</label>
@@ -716,9 +670,6 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
                   ['Duration',   `${totalDays} Days / ${nights} Nights`],
                   ['Group',      `${pax} pax`],
                   ['Hotel',      hotelTier],
-                  ['Dates',      arrivalDate ? `${arrivalDate} → ${returnDate || '—'}` : 'Not set'],
-                  ['Flight In',  (() => { const f = INBOUND_FLIGHTS.find((x) => x.id === inboundFlightId); return f ? `${f.flightNo} · ${f.sector} · Dep ${f.depart}` : customFlightIn || '—' })()],
-                  ['Flight Out', (() => { const f = OUTBOUND_FLIGHTS.find((x) => x.id === outboundFlightId); return f ? `${f.flightNo} · ${f.sector} · Dep ${f.depart}` : customFlightOut || '—' })()],
                 ].map(([label, val]) => (
                   <div key={label} className="flex items-center justify-between px-4 py-3">
                     <span className="text-xs text-stone-400 font-medium uppercase tracking-wide">{label}</span>

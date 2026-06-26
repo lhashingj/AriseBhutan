@@ -3,25 +3,30 @@
 export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
-import { PlusCircle, FileText, Clock, CheckCircle2, XCircle, Download, Package, Pencil } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { PlusCircle, FileText, Clock, CheckCircle2, XCircle, Package, Pencil } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
 import PackageBuilder from '@/components/PackageBuilder'
-import BookingVoucher from '@/components/BookingVoucher'
-import { buildVoucherData } from '@/utils/bookingTransformer'
 
 const STATUS_CONFIG = {
-  PENDING:   { label: 'Pending',   color: 'bg-amber-100 text-amber-700',   icon: Clock },
-  CONFIRMED: { label: 'Confirmed', color: 'bg-green-100 text-green-700',   icon: CheckCircle2 },
-  CANCELLED: { label: 'Cancelled', color: 'bg-red-100 text-red-600',       icon: XCircle },
+  PENDING:   { label: 'Pending',   color: 'bg-amber-100 text-amber-700',  icon: Clock },
+  CONFIRMED: { label: 'Confirmed', color: 'bg-green-100 text-green-700',  icon: CheckCircle2 },
+  CANCELLED: { label: 'Cancelled', color: 'bg-red-100 text-red-600',      icon: XCircle },
+}
+
+function getRef(booking) {
+  const year = new Date(booking.created_at).getFullYear()
+  return `ARB-${year}-${booking.id.slice(0, 6).toUpperCase()}`
 }
 
 export default function ClientDashboard() {
-  const [profile, setProfile]       = useState(null)
-  const [bookings, setBookings]     = useState([])
-  const [loading, setLoading]       = useState(true)
-  const [showBuilder, setBuilder]   = useState(false)
-  const [editingBooking, setEditing] = useState(null) // booking being edited
-  const [viewBooking, setView]      = useState(null)  // booking to show as voucher
+  const router = useRouter()
+  const [profile, setProfile]         = useState(null)
+  const [bookings, setBookings]       = useState([])
+  const [itinMap, setItinMap]         = useState({})
+  const [loading, setLoading]         = useState(true)
+  const [showBuilder, setBuilder]     = useState(false)
+  const [editingBooking, setEditing]  = useState(null)
 
   async function load() {
     const { data: { session } } = await supabase.auth.getSession()
@@ -33,7 +38,20 @@ export default function ClientDashboard() {
     ])
 
     setProfile(prof)
-    setBookings(bks || [])
+    const bookingList = bks || []
+    setBookings(bookingList)
+
+    // Fetch corresponding itineraries to get admin-edited pricing & references
+    if (bookingList.length > 0) {
+      const refs = bookingList.map(b => getRef(b))
+      const { data: itins } = await supabase
+        .from('itineraries')
+        .select('booking_reference, pricing, status')
+        .in('booking_reference', refs)
+      const map = Object.fromEntries((itins || []).map(i => [i.booking_reference, i]))
+      setItinMap(map)
+    }
+
     setLoading(false)
   }
 
@@ -53,25 +71,10 @@ export default function ClientDashboard() {
     )
   }
 
-  // If viewing a booking as full voucher
-  if (viewBooking) {
-    return (
-      <div>
-        <button
-          onClick={() => setView(null)}
-          className="btn-outline mb-6 text-sm"
-        >
-          ← Back to Dashboard
-        </button>
-        <BookingVoucher booking={buildVoucherData(viewBooking, profile)} />
-      </div>
-    )
-  }
-
   return (
     <div className="max-w-6xl mx-auto space-y-8">
 
-      {/* ── Header ── */}
+      {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-serif font-bold text-stone-900">
@@ -86,7 +89,7 @@ export default function ClientDashboard() {
         </button>
       </div>
 
-      {/* ── Stats ── */}
+      {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: 'Total Packages',  value: stats.total,     color: 'text-stone-900',  bg: 'bg-white' },
@@ -100,7 +103,7 @@ export default function ClientDashboard() {
         ))}
       </div>
 
-      {/* ── Bookings Grid ── */}
+      {/* Bookings Grid */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-serif font-bold text-stone-900">My Packages</h2>
@@ -119,8 +122,11 @@ export default function ClientDashboard() {
         ) : (
           <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
             {bookings.map((booking) => {
-              const cfg = STATUS_CONFIG[booking.status] || STATUS_CONFIG.PENDING
-              const Icon = cfg.icon
+              const cfg   = STATUS_CONFIG[booking.status] || STATUS_CONFIG.PENDING
+              const Icon  = cfg.icon
+              const ref   = getRef(booking)
+              const itin  = itinMap[ref]
+              const total = itin?.pricing?.grand_total || booking.total_cost || 0
               const nights = booking.arrival_date && booking.return_date
                 ? Math.floor((new Date(booking.return_date) - new Date(booking.arrival_date)) / 86400000)
                 : null
@@ -155,18 +161,16 @@ export default function ClientDashboard() {
                       </div>
                     )}
 
-                    {/* Cost */}
+                    {/* Cost + actions */}
                     <div className="flex items-center justify-between pt-1 border-t border-stone-50">
                       <div>
                         <p className="text-[10px] text-stone-400 uppercase tracking-wider">Total</p>
                         <p className="font-bold text-stone-900 text-base">
-                          ${Number(booking.total_cost || 0).toLocaleString()}
+                          ${Number(total).toLocaleString()}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <p className="text-[9px] text-stone-300 font-mono">
-                          {booking.id?.slice(0, 8).toUpperCase()}
-                        </p>
+                        <p className="text-[9px] text-stone-300 font-mono">{ref}</p>
                         {booking.status === 'PENDING' && (
                           <button
                             onClick={() => setEditing(booking)}
@@ -177,8 +181,8 @@ export default function ClientDashboard() {
                           </button>
                         )}
                         <button
-                          onClick={() => setView(booking)}
-                          title="View voucher"
+                          onClick={() => router.push(`/itinerary/${ref}`)}
+                          title="View itinerary"
                           className="p-2 rounded-xl bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors"
                         >
                           <FileText className="w-4 h-4" />
@@ -198,8 +202,8 @@ export default function ClientDashboard() {
                         ) : (
                           <>
                             <p className="font-semibold text-amber-800 mb-1">💳 Payment Required to Confirm Your Trip</p>
-                            <p className="text-amber-700">Amount: <strong>${Number(booking.total_cost).toLocaleString()} USD</strong></p>
-                            <p className="text-stone-600 mt-1.5">Transfer to our account and contact us with your booking reference: <span className="font-mono font-bold">{booking.id?.slice(0, 8).toUpperCase()}</span></p>
+                            <p className="text-amber-700">Amount: <strong>${Number(total).toLocaleString()} USD</strong></p>
+                            <p className="text-stone-600 mt-1.5">Transfer to our account and contact us with your booking reference: <span className="font-mono font-bold">{ref}</span></p>
                             <p className="text-stone-500 mt-1">📞 +975 77 319 405 &nbsp;·&nbsp; ✉ arisebhutan@gmail.com</p>
                           </>
                         )}
@@ -213,7 +217,7 @@ export default function ClientDashboard() {
         )}
       </div>
 
-      {/* ── New Package Builder ── */}
+      {/* New Package Builder */}
       {showBuilder && (
         <PackageBuilder
           profile={profile}
@@ -222,7 +226,7 @@ export default function ClientDashboard() {
         />
       )}
 
-      {/* ── Edit Existing Booking ── */}
+      {/* Edit Existing Booking */}
       {editingBooking && (
         <PackageBuilder
           profile={profile}

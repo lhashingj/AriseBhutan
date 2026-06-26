@@ -2,29 +2,200 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import {
   Users, Clock, DollarSign, CheckCircle2, Search,
   ChevronUp, ChevronDown, RefreshCw, Trash2, Eye,
-  XCircle, Loader2, FileText, ExternalLink,
+  XCircle, Loader2, FileText, ExternalLink, X,
 } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/utils/supabase/client'
 import AdminUserDrawer from '@/components/AdminUserDrawer'
-import AdminEnquirySection from '@/components/AdminEnquirySection'
+
+function computePricing(packageRate, serviceFee, nights, guests, inrRate) {
+  const rate = Number(packageRate) || 0
+  const fee  = Number(serviceFee)  || 0
+  const n    = Number(nights)      || 1
+  const g    = Number(guests)      || 1
+  const fx   = Number(inrRate)     || 83.5
+  const sdf  = 100 * n * g
+  const sub  = (rate * g) + sdf + fee
+  const gst  = sub * 0.05
+  const total = sub + gst
+  const inr  = total * fx
+  return { sdfTotal: sdf, subtotal: sub, gst, grandTotal: total, equivalentInr: inr }
+}
+
+function PricingModal({ itinerary, onClose, onSaved }) {
+  const nights = Number(itinerary.tour_summary?.duration_nights) || 1
+  const guests = Number(itinerary.tour_summary?.group_size)      || 1
+
+  const [packageRate, setPackageRate] = useState(itinerary.pricing?.package_rate_per_pax ?? '')
+  const [serviceFee,  setServiceFee]  = useState(itinerary.pricing?.service_fee ?? '')
+  const [inrRate,     setInrRate]     = useState(itinerary.pricing?.inr_rate ?? 83.5)
+  const [saving,      setSaving]      = useState(false)
+  const [err,         setErr]         = useState('')
+
+  const calc = useMemo(
+    () => computePricing(packageRate, serviceFee, nights, guests, inrRate),
+    [packageRate, serviceFee, nights, guests, inrRate]
+  )
+  const fmt = n => Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const inp = 'w-full bg-stone-800 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-stone-100 placeholder:text-stone-600 focus:outline-none focus:border-amber-500/50 transition-colors'
+
+  async function save() {
+    setSaving(true)
+    setErr('')
+    const pricing = {
+      package_rate_per_pax: Number(packageRate) || 0,
+      sdf_total:            calc.sdfTotal,
+      service_fee:          Number(serviceFee) || 0,
+      subtotal:             calc.subtotal,
+      gst:                  calc.gst,
+      grand_total:          calc.grandTotal,
+      inr_rate:             Number(inrRate) || 83.5,
+      equivalent_inr:       calc.equivalentInr,
+    }
+    const { data, error } = await supabase
+      .from('itineraries')
+      .update({ pricing })
+      .eq('id', itinerary.id)
+      .select()
+      .single()
+    setSaving(false)
+    if (error) { setErr(error.message); return }
+    onSaved(data)
+    onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
+      <div className="bg-[#1C1C1F] border border-[#2E2E33] rounded-2xl shadow-2xl w-full max-w-md">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+          <div>
+            <p className="text-[10px] font-mono text-stone-500 uppercase tracking-widest">{itinerary.booking_reference}</p>
+            <h3 className="font-bold text-white text-base mt-0.5">Edit Pricing</h3>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl text-stone-400 hover:text-white hover:bg-white/10 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-5 py-4 space-y-4">
+          {/* Nights / guests info */}
+          <p className="text-xs text-stone-500">
+            {nights} night{nights !== 1 ? 's' : ''} · {guests} guest{guests !== 1 ? 's' : ''}
+            {' '}— edit nights &amp; group size in the Full Editor
+          </p>
+
+          {/* Inputs */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[11px] text-stone-400 uppercase tracking-wider font-semibold block mb-1.5">Package Rate / Pax (USD)</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">$</span>
+                <input type="number" min="0" step="50" value={packageRate}
+                  onChange={e => setPackageRate(e.target.value)} placeholder="0"
+                  className={`${inp} pl-7`} />
+              </div>
+            </div>
+            <div>
+              <label className="text-[11px] text-stone-400 uppercase tracking-wider font-semibold block mb-1.5">Service Fee (USD)</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">$</span>
+                <input type="number" min="0" step="10" value={serviceFee}
+                  onChange={e => setServiceFee(e.target.value)} placeholder="0"
+                  className={`${inp} pl-7`} />
+              </div>
+            </div>
+          </div>
+
+          {/* Live breakdown */}
+          <div className="bg-stone-950 rounded-2xl p-4 space-y-2.5 border border-white/5">
+            <div className="flex justify-between text-stone-400 text-sm">
+              <span>Package Rate × {guests} guests</span>
+              <span className="font-mono text-stone-200">${fmt((Number(packageRate) || 0) * guests)}</span>
+            </div>
+            <div className="flex justify-between text-stone-400 text-sm">
+              <span>SDF ($100 × {nights}N × {guests} guests)</span>
+              <span className="font-mono text-stone-200">${fmt(calc.sdfTotal)}</span>
+            </div>
+            <div className="flex justify-between text-stone-400 text-sm">
+              <span>Service Fee</span>
+              <span className="font-mono text-stone-200">${fmt(Number(serviceFee) || 0)}</span>
+            </div>
+            <div className="border-t border-white/10 pt-2.5 flex justify-between text-white text-sm font-semibold">
+              <span>Subtotal</span>
+              <span className="font-mono">${fmt(calc.subtotal)}</span>
+            </div>
+            <div className="flex justify-between text-stone-400 text-sm">
+              <span>GST (5%)</span>
+              <span className="font-mono text-stone-200">${fmt(calc.gst)}</span>
+            </div>
+            {/* Grand total */}
+            <div className="rounded-xl overflow-hidden mt-1"
+              style={{ background: 'linear-gradient(135deg, #1C1007, #2D1A08)', boxShadow: '0 0 20px 2px rgba(217,119,6,0.18), inset 0 1px 0 rgba(245,158,11,0.2)' }}>
+              <div className="flex items-center justify-between px-4 py-3">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600/70">Grand Total</p>
+                  <p className="text-white text-xs font-bold mt-0.5">USD · All inclusive</p>
+                </div>
+                <p className="font-black text-2xl tracking-tight"
+                  style={{ color: '#F59E0B', fontFamily: 'monospace', textShadow: '0 0 24px rgba(245,158,11,0.6)' }}>
+                  ${fmt(calc.grandTotal)}
+                </p>
+              </div>
+              <div className="border-t border-amber-900/40 px-4 py-2 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-amber-700/60 whitespace-nowrap">INR Rate ₹</span>
+                  <input
+                    type="number"
+                    min="1"
+                    step="0.5"
+                    value={inrRate}
+                    onChange={e => setInrRate(e.target.value)}
+                    className="w-20 bg-transparent border border-amber-900/50 rounded-lg px-2 py-0.5 text-xs text-amber-600 font-mono focus:outline-none focus:border-amber-600/60 text-center"
+                  />
+                </div>
+                <span className="font-mono text-amber-600 text-xs font-semibold">
+                  ₹{calc.equivalentInr.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {err && <p className="text-red-400 text-xs">{err}</p>}
+        </div>
+
+        {/* Footer */}
+        <div className="flex gap-3 px-5 py-4 border-t border-white/10">
+          <button onClick={onClose}
+            className="flex-1 text-sm font-semibold text-stone-300 bg-stone-700 hover:bg-stone-600 py-2.5 rounded-xl transition-colors">
+            Cancel
+          </button>
+          <button onClick={save} disabled={saving}
+            className="flex-1 flex items-center justify-center gap-2 text-sm font-semibold bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white py-2.5 rounded-xl transition-colors">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <DollarSign className="w-4 h-4" />}
+            Save Pricing
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const ITIN_STATUS = {
-  enquiry_pending: { label: 'Enquiry',   cls: 'bg-rose-500/15 text-rose-400 ring-1 ring-inset ring-rose-500/30' },
-  pending_review:  { label: 'Review',    cls: 'bg-amber-500/15 text-amber-400 ring-1 ring-inset ring-amber-500/30' },
-  quoted:          { label: 'Quoted',    cls: 'bg-blue-500/15 text-blue-400 ring-1 ring-inset ring-blue-500/30' },
-  confirmed:       { label: 'Confirmed', cls: 'bg-emerald-500/15 text-emerald-400 ring-1 ring-inset ring-emerald-500/30' },
+  enquiry_pending: { label: 'New Enquiry', cls: 'bg-rose-500/20 text-rose-300 ring-1 ring-inset ring-rose-400/50' },
+  pending_review:  { label: 'Review',      cls: 'bg-amber-500/20 text-amber-300 ring-1 ring-inset ring-amber-400/50' },
+  quoted:          { label: 'Quoted',      cls: 'bg-blue-500/20 text-blue-300 ring-1 ring-inset ring-blue-400/50' },
+  confirmed:       { label: 'Confirmed',   cls: 'bg-emerald-500/20 text-emerald-300 ring-1 ring-inset ring-emerald-400/50' },
 }
 
 export default function AdminDashboard() {
   const [profiles, setProfiles]           = useState([])
   const [bookings, setBookings]           = useState([])
-  const [enquiries, setEnquiries]         = useState([])
-  const [vouchers, setVouchers]           = useState([])
   const [itineraries, setItineraries]     = useState([])
   const [loading, setLoading]             = useState(true)
   const [search, setSearch]               = useState('')
@@ -37,24 +208,17 @@ export default function AdminDashboard() {
   const [confirmDeleteBk, setConfirmDeleteBk]     = useState(null)
   const [confirmDeleteItin, setConfirmDeleteItin] = useState(null)
   const [deletingItin, setDeletingItin]   = useState(false)
+  const [pricingTarget, setPricingTarget] = useState(null)
 
   async function load() {
     setRefreshing(true)
-    const { data: { session } } = await supabase.auth.getSession()
-    const jwt = session?.access_token
-    const [{ data: prof }, { data: bks }, { data: enqs }, vouchersRes, { data: itins }] = await Promise.all([
+    const [{ data: prof }, { data: bks }, { data: itins }] = await Promise.all([
       supabase.from('profiles').select('*').order('created_at', { ascending: false }),
       supabase.from('bookings').select('*').order('created_at', { ascending: false }),
-      supabase.from('itinerary_requests').select('*').order('submitted_at', { ascending: false }),
-      jwt
-        ? fetch('/api/admin/vouchers', { headers: { Authorization: `Bearer ${jwt}` } }).then(r => r.json()).catch(() => ({ vouchers: [] }))
-        : Promise.resolve({ vouchers: [] }),
       supabase.from('itineraries').select('*').order('created_at', { ascending: false }),
     ])
     setProfiles(prof || [])
     setBookings(bks  || [])
-    setEnquiries(enqs || [])
-    setVouchers(vouchersRes?.vouchers || [])
     setItineraries(itins || [])
     setLoading(false)
     setRefreshing(false)
@@ -63,22 +227,54 @@ export default function AdminDashboard() {
   useEffect(() => { load() }, [])
 
   // ── Metrics ──────────────────────────────────────────────────────────────────
-  const totalClients = profiles.filter((p) => p.role === 'CLIENT').length
-  const pendingCount = bookings.filter((b) => b.status === 'PENDING').length
-  const revenue      = bookings.filter((b) => b.status === 'CONFIRMED').reduce((s, b) => s + Number(b.total_cost || 0), 0)
+  const totalClients    = profiles.filter((p) => p.role === 'CLIENT').length
+  const pendingCount    = bookings.filter((b) => b.status === 'PENDING').length
+  const confirmedItins  = itineraries.filter((i) => i.status === 'confirmed')
+  const revenue         = confirmedItins.reduce((s, i) => s + Number(i.pricing?.grand_total || 0), 0)
 
   // ── Booking CRUD ─────────────────────────────────────────────────────────────
   async function confirmBookingInline(bkId) {
     setProcessingId(bkId)
+    const bk = bookings.find(b => b.id === bkId)
     const { error } = await supabase.from('bookings').update({ status: 'CONFIRMED' }).eq('id', bkId)
-    if (!error) setBookings(prev => prev.map(b => b.id === bkId ? { ...b, status: 'CONFIRMED' } : b))
+    if (!error) {
+      setBookings(prev => prev.map(b => b.id === bkId ? { ...b, status: 'CONFIRMED' } : b))
+      // Sync status to the linked itinerary record
+      if (bk?.client_email) {
+        const { data: synced } = await supabase
+          .from('itineraries')
+          .update({ status: 'confirmed' })
+          .filter('client_info->>email', 'eq', bk.client_email)
+          .filter('tour_summary->>tour_package', 'eq', bk.tour_title || 'Custom Package')
+          .select()
+        if (synced?.length) {
+          setItineraries(prev => prev.map(i => synced.find(u => u.id === i.id) || i))
+        }
+      }
+    }
     setProcessingId(null)
   }
 
   async function cancelBookingInline(bkId) {
     setProcessingId(bkId)
+    const bk = bookings.find(b => b.id === bkId)
     const { error } = await supabase.from('bookings').update({ status: 'CANCELLED' }).eq('id', bkId)
-    if (!error) setBookings(prev => prev.map(b => b.id === bkId ? { ...b, status: 'CANCELLED' } : b))
+    if (!error) {
+      setBookings(prev => prev.map(b => b.id === bkId ? { ...b, status: 'CANCELLED' } : b))
+      // Sync cancellation to the linked itinerary record
+      if (bk?.client_email) {
+        const { data: synced } = await supabase
+          .from('itineraries')
+          .update({ status: 'pending_review' })
+          .filter('client_info->>email', 'eq', bk.client_email)
+          .filter('tour_summary->>tour_package', 'eq', bk.tour_title || 'Custom Package')
+          .eq('status', 'confirmed')
+          .select()
+        if (synced?.length) {
+          setItineraries(prev => prev.map(i => synced.find(u => u.id === i.id) || i))
+        }
+      }
+    }
     setProcessingId(null)
   }
 
@@ -191,52 +387,62 @@ export default function AdminDashboard() {
       </div>
 
       {/* ── Metrics HUD ── */}
-      <div className="grid sm:grid-cols-3 gap-5">
+      <div className="grid sm:grid-cols-3 gap-4">
         <button
           onClick={() => setActivePanel(activePanel === 'clients' ? null : 'clients')}
-          className={`bg-stone-800 rounded-2xl border p-6 flex items-center gap-4 text-left w-full transition-all
-            ${activePanel === 'clients' ? 'border-blue-500/40 ring-1 ring-blue-500/20' : 'border-white/5 hover:border-blue-500/30'}`}>
-          <div className="w-12 h-12 rounded-2xl bg-blue-500/15 flex items-center justify-center flex-shrink-0">
+          className={`group bg-[#1A1A1D] rounded-2xl border p-6 flex items-center gap-4 text-left w-full transition-all shadow-lg
+            ${activePanel === 'clients'
+              ? 'border-blue-500/50 shadow-blue-950/40'
+              : 'border-[#2A2A2E] hover:border-blue-500/40 hover:shadow-blue-950/30'}`}>
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all
+            ${activePanel === 'clients' ? 'bg-blue-500/25' : 'bg-blue-500/15 group-hover:bg-blue-500/20'}`}>
             <Users className="w-6 h-6 text-blue-400" />
           </div>
           <div>
-            <p className="text-stone-400 text-xs font-medium uppercase tracking-wider">Registered Clients</p>
+            <p className="text-stone-500 text-[10px] font-bold uppercase tracking-widest">Registered Clients</p>
             <p className="text-3xl font-bold text-white mt-0.5">{totalClients}</p>
           </div>
         </button>
 
         <button
           onClick={() => setActivePanel(activePanel === 'pending' ? null : 'pending')}
-          className={`bg-stone-800 rounded-2xl border p-6 flex items-center gap-4 text-left w-full transition-all
-            ${activePanel === 'pending' ? 'border-amber-500/40 ring-1 ring-amber-500/20' : 'border-white/5 hover:border-amber-500/30'}`}>
-          <div className="w-12 h-12 rounded-2xl bg-amber-500/15 flex items-center justify-center flex-shrink-0">
+          className={`group bg-[#1A1A1D] rounded-2xl border p-6 flex items-center gap-4 text-left w-full transition-all shadow-lg
+            ${activePanel === 'pending'
+              ? 'border-[#D97706]/50 shadow-amber-950/40'
+              : 'border-[#2A2A2E] hover:border-[#D97706]/40 hover:shadow-amber-950/30'}`}>
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all
+            ${activePanel === 'pending' ? 'bg-amber-500/25' : 'bg-amber-500/15 group-hover:bg-amber-500/20'}`}>
             <Clock className="w-6 h-6 text-amber-400" />
           </div>
           <div>
-            <p className="text-stone-400 text-xs font-medium uppercase tracking-wider">Pending Bookings</p>
-            <p className="text-3xl font-bold text-amber-400 mt-0.5">{pendingCount}</p>
+            <p className="text-stone-500 text-[10px] font-bold uppercase tracking-widest">Pending Bookings</p>
+            <p className="text-3xl font-bold text-[#F59E0B] mt-0.5">{pendingCount}</p>
           </div>
         </button>
 
         <button
           onClick={() => setActivePanel(activePanel === 'confirmed' ? null : 'confirmed')}
-          className={`bg-stone-800 rounded-2xl border p-6 flex items-center gap-4 text-left w-full transition-all
-            ${activePanel === 'confirmed' ? 'border-green-500/40 ring-1 ring-green-500/20' : 'border-white/5 hover:border-green-500/30'}`}>
-          <div className="w-12 h-12 rounded-2xl bg-green-500/15 flex items-center justify-center flex-shrink-0">
-            <DollarSign className="w-6 h-6 text-green-400" />
+          className={`group bg-[#1A1A1D] rounded-2xl border p-6 flex items-center gap-4 text-left w-full transition-all shadow-lg
+            ${activePanel === 'confirmed'
+              ? 'border-emerald-500/50 shadow-emerald-950/40'
+              : 'border-[#2A2A2E] hover:border-emerald-500/40 hover:shadow-emerald-950/30'}`}>
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all
+            ${activePanel === 'confirmed' ? 'bg-emerald-500/25' : 'bg-emerald-500/15 group-hover:bg-emerald-500/20'}`}>
+            <DollarSign className="w-6 h-6 text-emerald-400" />
           </div>
           <div>
-            <p className="text-stone-400 text-xs font-medium uppercase tracking-wider">Confirmed Revenue</p>
-            <p className="text-3xl font-bold text-green-400 mt-0.5">
+            <p className="text-stone-500 text-[10px] font-bold uppercase tracking-widest">Confirmed Revenue</p>
+            <p className="text-3xl font-bold text-emerald-400 mt-0.5">
               ${revenue.toLocaleString('en-US', { maximumFractionDigits: 0 })}
             </p>
+            <p className="text-[10px] text-stone-500 mt-0.5">{confirmedItins.length} itinerar{confirmedItins.length === 1 ? 'y' : 'ies'}</p>
           </div>
         </button>
       </div>
 
       {/* ── Clients Panel ── */}
       {activePanel === 'clients' && (
-        <div className="bg-stone-800 rounded-2xl border border-blue-500/20 overflow-hidden">
+        <div className="bg-[#1A1A1D] rounded-2xl border border-blue-500/25 overflow-hidden shadow-xl">
           <div className="px-5 py-4 border-b border-blue-500/20 bg-blue-500/10 flex items-center justify-between">
             <h2 className="font-semibold text-white flex items-center gap-2">
               <Users className="w-4 h-4 text-blue-400" /> Registered Clients
@@ -247,7 +453,7 @@ export default function AdminDashboard() {
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="bg-stone-900/50 border-b border-white/5 text-xs font-semibold text-stone-400 uppercase tracking-wider">
+                <tr className="bg-[#111114] border-b border-white/5 text-[10px] font-bold text-stone-500 uppercase tracking-widest">
                   <th className="px-5 py-3 text-left">Name</th>
                   <th className="px-5 py-3 text-left">Email</th>
                   <th className="px-5 py-3 text-left">Packages</th>
@@ -299,7 +505,7 @@ export default function AdminDashboard() {
 
       {/* ── Pending Bookings Panel ── */}
       {activePanel === 'pending' && (
-        <div className="bg-stone-800 rounded-2xl border border-amber-500/20 overflow-hidden">
+        <div className="bg-[#1A1A1D] rounded-2xl border border-[#D97706]/25 overflow-hidden shadow-xl">
           <div className="px-5 py-4 border-b border-amber-500/20 bg-amber-500/10 flex items-center justify-between">
             <h2 className="font-semibold text-white flex items-center gap-2">
               <Clock className="w-4 h-4 text-amber-400" /> Pending Bookings
@@ -380,14 +586,14 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* ── Confirmed Bookings Panel ── */}
+      {/* ── Confirmed Itineraries Panel ── */}
       {activePanel === 'confirmed' && (
-        <div className="bg-stone-800 rounded-2xl border border-green-500/20 overflow-hidden">
+        <div className="bg-[#1A1A1D] rounded-2xl border border-emerald-500/25 overflow-hidden shadow-xl">
           <div className="px-5 py-4 border-b border-green-500/20 bg-green-500/10 flex items-center justify-between">
             <h2 className="font-semibold text-white flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-green-400" /> Confirmed Bookings
+              <CheckCircle2 className="w-4 h-4 text-green-400" /> Confirmed Itineraries
               <span className="text-xs font-normal text-stone-400 ml-1">
-                ({bookings.filter((b) => b.status === 'CONFIRMED').length} · ${revenue.toLocaleString('en-US', { maximumFractionDigits: 0 })} total)
+                ({confirmedItins.length} · ${revenue.toLocaleString('en-US', { maximumFractionDigits: 0 })} total)
               </span>
             </h2>
             <button onClick={() => setActivePanel(null)} className="text-xs text-stone-400 hover:text-white">✕ Close</button>
@@ -398,47 +604,56 @@ export default function AdminDashboard() {
                 <tr className="bg-stone-900/50 border-b border-white/5 text-xs font-semibold text-stone-400 uppercase tracking-wider">
                   <th className="px-5 py-3 text-left">Client</th>
                   <th className="px-5 py-3 text-left">Tour</th>
-                  <th className="px-5 py-3 text-left">Dates</th>
-                  <th className="px-5 py-3 text-left">Guests</th>
+                  <th className="px-5 py-3 text-left">Trip</th>
+                  <th className="px-5 py-3 text-left">Reference</th>
                   <th className="px-5 py-3 text-left">Total</th>
                   <th className="px-5 py-3 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {bookings.filter((b) => b.status === 'CONFIRMED').map((bk) => {
-                  const owner = profiles.find((p) => p.id === bk.user_id)
+                {confirmedItins.map((it) => {
+                  const name  = it.client_info?.guest_name || it.client_info?.email || '—'
+                  const email = it.client_info?.email || ''
+                  const tour  = it.tour_summary?.tour_package || 'Custom Package'
+                  const nights = it.tour_summary?.duration_nights
+                  const guests = it.tour_summary?.group_size
+                  const total  = Number(it.pricing?.grand_total || 0)
                   return (
-                    <tr key={bk.id} className="hover:bg-green-500/5 transition-colors">
+                    <tr key={it.id} className="hover:bg-green-500/5 transition-colors">
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 font-bold text-xs flex-shrink-0">
-                            {(owner?.name || bk.client_name || '?')[0]?.toUpperCase()}
+                            {name[0]?.toUpperCase() || '?'}
                           </div>
                           <div>
-                            <p className="font-medium text-white text-sm">{owner?.name || bk.client_name || '—'}</p>
-                            <p className="text-xs text-stone-500">{bk.client_email || owner?.email || ''}</p>
+                            <p className="font-medium text-white text-sm">{name}</p>
+                            {email && <p className="text-xs text-stone-500">{email}</p>}
                           </div>
                         </div>
                       </td>
                       <td className="px-5 py-3.5 text-sm text-stone-300 max-w-[200px]">
-                        <p className="line-clamp-1">{bk.tour_title || 'Custom Package'}</p>
-                        <p className="text-xs text-stone-500">{bk.hotel_tier || '—'}</p>
+                        <p className="line-clamp-1">{tour}</p>
+                        <p className="text-xs text-stone-500">{it.tour_summary?.hotel_tier || '—'}</p>
                       </td>
                       <td className="px-5 py-3.5 text-sm text-stone-400">
-                        {bk.arrival_date ? new Date(bk.arrival_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
-                        {bk.return_date ? ` – ${new Date(bk.return_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : ''}
+                        {nights != null ? `${nights}N` : '—'}
+                        {guests ? ` · ${guests} pax` : ''}
                       </td>
-                      <td className="px-5 py-3.5 text-sm text-stone-300">{bk.group_size || '—'}</td>
                       <td className="px-5 py-3.5">
-                        <span className="font-bold text-green-400">${Number(bk.total_cost || 0).toLocaleString()}</span>
+                        <span className="font-mono text-xs text-stone-500">{it.booking_reference || '—'}</span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span className="font-bold text-green-400">${total.toLocaleString()}</span>
                       </td>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2">
-                          <button onClick={() => setSelected(owner || { id: bk.user_id, name: bk.client_name })}
-                            className="flex items-center gap-1 text-xs font-semibold text-green-400 hover:text-green-300 hover:bg-green-500/10 border border-green-500/30 px-2.5 py-1.5 rounded-lg transition-colors">
-                            <Eye className="w-3 h-3" /> View
-                          </button>
-                          <button onClick={() => setConfirmDeleteBk(bk.id)}
+                          {it.booking_reference && (
+                            <Link href={`/itinerary/${it.booking_reference}`} target="_blank"
+                              className="flex items-center gap-1 text-xs font-semibold text-green-400 hover:text-green-300 hover:bg-green-500/10 border border-green-500/30 px-2.5 py-1.5 rounded-lg transition-colors">
+                              <Eye className="w-3 h-3" /> Voucher
+                            </Link>
+                          )}
+                          <button onClick={() => setConfirmDeleteItin(it)}
                             className="text-stone-600 hover:text-red-400 transition-colors p-1">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -447,15 +662,15 @@ export default function AdminDashboard() {
                     </tr>
                   )
                 })}
-                {bookings.filter((b) => b.status === 'CONFIRMED').length === 0 && (
-                  <tr><td colSpan={6} className="px-5 py-10 text-center text-stone-500 text-sm">No confirmed bookings yet.</td></tr>
+                {confirmedItins.length === 0 && (
+                  <tr><td colSpan={6} className="px-5 py-10 text-center text-stone-500 text-sm">No confirmed itineraries yet.</td></tr>
                 )}
               </tbody>
             </table>
           </div>
-          {bookings.filter((b) => b.status === 'CONFIRMED').length > 0 && (
+          {confirmedItins.length > 0 && (
             <div className="px-5 py-3 border-t border-white/5 bg-stone-900/30 flex items-center justify-between">
-              <p className="text-xs text-stone-500">{bookings.filter((b) => b.status === 'CONFIRMED').length} confirmed bookings</p>
+              <p className="text-xs text-stone-500">{confirmedItins.length} confirmed itineraries</p>
               <p className="text-sm font-bold text-green-400">Total Revenue: ${revenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
             </div>
           )}
@@ -465,22 +680,26 @@ export default function AdminDashboard() {
       {/* ── Awaiting Confirmation Strip ── */}
       {bookings.filter((b) => b.status === 'PENDING').length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-stone-400 uppercase tracking-wider mb-3">
-            Awaiting Confirmation
-          </h2>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-1.5 h-5 rounded-full bg-[#D97706]" />
+            <h2 className="text-xs font-bold text-stone-400 uppercase tracking-widest">
+              Awaiting Confirmation
+            </h2>
+            <div className="flex-1 h-px bg-[#2A2A2E]" />
+          </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {bookings.filter((b) => b.status === 'PENDING').slice(0, 6).map((bk) => {
               const owner = profiles.find((p) => p.id === bk.user_id)
               const busy  = processingId === bk.id
               return (
-                <div key={bk.id} className="bg-stone-800 rounded-2xl border border-amber-500/20 p-4 hover:border-amber-500/40 transition-all">
+                <div key={bk.id} className="bg-[#1C1914] rounded-2xl border border-[#D97706]/30 p-4 hover:border-[#D97706]/50 transition-all shadow-lg shadow-amber-950/20">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <p className="font-semibold text-white text-sm line-clamp-1">{bk.tour_title || 'Custom Package'}</p>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 flex-shrink-0">PENDING</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 flex-shrink-0">PENDING</span>
                   </div>
                   <p className="text-xs text-stone-400">{owner?.name || bk.client_name || '—'} · {bk.group_size || '—'} pax</p>
-                  <p className="text-base font-bold text-white mt-1 mb-3">${Number(bk.total_cost).toLocaleString()}</p>
-                  <div className="flex items-center gap-1.5 flex-wrap border-t border-white/10 pt-2.5">
+                  <p className="text-base font-bold text-[#F59E0B] mt-1 mb-3">${Number(bk.total_cost).toLocaleString()}</p>
+                  <div className="flex items-center gap-1.5 flex-wrap border-t border-[#D97706]/15 pt-2.5">
                     <button onClick={() => confirmBookingInline(bk.id)} disabled={busy}
                       className="flex items-center gap-1 text-[11px] font-semibold bg-green-600 hover:bg-green-700 text-white px-2.5 py-1.5 rounded-lg disabled:opacity-50 transition-colors">
                       {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />} Confirm
@@ -523,22 +742,23 @@ export default function AdminDashboard() {
         </div>
 
         {itineraries.length === 0 ? (
-          <div className="bg-stone-800 rounded-2xl border border-white/5 flex flex-col items-center justify-center py-14 text-stone-500">
-            <FileText className="w-9 h-9 mb-2 opacity-25" />
+          <div className="bg-[#1A1A1D] rounded-2xl border border-[#2A2A2E] flex flex-col items-center justify-center py-14 text-stone-500">
+            <FileText className="w-9 h-9 mb-2 opacity-20" />
             <p className="text-sm">No itineraries yet. They appear when guests submit enquiries.</p>
           </div>
         ) : (
-          <div className="bg-stone-800 rounded-2xl border border-white/5 overflow-hidden">
+          <div className="bg-[#1A1A1D] rounded-2xl border border-[#D97706]/20 overflow-hidden shadow-xl">
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
-                  <tr className="bg-stone-900/50 border-b border-white/5 text-xs font-semibold text-stone-400 uppercase tracking-wider">
-                    <th className="px-5 py-3 text-left">Client</th>
-                    <th className="px-5 py-3 text-left">Tour Package</th>
-                    <th className="px-5 py-3 text-left">Status</th>
-                    <th className="px-5 py-3 text-left">Trip</th>
-                    <th className="px-5 py-3 text-left">Reference</th>
-                    <th className="px-5 py-3 text-left">Actions</th>
+                  <tr className="bg-[#111114] border-b border-[#D97706]/15 text-[10px] font-bold text-stone-500 uppercase tracking-widest">
+                    <th className="px-5 py-3.5 text-left">Client</th>
+                    <th className="px-5 py-3.5 text-left">Tour Package</th>
+                    <th className="px-5 py-3.5 text-left">Status</th>
+                    <th className="px-5 py-3.5 text-left">Trip</th>
+                    <th className="px-5 py-3.5 text-left">Total (USD)</th>
+                    <th className="px-5 py-3.5 text-left">Reference</th>
+                    <th className="px-5 py-3.5 text-left">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -549,6 +769,7 @@ export default function AdminDashboard() {
                     const tour   = it.tour_summary?.tour_package || 'Custom Package'
                     const nights = it.tour_summary?.duration_nights
                     const guests = it.tour_summary?.group_size
+                    const total  = it.pricing?.grand_total
                     const busy   = processingId === it.id
                     return (
                       <tr key={it.id} className="hover:bg-white/5 transition-colors">
@@ -586,6 +807,12 @@ export default function AdminDashboard() {
                           {guests ? ` · ${guests} pax` : ''}
                         </td>
                         <td className="px-5 py-3.5">
+                          {total > 0
+                            ? <span className="font-bold font-mono text-amber-400 text-sm">${Number(total).toLocaleString()}</span>
+                            : <span className="text-stone-600 text-xs italic">Not set</span>
+                          }
+                        </td>
+                        <td className="px-5 py-3.5">
                           <span className="font-mono text-xs text-stone-500">{it.booking_reference || '—'}</span>
                         </td>
                         <td className="px-5 py-3.5">
@@ -615,15 +842,12 @@ export default function AdminDashboard() {
                 </tbody>
               </table>
             </div>
-            <div className="px-5 py-3 border-t border-white/5 bg-stone-900/30">
-              <p className="text-xs text-stone-500">{itineraries.length} total itineraries</p>
+            <div className="px-5 py-3 border-t border-[#D97706]/10 bg-[#111114]">
+              <p className="text-xs text-stone-600">{itineraries.length} total itineraries</p>
             </div>
           </div>
         )}
       </div>
-
-      {/* ── Enquiries ── */}
-      <AdminEnquirySection enquiries={enquiries} vouchers={vouchers} onRefresh={load} />
 
       {/* ── Global Client Directory ── */}
       <div>
@@ -640,11 +864,11 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-stone-800 rounded-2xl border border-white/5 overflow-hidden">
+        <div className="bg-[#1A1A1D] rounded-2xl border border-[#2A2A2E] overflow-hidden shadow-xl">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="bg-stone-900/50 border-b border-white/5">
+                <tr className="bg-[#111114] border-b border-[#2A2A2E]">
                   {[
                     { key: 'name',       label: 'Name' },
                     { key: 'email',      label: 'Email' },
@@ -654,11 +878,11 @@ export default function AdminDashboard() {
                   ].map(({ key, label }) => (
                     <th key={key}
                       onClick={() => toggleSort(key)}
-                      className="px-5 py-3.5 text-left text-xs font-semibold text-stone-400 uppercase tracking-wider cursor-pointer hover:text-white select-none">
+                      className="px-5 py-3.5 text-left text-[10px] font-bold text-stone-500 uppercase tracking-widest cursor-pointer hover:text-stone-300 select-none transition-colors">
                       <span className="flex items-center gap-1.5">{label}<SortIcon col={key} /></span>
                     </th>
                   ))}
-                  <th className="px-5 py-3.5 text-left text-xs font-semibold text-stone-400 uppercase tracking-wider">Actions</th>
+                  <th className="px-5 py-3.5 text-left text-[10px] font-bold text-stone-500 uppercase tracking-widest">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -714,16 +938,16 @@ export default function AdminDashboard() {
               </tbody>
             </table>
           </div>
-          <div className="px-5 py-3 border-t border-white/5 bg-stone-900/30">
-            <p className="text-xs text-stone-500">{filtered.length} of {profiles.length} clients shown</p>
+          <div className="px-5 py-3 border-t border-[#2A2A2E] bg-[#111114]">
+            <p className="text-xs text-stone-600">{filtered.length} of {profiles.length} clients shown</p>
           </div>
         </div>
       </div>
 
       {/* ── Delete Booking Confirm Modal ── */}
       {confirmDeleteBk && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-          <div className="bg-stone-800 border border-white/10 rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm px-4">
+          <div className="bg-[#1C1C1F] border border-[#2E2E33] rounded-2xl shadow-2xl p-6 w-full max-w-sm">
             <h3 className="font-bold text-white mb-1">Delete this booking?</h3>
             <p className="text-sm text-stone-400 mb-5">This will permanently remove the booking record. This cannot be undone.</p>
             <div className="flex gap-3">
@@ -743,8 +967,8 @@ export default function AdminDashboard() {
 
       {/* ── Delete Itinerary Confirm Modal ── */}
       {confirmDeleteItin && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-          <div className="bg-stone-800 border border-white/10 rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm px-4">
+          <div className="bg-[#1C1C1F] border border-[#2E2E33] rounded-2xl shadow-2xl p-6 w-full max-w-sm">
             <h3 className="font-bold text-white mb-1">Delete itinerary?</h3>
             <p className="text-sm text-stone-400 mb-1">
               <span className="font-semibold text-white">{confirmDeleteItin.client_info?.guest_name || 'Guest'}</span> — {confirmDeleteItin.tour_summary?.tour_package || 'Custom Package'}
@@ -776,6 +1000,18 @@ export default function AdminDashboard() {
           onClose={() => setSelected(null)}
           onDelete={handleProfileDelete}
           onUpdate={handleProfileUpdate}
+        />
+      )}
+
+      {/* ── Pricing Modal ── */}
+      {pricingTarget && (
+        <PricingModal
+          itinerary={pricingTarget}
+          onClose={() => setPricingTarget(null)}
+          onSaved={(updated) => {
+            setItineraries(prev => prev.map(i => i.id === updated.id ? updated : i))
+            setPricingTarget(null)
+          }}
         />
       )}
     </div>

@@ -1,546 +1,669 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
-import { Loader2, AlertCircle, Printer, Clock } from 'lucide-react'
+import { Loader2, AlertCircle, Download, ArrowLeft, Settings } from 'lucide-react'
+import Link from 'next/link'
 import { supabase } from '@/utils/supabase/client'
+import { generateVoucherPDF } from '@/utils/pdfGenerator'
 
-// ── Formatting helpers ────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────
 function fmtDate(d) {
   if (!d) return '—'
-  return new Date(d).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
-}
-function fmtMoney(n, decimals = 2) {
-  return Number(n || 0).toLocaleString('en-US', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
+  return new Date(d + (d.includes('T') ? '' : 'T00:00:00')).toLocaleDateString('en-US', {
+    day: 'numeric', month: 'long', year: 'numeric',
   })
 }
+function fmtMoney(n, dec = 2) {
+  return Number(n || 0).toLocaleString('en-US', {
+    minimumFractionDigits: dec, maximumFractionDigits: dec,
+  })
+}
+function parseMeals(m) {
+  if (!m) return []
+  if (Array.isArray(m)) return m
+  return m.split(/[,/\s]+/).map(x => x.trim().toUpperCase()[0]).filter(Boolean)
+}
 
-// ── Standard inclusions / exclusions ─────────────────────────
 const DEFAULT_INCLUSIONS = [
-  'Bhutan Sustainable Development Fee (SDF) — $100 per person per night',
-  'Bhutan visa and entry permit processing',
-  'All accommodation per the confirmed itinerary',
-  'All meals as specified (B = Breakfast, L = Lunch, D = Dinner)',
+  `Accommodation (${'{tier}'}) as per itinerary`,
   'Licensed English-speaking DOT-certified guide',
-  'Private air-conditioned vehicle with dedicated driver',
-  'All monument, dzong and protected-area entry fees',
-  'Arise Bhutan 24/7 in-country emergency support',
+  'Private vehicle & dedicated driver',
+  'Sustainable Development Fee (SDF) — $100/person/night',
+  'All monument & dzong entry fees',
+  'Meals as per itinerary',
 ]
-
 const DEFAULT_EXCLUSIONS = [
-  'International airfare to / from Paro (PBH)',
-  'Travel insurance and medical evacuation cover',
-  'Personal expenses, gratuities and tips',
-  'Alcoholic beverages and premium room-service items',
-  'Optional adventure activities (archery, cycling, hot springs)',
-  'Any services not explicitly listed under Inclusions',
+  'International flights (DEL ↔ PBH)',
+  'Travel & medical insurance',
+  'Personal expenses',
+  'Gratuities for guide & driver',
 ]
-
 const DEFAULT_CANCELLATION = [
-  { period: '60 days or more before departure', policy: 'Full refund, less USD 150 administration fee' },
-  { period: '30 – 59 days before departure',    policy: '50 % of total tour cost forfeited' },
-  { period: '15 – 29 days before departure',    policy: '75 % of total tour cost forfeited' },
-  { period: 'Under 15 days / No-show',          policy: '100 % non-refundable' },
+  { period: '60+ days before departure',   policy: 'Full refund less $150 processing fee' },
+  { period: '30–59 days before departure', policy: '50% refund' },
+  { period: 'Under 30 days / No-show',     policy: 'Non-refundable' },
 ]
 
-// ── Meal badge ────────────────────────────────────────────────
-function MealBadge({ code }) {
-  const colors = { B: 'bg-amber-100 text-amber-700', L: 'bg-green-100 text-green-700', D: 'bg-blue-100 text-blue-700' }
-  return (
-    <span className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded ${colors[code] || 'bg-stone-100 text-stone-600'}`}>
-      {code}
-    </span>
-  )
-}
-
-function parseMeals(meals) {
-  if (!meals) return []
-  if (Array.isArray(meals)) return meals
-  return meals.split(/[,/\s]+/).map(m => m.trim()).filter(Boolean)
-}
-
-// ── Small layout components ───────────────────────────────────
-function SectionTitle({ children }) {
-  return (
-    <div className="flex items-center gap-3">
-      <h2 className="text-xs font-bold text-stone-500 uppercase tracking-widest whitespace-nowrap">{children}</h2>
-      <div className="flex-1 h-px bg-stone-100" />
-    </div>
-  )
-}
-
-function InfoRow({ label, value, span }) {
-  if (!value) return null
-  return (
-    <div className={span ? 'col-span-2' : ''}>
-      <p className="text-[10px] text-stone-400 uppercase tracking-wider font-semibold">{label}</p>
-      <p className="text-stone-800 text-sm font-medium mt-0.5">{value}</p>
-    </div>
-  )
-}
-
-function PricingRow({ label, value, bold }) {
-  return (
-    <tr>
-      <td className={`px-5 py-3 ${bold ? 'font-semibold text-stone-900' : 'text-stone-600'}`}>{label}</td>
-      <td className={`px-5 py-3 text-right font-mono ${bold ? 'font-bold text-stone-900' : 'text-stone-700'}`}>{value}</td>
-    </tr>
-  )
-}
-
-// ── Status badge config ───────────────────────────────────────
-const STATUS_BADGE = {
-  enquiry_pending: { label: 'Under Review',   cls: 'bg-rose-100 text-rose-700' },
-  pending_review:  { label: 'Under Review',   cls: 'bg-amber-100 text-amber-700' },
-  quoted:          { label: 'Quoted',         cls: 'bg-blue-100 text-blue-700' },
-  confirmed:       { label: 'Confirmed',      cls: 'bg-green-100 text-green-700' },
+// ── Status config ─────────────────────────────────────────────
+const STATUS_CFG = {
+  enquiry_pending: { label: 'Under Review', dot: '#F87171', bg: '#1C1917', border: '#F87171' },
+  pending_review:  { label: 'Under Review', dot: '#FBBF24', bg: '#1C1810', border: '#D97706' },
+  quoted:          { label: 'Quoted',       dot: '#60A5FA', bg: '#0F1629', border: '#3B82F6' },
+  confirmed:       { label: 'Confirmed',    dot: '#34D399', bg: '#0A1F16', border: '#10B981' },
 }
 
 // ── Main page ─────────────────────────────────────────────────
 export default function ItineraryVoucherPage() {
-  const { reference }             = useParams()
-  const [itinerary, setItinerary] = useState(null)
-  const [loading, setLoading]     = useState(true)
-  const [error, setError]         = useState('')
+  const { reference }            = useParams()
+  const searchParams             = useSearchParams()
+  const isAdminView              = searchParams.get('admin') === '1'
+  const [it, setIt]              = useState(null)
+  const [loading, setLoading]    = useState(true)
+  const [error, setError]        = useState('')
+  const [pdfLoading, setPdfLoading] = useState(false)
 
   useEffect(() => {
-    async function fetchItinerary() {
+    async function fetch() {
       const { data, error: err } = await supabase
         .from('itineraries')
         .select('*')
         .eq('booking_reference', reference)
         .single()
-      if (err || !data) {
-        setError('Itinerary not found. Please check your booking reference.')
-      } else {
-        setItinerary(data)
-      }
+      if (err || !data) setError('Itinerary not found. Please check your booking reference.')
+      else setIt(data)
       setLoading(false)
     }
-    if (reference) fetchItinerary()
+    if (reference) fetch()
   }, [reference])
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50">
-        <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-stone-50">
+      <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
+    </div>
+  )
+
+  if (error) return (
+    <div className="min-h-screen flex items-center justify-center bg-stone-50 px-4">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-md p-8 text-center">
+        <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-4" />
+        <h2 className="text-lg font-serif font-bold text-stone-900 mb-2">Voucher Not Found</h2>
+        <p className="text-stone-500 text-sm">{error}</p>
+        <p className="text-stone-400 text-xs mt-3 font-mono">{reference}</p>
       </div>
-    )
-  }
+    </div>
+  )
 
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50 px-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-md p-8 text-center">
-          <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-4" />
-          <h2 className="text-lg font-serif font-bold text-stone-900 mb-2">Voucher Not Found</h2>
-          <p className="text-stone-500 text-sm">{error}</p>
-          <p className="text-stone-400 text-xs mt-3">Reference: <span className="font-mono">{reference}</span></p>
-        </div>
-      </div>
-    )
-  }
+  const info   = it.client_info   || {}
+  const tour   = it.tour_summary  || {}
+  const px     = it.pricing       || {}
+  const nights = Number(tour.duration_nights) || 1
+  const guests = Number(tour.group_size) || 1
+  const isPending  = it.status === 'enquiry_pending' || it.status === 'pending_review'
+  const showPricing = it.status === 'quoted' || it.status === 'confirmed'
+  const cfg = STATUS_CFG[it.status] || STATUS_CFG.pending_review
 
-  const it          = itinerary
-  const info        = it.client_info   || {}
-  const tour        = it.tour_summary  || {}
-  const px          = it.pricing       || {}
-
-  const isPending   = it.status === 'enquiry_pending' || it.status === 'pending_review'
-  const showPricing = it.status === 'quoted'          || it.status === 'confirmed'
-
-  const badge = STATUS_BADGE[it.status] || STATUS_BADGE.pending_review
+  const inclusions = (tour.inclusions?.length > 0)
+    ? tour.inclusions
+    : DEFAULT_INCLUSIONS.map(s => s.replace('{tier}', tour.hotel_tier || '5-Star'))
+  const exclusions = (tour.exclusions?.length > 0) ? tour.exclusions : DEFAULT_EXCLUSIONS
+  const cancellation = (tour.cancellation?.length > 0) ? tour.cancellation : DEFAULT_CANCELLATION
 
   return (
     <>
-      {/* Print styles */}
       <style>{`
         @media print {
           .no-print { display: none !important; }
-          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .voucher-page { box-shadow: none !important; }
-          @page { size: A4; margin: 12mm 15mm; }
-          .page-break-avoid { break-inside: avoid; }
+          body { background: #ffffff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          table, tr, img, .page-break-avoid { page-break-inside: avoid !important; }
+          .voucher-root { padding: 0 !important; background: white !important; }
+          @page { size: A4; margin: 10mm 12mm; }
         }
       `}</style>
 
-      <div className="min-h-screen bg-stone-100 py-8 px-4 print:bg-white print:py-0 print:px-0">
+      {/* Page shell — pt-24 clears the fixed 72px navbar */}
+      <div className="voucher-root min-h-screen bg-stone-100 pt-24 pb-8 px-4 print:bg-white print:pt-0 print:pb-0 print:px-0">
 
-        {/* Print button */}
-        <div className="max-w-[860px] mx-auto mb-4 flex justify-end no-print">
+        {/* Toolbar */}
+        <div className="max-w-[900px] mx-auto mb-5 flex items-center justify-between no-print">
+          {isAdminView ? (
+            <div className="flex items-center gap-2">
+              <Link href="/admin/dashboard"
+                className="flex items-center gap-1.5 text-xs font-semibold text-stone-600 hover:text-stone-900 border border-stone-300 hover:border-stone-400 bg-white rounded-xl px-3 py-2 transition-colors shadow-sm">
+                <ArrowLeft className="w-3.5 h-3.5" /> Back to Admin
+              </Link>
+              <Link href="/admin/itineraries"
+                className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 hover:text-amber-800 border border-amber-300 hover:border-amber-400 bg-amber-50 rounded-xl px-3 py-2 transition-colors shadow-sm">
+                <Settings className="w-3.5 h-3.5" /> Edit Itinerary
+              </Link>
+            </div>
+          ) : (
+            <a href="/" className="text-xs text-stone-400 hover:text-stone-600 transition-colors">← Back to website</a>
+          )}
           <button
-            onClick={() => window.print()}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold transition-colors shadow-sm"
+            onClick={async () => {
+              setPdfLoading(true)
+              try {
+                await generateVoucherPDF('voucher-doc', `Arise-Bhutan-${it.booking_reference}.pdf`)
+              } catch (e) {
+                console.error('PDF error:', e)
+              } finally {
+                setPdfLoading(false)
+              }
+            }}
+            disabled={pdfLoading}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold transition-all shadow-lg disabled:opacity-70"
+            style={{ background: 'linear-gradient(135deg, #D97706, #B45309)' }}
           >
-            <Printer className="w-4 h-4" /> Print / Save PDF
+            {pdfLoading
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
+              : <><Download className="w-4 h-4" /> Download PDF</>
+            }
           </button>
         </div>
 
-        {/* ── Voucher document ── */}
-        <div className="voucher-page max-w-[860px] mx-auto bg-white shadow-xl print:shadow-none">
+        {/* ── Voucher document ─────────────────────────────────── */}
+        <div className="max-w-[900px] mx-auto bg-white shadow-2xl print:shadow-none" id="voucher-doc">
 
-          {/* Amber top border */}
-          <div className="h-1.5" style={{ backgroundColor: '#D97706' }} />
+          {/* ── HEADER ── */}
+          <header style={{ background: 'linear-gradient(135deg, #92400E 0%, #D97706 60%, #F59E0B 100%)' }}
+            className="px-8 pt-8 pb-6">
+            <div className="flex items-start justify-between gap-6">
+              {/* Logo + tagline */}
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur overflow-hidden flex items-center justify-center border-2 border-white/40 flex-shrink-0">
+                  <Image src="/images/logo.jpeg" alt="Arise Bhutan" width={56} height={56} className="object-contain" />
+                </div>
+                <div>
+                  <p className="font-serif font-bold text-white text-xl leading-tight">Arise Bhutan</p>
+                  <p className="text-amber-200 text-xs font-semibold uppercase tracking-widest">Tours &amp; Travels · DOT Certified</p>
+                  <p className="text-amber-200/70 text-xs mt-0.5">
+                    {isPending ? 'Travel Enquiry & Itinerary Proposal' : 'Booking Confirmation & Itinerary Voucher'}
+                  </p>
+                </div>
+              </div>
 
-          {/* ── Header ── */}
-          <header className="px-10 py-7 flex items-start justify-between gap-6 border-b border-stone-100">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-white border border-stone-200 overflow-hidden flex items-center justify-center shrink-0 shadow-sm">
-                <Image src="/images/logo.jpeg" alt="Arise Bhutan" width={56} height={56} className="object-contain" />
+              {/* Reference box */}
+              <div className="text-right flex-shrink-0">
+                <div className="inline-block bg-white/15 backdrop-blur border border-white/30 rounded-xl px-5 py-3">
+                  <p className="text-amber-200/80 text-[9px] font-bold uppercase tracking-widest mb-1">Booking Reference</p>
+                  <p className="font-mono font-black text-white text-xl tracking-wider">{it.booking_reference}</p>
+                  <p className="text-amber-200/70 text-[10px] mt-1">Issued: {fmtDate(it.created_at)}</p>
+                </div>
+                {/* Status badge */}
+                <div className="mt-3 flex justify-end">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
+                    style={{ background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.border }}>
+                    <span className="w-1.5 h-1.5 rounded-full inline-block"
+                      style={{ background: cfg.dot, animation: it.status === 'confirmed' ? 'pulse 2s infinite' : 'none' }} />
+                    ● {cfg.label}
+                  </span>
+                </div>
               </div>
-              <div>
-                <p className="font-serif font-bold text-stone-900 text-lg leading-tight">Arise Bhutan</p>
-                <p className="text-stone-500 text-xs">Tours &amp; Travels</p>
-                <p className="text-stone-400 text-[11px] mt-0.5">www.arisebhutan.com</p>
-              </div>
-            </div>
-
-            <div className="text-right shrink-0">
-              <div className="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 rounded-full px-3 py-1 text-[10px] font-semibold text-amber-700 uppercase tracking-wider mb-2">
-                ✦ Licensed DOT Operator
-              </div>
-              <p className="font-mono font-bold text-stone-900 text-lg tracking-wider">
-                {it.booking_reference}
-              </p>
-              <p className="text-stone-400 text-xs uppercase tracking-wider mt-0.5">
-                {isPending ? 'Travel Enquiry' : 'Booking Voucher'}
-              </p>
-              <span className={`inline-flex items-center gap-1 mt-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide ${badge.cls}`}>
-                ● {badge.label}
-              </span>
             </div>
           </header>
 
-          <div className="px-10 py-8 space-y-8">
+          {/* ── BODY ── */}
+          <div className="px-8 py-7 space-y-7">
 
-            {/* ── Pending status banner ── */}
+            {/* Under-review banner */}
             {isPending && (
-              <section className="page-break-avoid">
-                <div className="rounded-xl border border-amber-200 bg-amber-50 px-6 py-5 flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
-                    <Clock className="w-5 h-5 text-amber-600" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-amber-900 text-sm leading-snug">
-                      Bespoke Package Pricing Under Operational Review
-                    </p>
-                    <p className="text-amber-700 text-xs mt-1.5 leading-relaxed">
-                      Your dedicated travel concierge is reviewing your preferences and preparing a personalised
-                      pricing proposal. A complete cost breakdown will be shared with you within 24 hours.
-                    </p>
-                    <div className="mt-3 inline-flex items-center gap-1.5 bg-amber-100 border border-amber-200 rounded-full px-3 py-1 text-[11px] font-bold text-amber-800 uppercase tracking-wide">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-pulse" />
-                      Concierge Desk Review In Progress
-                    </div>
-                  </div>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 flex items-start gap-3 page-break-avoid">
+                <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0 mt-0.5 text-amber-600 font-bold text-sm">⏳</div>
+                <div>
+                  <p className="font-semibold text-amber-900 text-sm">Bespoke Package Pricing Under Concierge Review</p>
+                  <p className="text-amber-700 text-xs mt-1 leading-relaxed">
+                    Your travel concierge is reviewing your preferences and preparing a personalised pricing proposal.
+                    A complete cost breakdown will be shared within 24 hours.
+                  </p>
                 </div>
-              </section>
-            )}
-
-            {/* ── Client Information ── */}
-            <section className="page-break-avoid">
-              <SectionTitle>Client Information</SectionTitle>
-              <div className="grid grid-cols-2 gap-x-10 gap-y-3 mt-4">
-                <InfoRow label="Guest Name"        value={info.guest_name} />
-                <InfoRow label="Email"             value={info.email} />
-                <InfoRow label="Phone"             value={info.phone} />
-                <InfoRow label="Nationality"       value={info.nationality} />
-                <InfoRow label="Passport No."      value={info.passport_no} />
-                <InfoRow label="Passport Expiry"   value={fmtDate(info.passport_expiry)} />
-                <InfoRow label="Emergency Contact" value={info.emergency_contact} span />
               </div>
-            </section>
+            )}
 
-            {/* ── Tour Summary ── */}
-            <section className="page-break-avoid">
-              <SectionTitle>Tour Summary</SectionTitle>
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mt-4">
-                {[
-                  { label: 'Tour Package', value: tour.tour_package, wide: true },
-                  { label: 'Category',     value: tour.category },
-                  { label: 'Duration',     value: tour.duration_nights ? `${tour.duration_nights} Nights` : '—' },
-                  { label: 'Group Size',   value: tour.group_size ? `${tour.group_size} Pax` : '—' },
-                  { label: 'Departure',    value: fmtDate(tour.departure_date) },
-                  { label: 'Return',       value: fmtDate(tour.return_date) },
-                ].map(({ label, value, wide }) => (
-                  <div key={label} className={`bg-stone-50 rounded-xl p-3 ${wide ? 'col-span-3 sm:col-span-2' : ''}`}>
-                    <p className="text-[10px] text-stone-400 uppercase tracking-wider font-semibold">{label}</p>
-                    <p className="text-stone-800 font-semibold text-sm mt-0.5">{value || '—'}</p>
-                  </div>
-                ))}
+            {/* ── CLIENT INFO + TOUR SUMMARY (side by side) ── */}
+            <div className="grid grid-cols-2 gap-5 page-break-avoid">
+              {/* Client Info */}
+              <div className="rounded-xl overflow-hidden border border-stone-200">
+                <div className="bg-stone-800 px-4 py-2.5">
+                  <p className="text-white text-[10px] font-bold uppercase tracking-widest">Client Information</p>
+                </div>
+                <div className="divide-y divide-stone-100">
+                  {[
+                    ['Guest Name',        info.guest_name],
+                    ['Email Address',     info.email],
+                    ['Phone / WhatsApp',  info.phone],
+                    ['Nationality',       info.nationality],
+                    ['Passport No.',      info.passport_no || info.passport_number],
+                    ['Passport Expiry',   info.passport_expiry ? fmtDate(info.passport_expiry) : null],
+                    ['Emergency Contact', info.emergency_contact],
+                  ].filter(([, v]) => v).map(([label, val]) => (
+                    <div key={label} className="flex px-4 py-2">
+                      <span className="text-stone-400 text-[10px] w-32 flex-shrink-0 font-medium pt-px">{label}</span>
+                      <span className="text-stone-800 text-xs font-semibold leading-snug">{val}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </section>
 
-            {/* ── Travel Preferences (pending enquiries only) ── */}
-            {isPending && (tour.hotel_tier || tour.interests?.length > 0 || tour.message) && (
-              <section className="page-break-avoid">
-                <SectionTitle>Your Travel Preferences</SectionTitle>
-                <div className="grid grid-cols-2 gap-x-10 gap-y-4 mt-4">
-                  {tour.hotel_tier && (
-                    <InfoRow label="Preferred Accommodation" value={tour.hotel_tier} />
-                  )}
-                  {tour.interests?.length > 0 && (
-                    <div className="col-span-2">
-                      <p className="text-[10px] text-stone-400 uppercase tracking-wider font-semibold mb-2">Special Interests</p>
-                      <div className="flex flex-wrap gap-2">
-                        {tour.interests.map((interest, idx) => (
-                          <span key={idx} className="text-xs px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full font-medium">
-                            {interest}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {tour.message && (
-                    <div className="col-span-2">
-                      <p className="text-[10px] text-stone-400 uppercase tracking-wider font-semibold mb-1">Additional Notes</p>
-                      <p className="text-stone-700 text-sm leading-relaxed">{tour.message}</p>
-                    </div>
-                  )}
+              {/* Tour Summary */}
+              <div className="rounded-xl overflow-hidden border border-stone-200">
+                <div className="px-4 py-2.5" style={{ background: 'linear-gradient(90deg, #92400E, #D97706)' }}>
+                  <p className="text-white text-[10px] font-bold uppercase tracking-widest">Tour Summary</p>
                 </div>
-              </section>
-            )}
-
-            {/* ── Specialist Team ── */}
-            {(isPending || tour.guide_name) && (
-              <section className="page-break-avoid">
-                <SectionTitle>Your Specialist Team</SectionTitle>
-                <div className="grid grid-cols-2 gap-x-10 gap-y-3 mt-4">
-                  <div>
-                    <p className="text-[10px] text-stone-400 uppercase tracking-wider font-semibold">Assigned Guide</p>
-                    <p className="text-stone-800 text-sm font-medium mt-0.5">
-                      {tour.guide_name || (isPending ? 'Assigned on confirmation' : '—')}
-                    </p>
-                  </div>
-                  {tour.vehicle_details && (
-                    <div>
-                      <p className="text-[10px] text-stone-400 uppercase tracking-wider font-semibold">Private Vehicle &amp; Driver</p>
-                      <p className="text-stone-800 text-sm font-medium mt-0.5">{tour.vehicle_details}</p>
+                <div className="divide-y divide-stone-100">
+                  {[
+                    ['Tour Package',  tour.tour_package || '—'],
+                    ['Category',      tour.category || '—'],
+                    ['Duration',      tour.duration_nights ? `${Number(tour.duration_nights) + 1} Days / ${tour.duration_nights} Nights` : '—'],
+                    ['Group Size',    tour.group_size ? `${tour.group_size} Pax` : '—'],
+                    ['Departure',     fmtDate(tour.departure_date)],
+                    ['Return',        fmtDate(tour.return_date)],
+                    ['Guide',         tour.guide_name || (isPending ? 'Assigned on confirmation' : null)],
+                    ['Vehicle',       tour.vehicle_details || (isPending ? 'Private vehicle + driver' : null)],
+                  ].filter(([, v]) => v && v !== '—').map(([label, val]) => (
+                    <div key={label} className="flex px-4 py-2">
+                      <span className="text-stone-400 text-[10px] w-32 flex-shrink-0 font-medium pt-px">{label}</span>
+                      <span className="text-stone-800 text-xs font-semibold leading-snug">{val}</span>
                     </div>
-                  )}
-                  {isPending && !tour.vehicle_details && (
-                    <div>
-                      <p className="text-[10px] text-stone-400 uppercase tracking-wider font-semibold">Private Vehicle &amp; Driver</p>
-                      <p className="text-stone-500 text-sm mt-0.5 italic">Assigned on confirmation</p>
-                    </div>
-                  )}
+                  ))}
                 </div>
-              </section>
-            )}
+              </div>
+            </div>
 
-            {/* ── Flight Details (quoted/confirmed) ── */}
+            {/* ── FLIGHT DETAILS ── */}
             {!isPending && (it.flights || []).length > 0 && (
-              <section className="page-break-avoid">
-                <SectionTitle>Flight Details</SectionTitle>
-                <div className="mt-4 overflow-hidden rounded-xl border border-stone-100">
-                  <table className="w-full border-collapse text-sm">
-                    <thead>
-                      <tr className="bg-stone-800 text-stone-200 text-xs uppercase tracking-wider">
-                        {['Sector', 'Date', 'Flight No.', 'Departs', 'Arrives', 'Airline'].map(h => (
-                          <th key={h} className="px-4 py-3 text-left font-semibold">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-stone-50">
-                      {it.flights.map((f, i) => (
-                        <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-stone-50/60'}>
-                          <td className="px-4 py-3 font-semibold text-stone-800">{f.sector || '—'}</td>
-                          <td className="px-4 py-3 text-stone-600">{f.date || '—'}</td>
-                          <td className="px-4 py-3 font-mono text-amber-700">{f.flight_no || '—'}</td>
-                          <td className="px-4 py-3 text-stone-600">{f.departs || '—'}</td>
-                          <td className="px-4 py-3 text-stone-600">{f.arrives || '—'}</td>
-                          <td className="px-4 py-3 text-stone-500">{f.airline || '—'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
-            )}
-
-            {/* ── Day-by-Day Itinerary ── */}
-            {(it.day_by_day || []).length > 0 && (
-              <section>
-                <SectionTitle>Day-by-Day Itinerary</SectionTitle>
-                <div className="mt-4 space-y-3">
-                  {it.day_by_day.map((d, i) => {
-                    const meals = parseMeals(d.meals)
-                    return (
-                      <div key={i} className="page-break-avoid grid grid-cols-[56px_1fr] gap-0 rounded-xl overflow-hidden border border-stone-100">
-                        <div className="flex flex-col items-center justify-center bg-stone-800 text-white py-4 px-2">
-                          <p className="text-[9px] uppercase tracking-widest text-stone-400">Day</p>
-                          <p className="text-xl font-bold leading-none mt-0.5">{d.day ?? i + 1}</p>
-                          {d.date && (
-                            <p className="text-[9px] text-stone-500 mt-1 text-center leading-tight">
-                              {new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                            </p>
-                          )}
-                        </div>
-                        <div className="bg-white px-5 py-4">
-                          <p className="text-stone-800 text-sm leading-relaxed">{d.programme || '—'}</p>
-                          <div className="flex items-center gap-3 mt-3 flex-wrap">
-                            {d.accommodation_name && (
-                              <span className="flex items-center gap-1 text-xs text-stone-500">
-                                <span className="text-amber-600">⌂</span> {d.accommodation_name}
-                              </span>
-                            )}
-                            {meals.length > 0 && (
-                              <span className="flex items-center gap-1">
-                                <span className="text-xs text-stone-400">Meals:</span>
-                                {meals.map(m => <MealBadge key={m} code={m[0]?.toUpperCase()} />)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </section>
-            )}
-
-            {/* ── Cost Breakdown (quoted / confirmed only) ── */}
-            {showPricing && px.grand_total > 0 && (
-              <section className="page-break-avoid">
-                <SectionTitle>Cost Breakdown</SectionTitle>
-                <div className="mt-4 rounded-xl border border-stone-200 overflow-hidden">
-                  <table className="w-full border-collapse text-sm">
-                    <tbody className="divide-y divide-stone-100">
-                      <PricingRow
-                        label={`Package Rate — $${fmtMoney(px.package_rate_per_pax, 0)} per person × ${tour.group_size || 1} guests`}
-                        value={`$${fmtMoney(Number(px.package_rate_per_pax || 0) * Number(tour.group_size || 1))}`}
-                      />
-                      <PricingRow
-                        label={`Sustainable Development Fee — $100 × ${tour.duration_nights || 1} nights × ${tour.group_size || 1} guests`}
-                        value={`$${fmtMoney(px.sdf_total)}`}
-                      />
-                      {px.service_fee > 0 && (
-                        <PricingRow label="Service Fee" value={`$${fmtMoney(px.service_fee)}`} />
-                      )}
-                      <PricingRow label="Subtotal" value={`$${fmtMoney(px.subtotal)}`} bold />
-                      <PricingRow label="GST (5%)"  value={`$${fmtMoney(px.gst)}`} />
-                      <tr className="bg-amber-50">
-                        <td className="px-5 py-4 font-bold text-stone-900">Grand Total (USD)</td>
-                        <td className="px-5 py-4 text-right font-bold text-amber-700 text-lg font-mono">
-                          ${fmtMoney(px.grand_total)}
-                        </td>
-                      </tr>
-                      <tr className="bg-stone-50">
-                        <td className="px-5 py-3 text-stone-500 text-xs">Equivalent Amount (INR @ ₹83.5 / USD)</td>
-                        <td className="px-5 py-3 text-right text-stone-600 text-sm font-mono font-semibold">
-                          ₹{Number(px.equivalent_inr || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-[11px] text-stone-400 mt-2 italic">
-                  * INR equivalent is indicative only; final conversion at prevailing rate on payment date.
-                </p>
-              </section>
-            )}
-
-            {/* ── Inclusions & Exclusions ── */}
-            <section className="page-break-avoid">
-              <div className="grid sm:grid-cols-2 gap-6">
-                <div>
-                  <SectionTitle>Inclusions</SectionTitle>
-                  <ul className="mt-3 space-y-2">
-                    {DEFAULT_INCLUSIONS.map((item, i) => (
-                      <li key={i} className="flex items-start gap-2 text-xs text-stone-600">
-                        <span className="text-green-600 mt-0.5 shrink-0">✓</span>
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <SectionTitle>Exclusions</SectionTitle>
-                  <ul className="mt-3 space-y-2">
-                    {DEFAULT_EXCLUSIONS.map((item, i) => (
-                      <li key={i} className="flex items-start gap-2 text-xs text-stone-600">
-                        <span className="text-red-500 mt-0.5 shrink-0">✕</span>
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </section>
-
-            {/* ── Cancellation Policy ── */}
-            <section className="page-break-avoid">
-              <SectionTitle>Cancellation Policy</SectionTitle>
-              <div className="mt-4 overflow-hidden rounded-xl border border-stone-100">
-                <table className="w-full border-collapse text-sm">
+              <div className="page-break-avoid">
+                <SectionHead>Flight Details</SectionHead>
+                <table className="w-full border-collapse mt-3 text-xs">
                   <thead>
-                    <tr className="bg-stone-800 text-stone-200 text-xs uppercase tracking-wider">
-                      <th className="px-5 py-3 text-left font-semibold">Period</th>
-                      <th className="px-5 py-3 text-left font-semibold">Cancellation Terms</th>
+                    <tr className="bg-stone-800 text-white text-[10px] uppercase tracking-wider">
+                      {['Sector', 'Date', 'Flight No.', 'Departs', 'Arrives', 'Airline'].map(h => (
+                        <th key={h} className="px-3 py-2.5 text-left font-semibold">{h}</th>
+                      ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-stone-50">
-                    {DEFAULT_CANCELLATION.map((row, i) => (
-                      <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-stone-50/60'}>
-                        <td className="px-5 py-3 font-medium text-stone-700">{row.period}</td>
-                        <td className="px-5 py-3 text-stone-600">{row.policy}</td>
+                  <tbody>
+                    {it.flights.map((f, i) => (
+                      <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-stone-50'}>
+                        <td className="px-3 py-2.5 font-semibold text-stone-800 border border-stone-100">{f.sector || '—'}</td>
+                        <td className="px-3 py-2.5 text-stone-600 border border-stone-100">{f.date ? fmtDate(f.date) : '—'}</td>
+                        <td className="px-3 py-2.5 font-mono font-bold border border-stone-100" style={{ color: '#D97706' }}>{f.flight_no || '—'}</td>
+                        <td className="px-3 py-2.5 text-stone-600 border border-stone-100">{f.departs || '—'}</td>
+                        <td className="px-3 py-2.5 text-stone-600 border border-stone-100">{f.arrives || '—'}</td>
+                        <td className="px-3 py-2.5 text-stone-500 border border-stone-100">{f.airline || '—'}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </div>
-            </section>
-
-            {/* ── Payment Terms (quoted / confirmed only) ── */}
-            {showPricing && (
-              <section className="page-break-avoid">
-                <SectionTitle>Payment Terms</SectionTitle>
-                <ul className="mt-3 space-y-1.5">
-                  {[
-                    '30% deposit required within 7 days of booking confirmation to secure the reservation.',
-                    'Full balance due 30 days prior to the departure date.',
-                    'Accepted methods: Bank Transfer (SWIFT / RTGS), major credit/debit cards.',
-                    'All amounts are quoted and payable in USD unless prior arrangement for INR transfer is confirmed in writing.',
-                  ].map((t, i) => (
-                    <li key={i} className="flex items-start gap-2 text-xs text-stone-600">
-                      <span className="text-amber-600 shrink-0 mt-0.5">→</span> {t}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-          </div>
-
-          {/* ── Footer ── */}
-          <footer className="mt-2">
-            <div className="h-px" style={{ background: 'linear-gradient(to right, #D97706, transparent)' }} />
-            <div className="px-10 py-8 flex flex-col sm:flex-row items-center justify-between gap-6">
-              <div>
-                <p className="font-serif font-bold text-stone-900 text-xl italic">&ldquo;To Arise is to Awaken.&rdquo;</p>
-                <p className="text-stone-400 text-xs mt-1.5 max-w-xs leading-relaxed">
-                  We craft personal journeys into the Kingdom of Happiness — where every trail,
-                  monastery and dzong reveals a deeper layer of the ancient world.
+                <p className="text-[9px] text-stone-400 mt-1.5 italic">
+                  * Confirm flight schedules directly with the airline. Arise Bhutan is not responsible for schedule changes.
                 </p>
               </div>
-              <div className="text-right shrink-0 text-xs text-stone-400 space-y-0.5">
-                <p className="font-semibold text-stone-700 text-sm">Arise Bhutan Tours &amp; Travels</p>
-                <p>arisebhutan@gmail.com</p>
-                <p>www.arisebhutan.com</p>
-                <p className="mt-1 italic">Licensed by Tourism Council of Bhutan</p>
+            )}
+
+            {/* ── DAY-BY-DAY ITINERARY ── */}
+            {(it.day_by_day || []).length > 0 && (
+              <div>
+                <SectionHead>Day-by-Day Itinerary Programme</SectionHead>
+                <table className="w-full border-collapse mt-3 text-xs">
+                  <thead>
+                    <tr className="bg-stone-800 text-white text-[10px] uppercase tracking-wider">
+                      <th className="px-3 py-2.5 text-center font-semibold w-10">Day</th>
+                      <th className="px-3 py-2.5 text-left font-semibold w-20">Date</th>
+                      <th className="px-3 py-2.5 text-left font-semibold">Programme &amp; Activities</th>
+                      <th className="px-3 py-2.5 text-left font-semibold w-40">Accommodation</th>
+                      <th className="px-3 py-2.5 text-center font-semibold w-20">Meals</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {it.day_by_day.map((d, i) => {
+                      const meals = parseMeals(d.meals)
+                      const lines = (d.programme || '').split('\n').filter(Boolean)
+                      return (
+                        <tr key={i} className={`page-break-avoid ${i % 2 === 0 ? 'bg-white' : 'bg-stone-50/70'}`}>
+                          <td className="px-3 py-3 text-center font-bold text-stone-800 border border-stone-100 align-top">
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-white text-[10px] font-bold"
+                              style={{ background: 'linear-gradient(135deg, #92400E, #D97706)' }}>
+                              {String(d.day ?? i + 1).padStart(2, '0')}
+                            </span>
+                          </td>
+                          <td className="px-3 py-3 text-stone-500 border border-stone-100 align-top whitespace-nowrap">
+                            {d.date
+                              ? new Date(d.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                              : '—'}
+                          </td>
+                          <td className="px-3 py-3 border border-stone-100 align-top">
+                            {lines.length > 0 ? (
+                              <>
+                                <p className="font-bold text-stone-800 mb-1">{lines[0]}</p>
+                                {lines.slice(1).map((l, li) => (
+                                  <p key={li} className="text-stone-500 text-[10px] flex items-start gap-1">
+                                    <span className="text-amber-500 shrink-0 mt-0.5">›</span>{l}
+                                  </p>
+                                ))}
+                              </>
+                            ) : (
+                              <span className="text-stone-400 italic">Programme TBC</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-3 text-stone-600 border border-stone-100 align-top">
+                            {d.accommodation_name || 'N/A'}
+                          </td>
+                          <td className="px-3 py-3 text-center border border-stone-100 align-top">
+                            <div className="flex items-center justify-center gap-0.5 flex-wrap">
+                              {meals.map(m => {
+                                const colors = { B: '#FEF3C7 #92400E', L: '#D1FAE5 #065F46', D: '#DBEAFE #1E40AF' }
+                                const [bg, color] = (colors[m] || '#F3F4F6 #374151').split(' ')
+                                return (
+                                  <span key={m}
+                                    className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded"
+                                    style={{ background: bg, color }}>
+                                    {m === 'B' ? 'B' : m === 'L' ? 'L' : m === 'D' ? 'D' : m}
+                                  </span>
+                                )
+                              })}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+                <p className="text-[9px] text-stone-400 mt-1.5">B = Breakfast &nbsp;·&nbsp; L = Lunch &nbsp;·&nbsp; D = Dinner</p>
+              </div>
+            )}
+
+            {/* ── ACCOMMODATION SCHEDULE ── */}
+            {!isPending && (tour.accommodations || []).length > 0 && (
+              <div className="page-break-avoid">
+                <SectionHead>Accommodation Schedule</SectionHead>
+                <table className="w-full border-collapse mt-3 text-xs">
+                  <thead>
+                    <tr className="bg-stone-800 text-white text-[10px] uppercase tracking-wider">
+                      {['Hotel Name', 'Location', 'Category', 'Property Type', 'Check-in', 'Check-out', 'Room'].map(h => (
+                        <th key={h} className="px-3 py-2.5 text-left font-semibold">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tour.accommodations.map((a, i) => (
+                      <tr key={i} className={`page-break-avoid ${i % 2 === 0 ? 'bg-white' : 'bg-stone-50'}`}>
+                        <td className="px-3 py-2.5 font-semibold text-stone-800 border border-stone-100">{a.hotel || '—'}</td>
+                        <td className="px-3 py-2.5 text-stone-600 border border-stone-100">{a.city || '—'}</td>
+                        <td className="px-3 py-2.5 text-stone-600 border border-stone-100">{a.tier || '—'}</td>
+                        <td className="px-3 py-2.5 text-stone-500 border border-stone-100">Hotel</td>
+                        <td className="px-3 py-2.5 text-stone-600 border border-stone-100">{a.check_in ? fmtDate(a.check_in) : '—'}</td>
+                        <td className="px-3 py-2.5 text-stone-600 border border-stone-100">{a.check_out ? fmtDate(a.check_out) : '—'}</td>
+                        <td className="px-3 py-2.5 text-stone-500 border border-stone-100">{a.room_type || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <p className="text-[9px] text-stone-400 mt-1.5 italic">
+                  Hotels may be substituted with a property of equal or superior category if unavailability arises. Arise Bhutan will notify you with at least 72 hours notice.
+                </p>
+              </div>
+            )}
+
+            {/* ── COST BREAKDOWN ── */}
+            {showPricing && px.grand_total > 0 && (
+              <div className="page-break-avoid">
+                <SectionHead>Cost Breakdown &amp; Pricing Summary</SectionHead>
+                <div className="grid grid-cols-2 gap-5 mt-3">
+                  {/* Left: breakdown table */}
+                  <div className="rounded-xl overflow-hidden border border-stone-200">
+                    <table className="w-full border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-stone-800 text-white text-[10px] uppercase tracking-wider">
+                          <th className="px-4 py-2.5 text-left font-semibold">Cost Item</th>
+                          <th className="px-4 py-2.5 text-left font-semibold">Calculation</th>
+                          <th className="px-4 py-2.5 text-right font-semibold">Amount (USD)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stone-100">
+                        <tr className="bg-white">
+                          <td className="px-4 py-2.5 text-stone-700">Package Rate (per person)</td>
+                          <td className="px-4 py-2.5 text-stone-400">${fmtMoney(px.package_rate_per_pax, 0)} × {guests} pax</td>
+                          <td className="px-4 py-2.5 text-right font-semibold text-stone-800">
+                            ${fmtMoney(Number(px.package_rate_per_pax || 0) * guests)}
+                          </td>
+                        </tr>
+                        <tr className="bg-stone-50">
+                          <td className="px-4 py-2.5 text-stone-700">
+                            Sustainable Development Fee
+                            <p className="text-[9px] text-stone-400">Mandatory Royal Govt. of Bhutan levy</p>
+                          </td>
+                          <td className="px-4 py-2.5 text-stone-400">${100}/pax/night × {nights} × {guests}</td>
+                          <td className="px-4 py-2.5 text-right font-semibold text-stone-800">${fmtMoney(px.sdf_total)}</td>
+                        </tr>
+                        {px.service_fee > 0 && (
+                          <tr className="bg-white">
+                            <td className="px-4 py-2.5 text-stone-700">Service &amp; Handling Fee</td>
+                            <td className="px-4 py-2.5 text-stone-400">${fmtMoney(px.service_fee, 0)}/pax × {guests}</td>
+                            <td className="px-4 py-2.5 text-right font-semibold text-stone-800">${fmtMoney(Number(px.service_fee || 0))}</td>
+                          </tr>
+                        )}
+                        <tr className="bg-amber-50">
+                          <td className="px-4 py-2.5 font-bold text-stone-900" colSpan={2}>Sub-total</td>
+                          <td className="px-4 py-2.5 text-right font-bold text-stone-900">${fmtMoney(px.subtotal)}</td>
+                        </tr>
+                        <tr className="bg-white">
+                          <td className="px-4 py-2.5 text-stone-600" colSpan={2}>GST (5%)</td>
+                          <td className="px-4 py-2.5 text-right text-stone-700">5% on sub-total</td>
+                        </tr>
+                        <tr className="bg-white">
+                          <td className="px-4 py-2.5 text-right text-stone-700 font-semibold" colSpan={2}>GST Amount</td>
+                          <td className="px-4 py-2.5 text-right font-semibold text-stone-800">${fmtMoney(px.gst)}</td>
+                        </tr>
+                      </tbody>
+                      <tfoot>
+                        <tr style={{ background: 'linear-gradient(90deg, #1C1410, #2D1A08)' }}>
+                          <td className="px-4 py-3 font-bold text-white text-sm" colSpan={2}>Grand Total (USD)</td>
+                          <td className="px-4 py-3 text-right font-black text-lg" style={{ color: '#F59E0B', fontFamily: 'monospace' }}>
+                            ${fmtMoney(px.grand_total)}
+                          </td>
+                        </tr>
+                        <tr className="bg-stone-100">
+                          <td className="px-4 py-2 text-stone-500 text-[10px]" colSpan={2}>Equivalent (INR @ ₹83.5)</td>
+                          <td className="px-4 py-2 text-right font-mono text-stone-700 text-xs font-bold">
+                            ₹{Number(px.equivalent_inr || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+
+                  {/* Right: payment schedule + pricing notes */}
+                  <div className="space-y-4">
+                    <div className="rounded-xl border border-stone-200 overflow-hidden">
+                      <div className="px-4 py-2.5" style={{ background: 'linear-gradient(90deg, #92400E, #D97706)' }}>
+                        <p className="text-white text-[10px] font-bold uppercase tracking-widest">Payment Schedule</p>
+                      </div>
+                      <ul className="divide-y divide-stone-100">
+                        {[
+                          '30% deposit to confirm reservation',
+                          'Balance due 30 days before departure',
+                          'USD bank transfer or credit card',
+                        ].map((t, i) => (
+                          <li key={i} className="flex items-start gap-2 px-4 py-2.5 text-xs text-stone-600">
+                            <span className="text-amber-500 shrink-0 mt-0.5">›</span>{t}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="rounded-xl border border-stone-200 overflow-hidden">
+                      <div className="bg-stone-800 px-4 py-2.5">
+                        <p className="text-white text-[10px] font-bold uppercase tracking-widest">Pricing Notes</p>
+                      </div>
+                      <ul className="divide-y divide-stone-100">
+                        {[
+                          'SDF is non-negotiable — set by Royal Govt.',
+                          'INR equivalent shown for reference only.',
+                          'Quote valid 14 days from issue date.',
+                          'Child rates available on request.',
+                          'Group discounts available (10+ pax).',
+                        ].map((n, i) => (
+                          <li key={i} className="flex items-start gap-2 px-4 py-2.5 text-[10px] text-stone-500">
+                            <span className="text-stone-300 shrink-0">›</span>{n}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── INCLUSIONS & EXCLUSIONS ── */}
+            <div className="page-break-avoid">
+              <SectionHead>Package Inclusions &amp; Exclusions</SectionHead>
+              <div className="grid grid-cols-2 gap-5 mt-3">
+                <div className="rounded-xl border border-green-200 overflow-hidden">
+                  <div className="bg-green-700 px-4 py-2.5 flex items-center gap-2">
+                    <span className="text-white text-xs font-bold">✓</span>
+                    <p className="text-white text-[10px] font-bold uppercase tracking-widest">Included in Package</p>
+                  </div>
+                  <ul className="divide-y divide-green-50">
+                    {inclusions.map((item, i) => (
+                      <li key={i} className="flex items-start gap-2 px-4 py-2.5 bg-white">
+                        <span className="text-green-600 shrink-0 mt-0.5 font-bold text-xs">✓</span>
+                        <span className="text-stone-700 text-xs">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="rounded-xl border border-red-200 overflow-hidden">
+                  <div className="bg-red-700 px-4 py-2.5 flex items-center gap-2">
+                    <span className="text-white text-xs font-bold">✗</span>
+                    <p className="text-white text-[10px] font-bold uppercase tracking-widest">Not Included</p>
+                  </div>
+                  <ul className="divide-y divide-red-50">
+                    {exclusions.map((item, i) => (
+                      <li key={i} className="flex items-start gap-2 px-4 py-2.5 bg-white">
+                        <span className="text-red-500 shrink-0 mt-0.5 font-bold text-xs">✗</span>
+                        <span className="text-stone-700 text-xs">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </div>
-            <div className="h-1.5" style={{ backgroundColor: '#D97706' }} />
+
+            {/* ── CANCELLATION POLICY ── */}
+            <div className="page-break-avoid">
+              <SectionHead>Cancellation &amp; Refund Policy</SectionHead>
+              <table className="w-full border-collapse mt-3 text-xs">
+                <thead>
+                  <tr className="bg-stone-800 text-white text-[10px] uppercase tracking-wider">
+                    <th className="px-4 py-2.5 text-left font-semibold">Cancellation Period</th>
+                    <th className="px-4 py-2.5 text-left font-semibold">Refund Terms</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cancellation.map((row, i) => (
+                    <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-stone-50'}>
+                      <td className="px-4 py-2.5 font-semibold text-stone-800 border border-stone-100">{row.period}</td>
+                      <td className="px-4 py-2.5 text-stone-600 border border-stone-100">{row.refund || row.policy}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="text-[9px] text-stone-400 mt-1.5 italic">
+                Force majeure events (natural disasters, civil unrest, airline cancellations) handled on a case-by-case basis. Travel insurance strongly recommended.
+              </p>
+            </div>
+
+            {/* ── ARISE BRAND FOOTER BLOCK ── */}
+            <div className="rounded-2xl overflow-hidden page-break-avoid" style={{ background: 'linear-gradient(135deg, #1C1007, #2D1A08)' }}>
+              <div className="px-8 py-7">
+                <p className="font-serif font-bold text-2xl italic mb-3" style={{ color: '#F59E0B' }}>
+                  To Arise is to Awaken.
+                </p>
+                <p className="text-amber-100/80 text-sm leading-relaxed mb-3">
+                  At Arise Bhutan, we believe the finest journey is one that transforms. Each itinerary we craft carries
+                  the weight of our founder's conviction — born in the shadows of Paro's fortress walls, refined through
+                  seasons of walking Bhutan's ancient trails. We do not simply take you through Bhutan. We introduce you to it.
+                </p>
+                <p className="text-amber-200/60 text-xs leading-relaxed">
+                  Your booking is a promise — of early morning monastery bells, of steaming ema datshi in a farmhouse
+                  kitchen, of prayer flags catching the first Himalayan light. We honour this promise with meticulous care,
+                  passionate guides, and the quiet confidence of a team that calls this kingdom home. Welcome to Bhutan.
+                  Welcome to your awakening.
+                </p>
+                <div className="flex flex-wrap gap-4 mt-5">
+                  {['100% DOT Compliant', 'SDF Directly Remitted', '24/7 In-Country Support', 'Licensed Guides Only'].map(b => (
+                    <span key={b} className="text-[10px] font-bold text-amber-400 flex items-center gap-1">
+                      <span className="text-amber-500">✓</span> {b}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── DOCUMENT FOOTER ── */}
+          <footer className="border-t border-stone-200 px-8 py-6">
+            <div className="grid grid-cols-3 gap-6">
+              <div>
+                <p className="font-bold text-stone-900 text-sm mb-2">Arise Bhutan Tours &amp; Travels</p>
+                <div className="space-y-0.5 text-xs text-stone-500">
+                  <p>DOT License No: 50001567</p>
+                  <p>Dept. of Industry, Royal Govt. of Bhutan</p>
+                  <p>Nyamaizampa, Paro 12001, Bhutan</p>
+                  <p>P.O. Box 1234, Paro 11001</p>
+                </div>
+              </div>
+              <div>
+                <p className="font-bold text-stone-900 text-sm mb-2">Contact &amp; Support</p>
+                <div className="space-y-0.5 text-xs text-stone-500">
+                  <p>📞 +975 77 319 405</p>
+                  <p>📞 +975 2 272 929 (Office)</p>
+                  <p>✉ arisebhutan@gmail.com</p>
+                  <p>🌐 www.arisebhutan.com</p>
+                  <p>💬 WhatsApp: +975 77 319 405</p>
+                </div>
+              </div>
+              <div>
+                <p className="font-bold text-stone-900 text-sm mb-2">Travel Assurance</p>
+                <div className="space-y-0.5 text-xs text-stone-500">
+                  <p>✓ DOT Certified &amp; Licensed</p>
+                  <p>✓ SDF Remitted to Royal Govt.</p>
+                  <p>✓ All Guides DOT Certified</p>
+                  <p>✓ Comprehensive In-Country Support</p>
+                  <p>✓ Emergency Evacuation Protocol</p>
+                </div>
+              </div>
+            </div>
+            <div className="border-t border-stone-100 mt-5 pt-4 flex items-center justify-between">
+              <p className="text-[9px] text-stone-400 italic">
+                This voucher is computer-generated and is valid without a physical signature. Document issued on {fmtDate(it.created_at)}.
+              </p>
+              <p className="text-[9px] text-stone-400 font-mono">Ref: {it.booking_reference}</p>
+            </div>
           </footer>
         </div>
 
         {/* Bottom note */}
-        <p className="text-center text-xs text-stone-400 mt-4 no-print">
-          Issued: {fmtDate(it.created_at)} · Reference: {it.booking_reference}
+        <p className="text-center text-xs text-stone-400 mt-5 no-print">
+          Reference: {it.booking_reference} · Issued {fmtDate(it.created_at)}
         </p>
       </div>
     </>
+  )
+}
+
+// ── Section heading component ─────────────────────────────────
+function SectionHead({ children }) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="h-px flex-1 bg-amber-200" />
+      <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border border-amber-200 whitespace-nowrap"
+        style={{ color: '#92400E', background: '#FEF3C7' }}>
+        {children}
+      </span>
+      <div className="h-px flex-1 bg-amber-200" />
+    </div>
   )
 }

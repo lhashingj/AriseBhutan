@@ -35,7 +35,7 @@ export const premiumTours = [
         day: 1,
         title: 'Arrival in Paro',
         description:
-          'Land at Paro International Airport — one of the world\'s most dramatic approaches, ringed by Himalayan peaks at 7,300 ft. Your guide meets you with a traditional kata welcome scarf. Afternoon visit to the National Museum of Bhutan (Ta Dzong) — a cylindrical watchtower housing thangka paintings, armour, and natural history exhibits. Evening stroll through Paro Bazaar.',
+          'Land at Paro International Airport — one of the world\'s most dramatic approaches, ringed by Himalayan peaks at 7,300 ft. Your guide meets you with a traditional Khadar welcome scarf. Afternoon visit to the National Museum of Bhutan (Ta Dzong) — a cylindrical watchtower housing thangka paintings, armour, and natural history exhibits. Evening stroll through Paro Bazaar.',
         meals: 'Dinner',
         accommodation: 'Heritage Hotel, Paro (3★)',
       },

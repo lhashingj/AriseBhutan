@@ -71,8 +71,8 @@ export const tours: Tour[] = [
     itinerary: [
       {
         day: 1, title: 'Arrival in Paro → Thimphu',
-        description: 'Land at Paro International Airport — one of the world\'s most dramatic approaches, ringed by Himalayan peaks at 7,300 ft elevation. Your guide meets you with a traditional kata welcome scarf. Drive to Thimphu (1.5 hrs) for a traditional Bhutanese lunch. Visit Motithang Takin Preserve (the national animal — a cross between a cow and a goat in Bhutanese legend) and the 169-ft Buddha Dordenma statue with sweeping panoramic views across the capital.',
-        activities: ['Airport pickup & kata welcome', 'Motithang Takin Preserve', 'Buddha Dordenma', 'Thimphu orientation walk', 'Welcome dinner'],
+        description: 'Land at Paro International Airport — one of the world\'s most dramatic approaches, ringed by Himalayan peaks at 7,300 ft elevation. Your guide meets you with a traditional Khadar welcome scarf. Drive to Thimphu (1.5 hrs) for a traditional Bhutanese lunch. Visit Motithang Takin Preserve (the national animal — a cross between a cow and a goat in Bhutanese legend) and the 169-ft Buddha Dordenma statue with sweeping panoramic views across the capital.',
+        activities: ['Airport pickup & Khadar welcome', 'Motithang Takin Preserve', 'Buddha Dordenma', 'Thimphu orientation walk', 'Welcome dinner'],
         accommodation: 'Hotel, Thimphu (3★)', meals: 'Lunch · Dinner'
       },
       {
@@ -136,7 +136,7 @@ export const tours: Tour[] = [
     itinerary: [
       {
         day: 1, title: 'Arrival in Paro',
-        description: 'Arrive at Paro Airport. Meet your guide with a traditional kata welcome. Check in and rest. Late afternoon visit to the National Museum of Bhutan (Ta Dzong) — a cylindrical watchtower converted into a museum of thangka paintings, armour, and natural history. Evening stroll through Paro Bazaar.',
+        description: 'Arrive at Paro Airport. Meet your guide with a traditional Khadar welcome. Check in and rest. Late afternoon visit to the National Museum of Bhutan (Ta Dzong) — a cylindrical watchtower converted into a museum of thangka paintings, armour, and natural history. Evening stroll through Paro Bazaar.',
         activities: ['Airport pickup', 'National Museum of Bhutan', 'Paro Bazaar stroll', 'Welcome dinner'],
         accommodation: 'Heritage Hotel, Paro (3★)', meals: 'Dinner'
       },

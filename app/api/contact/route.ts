@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
+import { tours } from '@/data/tours'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -17,6 +18,78 @@ const supabaseAdmin = createClient(
 )
 
 const SITE_URL = 'https://www.arisebhutan.com'
+
+// ── Tour itinerary helpers ────────────────────────────────────────────────────
+
+type ActivityItem = { name: string; location: string; duration_hours: number; category: string }
+
+function findTourByInterest(tourInterest: string | undefined) {
+  if (!tourInterest) return null
+  const lower = tourInterest.toLowerCase()
+  return tours.find(t => lower.includes(t.title.toLowerCase())) ?? null
+}
+
+function mealsToCSV(meals: string): string {
+  const codes: string[] = []
+  if (/breakfast/i.test(meals)) codes.push('B')
+  if (/lunch/i.test(meals))    codes.push('L')
+  if (/dinner/i.test(meals))   codes.push('D')
+  return codes.join(',')
+}
+
+function buildDayByDay(
+  tour: ReturnType<typeof findTourByInterest>,
+  parsedNights: number,
+  actList: ActivityItem[],
+  depDate: Date | null,
+) {
+  if (tour && tour.itinerary.length > 0) {
+    const numDays = tour.itinerary.length
+
+    // Randomly shuffle & inject selected activities into middle days (skip first + last)
+    const shuffled = [...actList].sort(() => Math.random() - 0.5)
+    const injected: Record<number, ActivityItem[]> = {}
+    for (let i = 0; i < numDays; i++) injected[i] = []
+
+    if (shuffled.length > 0 && numDays > 0) {
+      const middleStart = numDays > 2 ? 1 : 0
+      const middleCount = Math.max(1, numDays > 2 ? numDays - 2 : numDays)
+      shuffled.forEach((act, i) => {
+        injected[middleStart + (i % middleCount)].push(act)
+      })
+    }
+
+    return tour.itinerary.map((day, i) => {
+      const date = depDate
+        ? new Date(depDate.getTime() + i * 86400000).toISOString().split('T')[0]
+        : null
+
+      const baseProgramme   = day.activities.join(' · ')
+      const injectedActs    = injected[i] ?? []
+      const injectedText    = injectedActs.map(a => `${a.name} · ${a.location} (${a.duration_hours}h)`).join('\n')
+      const programme       = [baseProgramme, injectedText].filter(Boolean).join('\n')
+
+      return {
+        day: i + 1,
+        date,
+        programme,
+        accommodation_name: day.accommodation || '',
+        meals: mealsToCSV(day.meals),
+      }
+    })
+  }
+
+  // Fallback: distribute activities round-robin when no tour match
+  return Array.from({ length: parsedNights }, (_, i) => {
+    const dayDate = depDate
+      ? new Date(depDate.getTime() + i * 86400000).toISOString().split('T')[0]
+      : null
+    const dayActivities = actList.filter((_, ai) => ai % parsedNights === i)
+    const programme     = dayActivities.map(a => `${a.name} · ${a.location} (${a.duration_hours}h)`).join('\n')
+    const meals         = i === 0 ? 'L,D' : i === parsedNights - 1 ? 'B,L' : 'B,D'
+    return { day: i + 1, date: dayDate, programme, accommodation_name: '', meals }
+  })
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -35,24 +108,12 @@ export async function POST(req: NextRequest) {
       .includes(hotelTier) ? hotelTier : '4-Star'
 
     // ── Build day_by_day from nights + selected activities ────────────
-    const actList: { name: string; location: string; duration_hours: number; category: string }[] =
-      activitiesSelected ?? []
+    const actList: ActivityItem[] = activitiesSelected ?? []
 
-    const depDate = travelDate ? new Date(travelDate) : null
+    const depDate  = travelDate ? new Date(travelDate) : null
+    const matchedTour = findTourByInterest(tourInterest)
 
-    const day_by_day = Array.from({ length: parsedNights }, (_, i) => {
-      const dayDate = depDate
-        ? new Date(depDate.getTime() + i * 86400000).toISOString().split('T')[0]
-        : null
-      // Distribute activities round-robin across days
-      const dayActivities = actList.filter((_, ai) => ai % parsedNights === i)
-      const programme = dayActivities.length > 0
-        ? dayActivities.map(a => `${a.name} · ${a.location} (${a.duration_hours}h)`).join('\n')
-        : ''
-      // Default meals: first day L+D, last day B+L, middle days B+D
-      const meals = i === 0 ? 'L,D' : i === parsedNights - 1 ? 'B,L' : 'B,D'
-      return { day: i + 1, date: dayDate, programme, accommodation_name: '', meals }
-    })
+    const day_by_day = buildDayByDay(matchedTour, parsedNights, actList, depDate)
 
     // ── 1. Create itineraries row (enquiry_pending, all pricing zeroed) ──
     const { data: itinRow, error: itinErr } = await supabaseAdmin
@@ -67,12 +128,15 @@ export async function POST(req: NextRequest) {
         },
         tour_summary: {
           tour_package:    tourInterest || 'Custom Bhutan Itinerary',
-          category:        interests?.length ? interests[0] : 'Custom',
-          duration_nights: parsedNights,
+          tour_title:      matchedTour?.title  || tourInterest || 'Custom Bhutan Itinerary',
+          category:        matchedTour?.categoryLabel || (interests?.length ? interests[0] : 'Custom'),
+          duration_nights: matchedTour ? matchedTour.nights : parsedNights,
+          duration_days:   matchedTour ? matchedTour.days   : parsedNights + 1,
           group_size:      parsedGuests,
           hotel_tier:      normalizedTier,
           departure_date:  travelDate || null,
           return_date:     null,
+          highlights:      matchedTour?.highlights?.slice(0, 5) ?? [],
           interests:            interests            ?? [],
           activities_selected:  activitiesSelected   ?? [],
           message:              message              || null,

@@ -48,14 +48,18 @@ export async function POST(req: NextRequest) {
       meals:              [d.breakfast && 'B', d.lunch && 'L', d.dinner && 'D'].filter(Boolean).join(','),
     }))
 
+    const year = new Date().getFullYear()
+    const booking_reference = `ARB-${year}-${booking.id.slice(0, 6).toUpperCase()}`
+
     const { error } = await supabaseAdmin.from('itineraries').insert({
+      booking_reference,
       status: 'enquiry_pending',
       client_info: {
         guest_name:       booking.client_name      || '',
         email:            booking.client_email     || '',
         phone:            booking.client_phone     || null,
         nationality:      booking.nationality      || '',
-        passport_number:  booking.passport_number  || null,
+        passport_no:      booking.passport_number  || null,
         passport_expiry:  booking.passport_expiry  || null,
         emergency_contact: booking.emergency_contact || null,
       },
