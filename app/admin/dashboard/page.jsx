@@ -853,13 +853,13 @@ export default function AdminDashboard() {
       <div>
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h2 className="text-lg font-serif font-bold text-white">Client Directory</h2>
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-500" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search name, email, role…"
-              className="pl-9 pr-4 py-2.5 text-sm border border-white/10 rounded-xl bg-stone-900 text-white placeholder:text-stone-500 focus:outline-none focus:border-amber-500 w-64"
+              className="pl-9 pr-4 py-2.5 text-sm border border-white/10 rounded-xl bg-stone-900 text-white placeholder:text-stone-500 focus:outline-none focus:border-amber-500 w-full sm:w-64"
             />
           </div>
         </div>

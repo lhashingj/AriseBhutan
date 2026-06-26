@@ -160,7 +160,7 @@ export default function AdminUsersPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-48">
+        <div className="relative flex-1 min-w-0 w-full sm:min-w-48 sm:w-auto">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-500" />
           <input
             value={search}
@@ -169,7 +169,7 @@ export default function AdminUsersPage() {
             className="w-full pl-9 pr-4 py-2.5 text-sm border border-white/10 rounded-xl bg-stone-900 text-white placeholder:text-stone-500 focus:outline-none focus:border-amber-500 transition-colors"
           />
         </div>
-        <div className="flex gap-1.5">
+        <div className="flex flex-wrap gap-1.5">
           {['ALL', 'CLIENT', 'ADMIN'].map((r) => (
             <button
               key={r}
