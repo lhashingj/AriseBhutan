@@ -168,31 +168,31 @@ export default function ItineraryVoucherPage() {
 
           {/* ── HEADER ── */}
           <header style={{ background: 'linear-gradient(135deg, #92400E 0%, #D97706 60%, #F59E0B 100%)' }}
-            className="px-8 pt-8 pb-6">
-            <div className="flex items-start justify-between gap-6">
+            className="px-4 sm:px-8 pt-6 sm:pt-8 pb-5 sm:pb-6">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
               {/* Logo + tagline */}
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur overflow-hidden flex items-center justify-center border-2 border-white/40 flex-shrink-0">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-white/20 backdrop-blur overflow-hidden flex items-center justify-center border-2 border-white/40 flex-shrink-0">
                   <Image src="/images/logo.jpeg" alt="Arise Bhutan" width={56} height={56} className="object-contain" />
                 </div>
                 <div>
-                  <p className="font-serif font-bold text-white text-xl leading-tight">Arise Bhutan</p>
-                  <p className="text-amber-200 text-xs font-semibold uppercase tracking-widest">Tours &amp; Travels · DOT Certified</p>
-                  <p className="text-amber-200/70 text-xs mt-0.5">
+                  <p className="font-serif font-bold text-white text-lg sm:text-xl leading-tight">Arise Bhutan</p>
+                  <p className="text-amber-200 text-[10px] sm:text-xs font-semibold uppercase tracking-widest">Tours &amp; Travels · DOT Certified</p>
+                  <p className="text-amber-200/70 text-[10px] sm:text-xs mt-0.5">
                     {isPending ? 'Travel Enquiry & Itinerary Proposal' : 'Booking Confirmation & Itinerary Voucher'}
                   </p>
                 </div>
               </div>
 
               {/* Reference box */}
-              <div className="text-right flex-shrink-0">
-                <div className="inline-block bg-white/15 backdrop-blur border border-white/30 rounded-xl px-5 py-3">
+              <div className="sm:text-right">
+                <div className="inline-block bg-white/15 backdrop-blur border border-white/30 rounded-xl px-4 sm:px-5 py-3">
                   <p className="text-amber-200/80 text-[9px] font-bold uppercase tracking-widest mb-1">Booking Reference</p>
-                  <p className="font-mono font-black text-white text-xl tracking-wider">{it.booking_reference}</p>
+                  <p className="font-mono font-black text-white text-base sm:text-xl tracking-wider">{it.booking_reference}</p>
                   <p className="text-amber-200/70 text-[10px] mt-1">Issued: {fmtDate(it.created_at)}</p>
                 </div>
                 {/* Status badge */}
-                <div className="mt-3 flex justify-end">
+                <div className="mt-2 sm:mt-3 flex sm:justify-end">
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
                     style={{ background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.border }}>
                     <span className="w-1.5 h-1.5 rounded-full inline-block"
@@ -205,7 +205,7 @@ export default function ItineraryVoucherPage() {
           </header>
 
           {/* ── BODY ── */}
-          <div className="px-8 py-7 space-y-7">
+          <div className="px-4 sm:px-8 py-6 sm:py-7 space-y-6 sm:space-y-7">
 
             {/* Under-review banner */}
             {isPending && (
@@ -222,7 +222,7 @@ export default function ItineraryVoucherPage() {
             )}
 
             {/* ── CLIENT INFO + TOUR SUMMARY (side by side) ── */}
-            <div className="grid grid-cols-2 gap-5 page-break-avoid">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 page-break-avoid">
               {/* Client Info */}
               <div className="rounded-xl overflow-hidden border border-stone-200">
                 <div className="bg-stone-800 px-4 py-2.5">
@@ -275,7 +275,8 @@ export default function ItineraryVoucherPage() {
             {!isPending && (it.flights || []).length > 0 && (
               <div className="page-break-avoid">
                 <SectionHead>Flight Details</SectionHead>
-                <table className="w-full border-collapse mt-3 text-xs">
+                <div className="overflow-x-auto mt-3">
+                <table className="w-full border-collapse text-xs min-w-[520px]">
                   <thead>
                     <tr className="bg-stone-800 text-white text-[10px] uppercase tracking-wider">
                       {['Sector', 'Date', 'Flight No.', 'Departs', 'Arrives', 'Airline'].map(h => (
@@ -296,6 +297,7 @@ export default function ItineraryVoucherPage() {
                     ))}
                   </tbody>
                 </table>
+                </div>
                 <p className="text-[9px] text-stone-400 mt-1.5 italic">
                   * Confirm flight schedules directly with the airline. Arise Bhutan is not responsible for schedule changes.
                 </p>
@@ -306,7 +308,8 @@ export default function ItineraryVoucherPage() {
             {(it.day_by_day || []).length > 0 && (
               <div>
                 <SectionHead>Day-by-Day Itinerary Programme</SectionHead>
-                <table className="w-full border-collapse mt-3 text-xs">
+                <div className="overflow-x-auto mt-3">
+                <table className="w-full border-collapse text-xs min-w-[560px]">
                   <thead>
                     <tr className="bg-stone-800 text-white text-[10px] uppercase tracking-wider">
                       <th className="px-3 py-2.5 text-center font-semibold w-10">Day</th>
@@ -370,6 +373,7 @@ export default function ItineraryVoucherPage() {
                     })}
                   </tbody>
                 </table>
+                </div>
                 <p className="text-[9px] text-stone-400 mt-1.5">B = Breakfast &nbsp;·&nbsp; L = Lunch &nbsp;·&nbsp; D = Dinner</p>
               </div>
             )}
@@ -378,7 +382,8 @@ export default function ItineraryVoucherPage() {
             {!isPending && (tour.accommodations || []).length > 0 && (
               <div className="page-break-avoid">
                 <SectionHead>Accommodation Schedule</SectionHead>
-                <table className="w-full border-collapse mt-3 text-xs">
+                <div className="overflow-x-auto mt-3">
+                <table className="w-full border-collapse text-xs min-w-[600px]">
                   <thead>
                     <tr className="bg-stone-800 text-white text-[10px] uppercase tracking-wider">
                       {['Hotel Name', 'Location', 'Category', 'Property Type', 'Check-in', 'Check-out', 'Room'].map(h => (
@@ -400,6 +405,7 @@ export default function ItineraryVoucherPage() {
                     ))}
                   </tbody>
                 </table>
+                </div>
                 <p className="text-[9px] text-stone-400 mt-1.5 italic">
                   Hotels may be substituted with a property of equal or superior category if unavailability arises. Arise Bhutan will notify you with at least 72 hours notice.
                 </p>
@@ -410,10 +416,10 @@ export default function ItineraryVoucherPage() {
             {showPricing && px.grand_total > 0 && (
               <div className="page-break-avoid">
                 <SectionHead>Cost Breakdown &amp; Pricing Summary</SectionHead>
-                <div className="grid grid-cols-2 gap-5 mt-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mt-3">
                   {/* Left: breakdown table */}
-                  <div className="rounded-xl overflow-hidden border border-stone-200">
-                    <table className="w-full border-collapse text-xs">
+                  <div className="rounded-xl overflow-hidden border border-stone-200 overflow-x-auto">
+                    <table className="w-full border-collapse text-xs min-w-[320px]">
                       <thead>
                         <tr className="bg-stone-800 text-white text-[10px] uppercase tracking-wider">
                           <th className="px-4 py-2.5 text-left font-semibold">Cost Item</th>
@@ -519,7 +525,7 @@ export default function ItineraryVoucherPage() {
             {/* ── INCLUSIONS & EXCLUSIONS ── */}
             <div className="page-break-avoid">
               <SectionHead>Package Inclusions &amp; Exclusions</SectionHead>
-              <div className="grid grid-cols-2 gap-5 mt-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mt-3">
                 <div className="rounded-xl border border-green-200 overflow-hidden">
                   <div className="bg-green-700 px-4 py-2.5 flex items-center gap-2">
                     <span className="text-white text-xs font-bold">✓</span>
@@ -554,7 +560,8 @@ export default function ItineraryVoucherPage() {
             {/* ── CANCELLATION POLICY ── */}
             <div className="page-break-avoid">
               <SectionHead>Cancellation &amp; Refund Policy</SectionHead>
-              <table className="w-full border-collapse mt-3 text-xs">
+              <div className="overflow-x-auto mt-3">
+              <table className="w-full border-collapse text-xs min-w-[360px]">
                 <thead>
                   <tr className="bg-stone-800 text-white text-[10px] uppercase tracking-wider">
                     <th className="px-4 py-2.5 text-left font-semibold">Cancellation Period</th>
@@ -570,6 +577,7 @@ export default function ItineraryVoucherPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
               <p className="text-[9px] text-stone-400 mt-1.5 italic">
                 Force majeure events (natural disasters, civil unrest, airline cancellations) handled on a case-by-case basis. Travel insurance strongly recommended.
               </p>
@@ -604,8 +612,8 @@ export default function ItineraryVoucherPage() {
           </div>
 
           {/* ── DOCUMENT FOOTER ── */}
-          <footer className="border-t border-stone-200 px-8 py-6">
-            <div className="grid grid-cols-3 gap-6">
+          <footer className="border-t border-stone-200 px-4 sm:px-8 py-5 sm:py-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6">
               <div>
                 <p className="font-bold text-stone-900 text-sm mb-2">Arise Bhutan Tours &amp; Travels</p>
                 <div className="space-y-0.5 text-xs text-stone-500">
