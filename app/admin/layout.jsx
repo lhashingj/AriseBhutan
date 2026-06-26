@@ -62,7 +62,7 @@ export default function AdminLayout({ children }) {
       {/* ── Admin Sidebar ── */}
       <aside className={`
         fixed inset-y-0 left-0 z-40 w-64 bg-stone-900 border-r border-white/5 flex flex-col transition-transform duration-300
-        lg:relative lg:translate-x-0
+        lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 lg:flex-shrink-0
         ${sideOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         {/* Brand */}

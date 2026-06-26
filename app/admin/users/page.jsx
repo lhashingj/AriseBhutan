@@ -30,7 +30,7 @@ export default function AdminUsersPage() {
     setRefreshing(true)
     const [{ data: prof }, { data: bks }] = await Promise.all([
       supabase.from('profiles').select('*').order('created_at', { ascending: false }),
-      supabase.from('bookings').select('*').order('created_at', { ascending: false }),
+      supabase.from('itineraries').select('*').order('created_at', { ascending: false }),
     ])
     setProfiles(prof || [])
     setBookings(bks  || [])
@@ -40,14 +40,19 @@ export default function AdminUsersPage() {
 
   useEffect(() => { load() }, [])
 
-  const bookingsFor = (uid) => bookings.filter((b) => b.user_id === uid)
-  const bookingCount = (uid) => bookingsFor(uid).length
-  const pendingCount = (uid) => bookings.filter((b) => b.user_id === uid && b.status === 'PENDING').length
+  const bookingsFor = (uid, email) => bookings.filter((b) =>
+    b.user_id === uid || b.client_info?.email === email
+  )
+  const bookingCount = (uid, email) => bookingsFor(uid, email).length
+  const pendingCount = (uid, email) => bookingsFor(uid, email).filter((b) =>
+    ['enquiry_pending', 'pending_review', 'PENDING'].includes(b.status)
+  ).length
 
-  function passportExpiry(uid) {
-    const bks = bookingsFor(uid).filter((b) => b.passport_expiry)
+  function passportExpiry(uid, email) {
+    const bks = bookingsFor(uid, email).filter((b) => b.passport_expiry || b.client_info?.passport_expiry)
     if (!bks.length) return null
-    return bks.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0].passport_expiry
+    const sorted = bks.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
+    return sorted.passport_expiry || sorted.client_info?.passport_expiry
   }
 
   function expiryWarning(exp) {
@@ -87,7 +92,7 @@ export default function AdminUsersPage() {
     })
 
   const clientCount = profiles.filter((p) => p.role === 'CLIENT').length
-  const passportWarnings = profiles.filter((p) => expiryWarning(passportExpiry(p.id))).length
+  const passportWarnings = profiles.filter((p) => expiryWarning(passportExpiry(p.id, p.email))).length
 
   if (loading) {
     return (
@@ -131,7 +136,7 @@ export default function AdminUsersPage() {
           <div>
             <p className="text-xs text-stone-400 font-medium uppercase tracking-wider">With Bookings</p>
             <p className="text-2xl font-bold text-white">
-              {profiles.filter((p) => bookingCount(p.id) > 0).length}
+              {profiles.filter((p) => bookingCount(p.id, p.email) > 0).length}
             </p>
           </div>
         </div>
@@ -210,9 +215,9 @@ export default function AdminUsersPage() {
             </thead>
             <tbody className="divide-y divide-white/5">
               {filtered.map((p) => {
-                const count   = bookingCount(p.id)
-                const pending = pendingCount(p.id)
-                const expiry  = passportExpiry(p.id)
+                const count   = bookingCount(p.id, p.email)
+                const pending = pendingCount(p.id, p.email)
+                const expiry  = passportExpiry(p.id, p.email)
                 const warn    = expiryWarning(expiry)
 
                 return (
@@ -297,11 +302,11 @@ export default function AdminUsersPage() {
       {selected && (
         <AdminUserDrawer
           profile={selected}
-          bookings={bookingsFor(selected.id)}
+          bookings={bookingsFor(selected.id, selected.email)}
           onClose={() => setSelected(null)}
           onDelete={(deletedId) => {
             setProfiles((prev) => prev.filter((p) => p.id !== deletedId))
-            setBookings((prev) => prev.filter((b) => b.user_id !== deletedId))
+            setBookings((prev) => prev.filter((b) => b.user_id !== deletedId && b.client_info?.email !== selected?.email))
           }}
           onUpdate={(updated) => {
             setProfiles((prev) => prev.map((p) => p.id === updated.id ? { ...p, ...updated } : p))

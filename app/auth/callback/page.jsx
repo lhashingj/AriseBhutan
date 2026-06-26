@@ -10,13 +10,30 @@ export default function AuthCallback() {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
+        const name  = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Traveller'
+        const email = session.user.email
+
+        // Detect brand-new users: created_at and last_sign_in_at are within 10 seconds of each other
+        const createdAt    = new Date(session.user.created_at).getTime()
+        const lastSignIn   = new Date(session.user.last_sign_in_at).getTime()
+        const isNewUser    = Math.abs(lastSignIn - createdAt) < 10000
+
         // Upsert profile for OAuth users (Google doesn't go through register page)
         await supabase.from('profiles').upsert({
-          id:    session.user.id,
-          name:  session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
-          email: session.user.email,
-          role:  'CLIENT',
+          id:   session.user.id,
+          name,
+          email,
+          role: 'CLIENT',
         }, { onConflict: 'id', ignoreDuplicates: true })
+
+        // Send welcome email only for first-time Google sign-ups
+        if (isNewUser) {
+          fetch('/api/welcome-email', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ name, email }),
+          }).catch(() => {})
+        }
 
         const { data: profile } = await supabase
           .from('profiles')

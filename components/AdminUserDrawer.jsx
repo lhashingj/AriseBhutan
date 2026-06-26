@@ -11,9 +11,16 @@ import { supabase } from '@/utils/supabase/client'
 const inputCls = 'w-full border border-white/10 rounded-xl px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-colors bg-stone-800'
 
 const STATUS_CONFIG = {
-  PENDING:   { label: 'Pending',   cls: 'bg-amber-500/15 text-amber-400 border-amber-500/25',   icon: Clock },
-  CONFIRMED: { label: 'Confirmed', cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25', icon: CheckCircle2 },
-  CANCELLED: { label: 'Cancelled', cls: 'bg-red-500/15 text-red-400 border-red-500/25',          icon: XCircle },
+  // Legacy
+  PENDING:         { label: 'Pending',        cls: 'bg-amber-500/15 text-amber-400 border-amber-500/25',    icon: Clock },
+  CONFIRMED:       { label: 'Confirmed',       cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25', icon: CheckCircle2 },
+  CANCELLED:       { label: 'Cancelled',       cls: 'bg-red-500/15 text-red-400 border-red-500/25',          icon: XCircle },
+  // Itinerary statuses
+  enquiry_pending: { label: 'New Enquiry',     cls: 'bg-rose-500/15 text-rose-400 border-rose-500/25',       icon: Clock },
+  pending_review:  { label: 'Pending Review',  cls: 'bg-amber-500/15 text-amber-400 border-amber-500/25',    icon: Clock },
+  quoted:          { label: 'Quoted',          cls: 'bg-blue-500/15 text-blue-400 border-blue-500/25',        icon: Clock },
+  confirmed:       { label: 'Confirmed',       cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25', icon: CheckCircle2 },
+  cancelled:       { label: 'Cancelled',       cls: 'bg-red-500/15 text-red-400 border-red-500/25',          icon: XCircle },
 }
 
 function fmtDate(d) {
@@ -61,27 +68,66 @@ function FlightBlock({ label, sector, flightNo, depart, arrive, date }) {
 
 function BookingCard({ booking }) {
   const [open, setOpen] = useState(false)
-  const StatusIcon = STATUS_CONFIG[booking.status]?.icon || Clock
-  const cfg = STATUS_CONFIG[booking.status] || STATUS_CONFIG.PENDING
-  const n   = nights(booking.arrival_date, booking.return_date)
-  const pax = parseInt(booking.group_size) || 0
-  const sdf = n * pax * 100
+  const cfg = STATUS_CONFIG[booking.status] || STATUS_CONFIG.pending_review
+  const StatusIcon = cfg.icon
+
+  // Support both itineraries (pricing.grand_total) and legacy bookings (total_cost)
+  const grandTotal = booking.pricing?.grand_total ?? booking.total_cost ?? 0
+  const subtotal   = booking.pricing?.subtotal    ?? booking.subtotal   ?? 0
+  const gst        = booking.pricing?.gst         ?? booking.gst        ?? 0
+  const sdfTotal   = booking.pricing?.sdf_total   ?? 0
+
+  // Tour title — itinerary uses tour_summary.tour_package
+  const tourTitle = booking.tour_summary?.tour_package || booking.tour_summary?.tour_title || booking.tour_title || 'Custom Package'
+
+  // Nights — prefer tour_summary, fallback to date diff
+  const n = Number(booking.tour_summary?.duration_nights)
+    || nights(booking.travel_date || booking.arrival_date, booking.return_date)
+    || 0
+  // Pax — itinerary stores in tour_summary.group_size
+  const pax = parseInt(booking.tour_summary?.group_size || booking.group_size) || 0
+
+  // Dates
+  const startDate  = booking.travel_date || booking.arrival_date
+  const endDate    = booking.return_date
+    || (startDate && n ? new Date(new Date(startDate).getTime() + n * 86400000).toISOString() : null)
+
+  // Flights — itineraries store as array; legacy uses flat fields
+  const flightsArr = booking.flights || []
+  const arrFlight  = flightsArr.find(f => f.type === 'arrival')   || null
+  const depFlight  = flightsArr.find(f => f.type === 'departure') || null
+  const hasFlights = arrFlight || depFlight || booking.flight_arrival || booking.flight_return
+
+  // Passport — itineraries use client_info.passport_no; legacy bookings use passport_number
+  const passportNo  = booking.passport_number   || booking.client_info?.passport_no || booking.client_info?.passport_number
+  const passportExp = booking.passport_expiry   || booking.client_info?.passport_expiry
+  const nationality = booking.nationality       || booking.client_info?.nationality
+  const emergency   = booking.emergency_contact || booking.client_info?.emergency_contact
+  const clientEmail = booking.client_email      || booking.client_info?.email
+  const clientPhone = booking.client_phone      || booking.client_info?.phone
 
   return (
     <div className="border border-white/5 rounded-2xl overflow-hidden bg-stone-800">
       <div className="px-4 py-3 flex items-start gap-3">
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-white text-sm line-clamp-1">{booking.tour_title || 'Custom Package'}</p>
+          <p className="font-semibold text-white text-sm line-clamp-1">{tourTitle}</p>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${cfg.cls}`}>
               <StatusIcon className="w-3 h-3" />
               {cfg.label}
             </span>
-            <span className="text-[11px] text-stone-500">{fmtDate(booking.arrival_date)} → {fmtDate(booking.return_date)}</span>
+            {booking.booking_reference && (
+              <span className="text-[11px] font-mono text-stone-400">{booking.booking_reference}</span>
+            )}
+            <span className="text-[11px] text-stone-500">
+              {fmtDate(startDate)}{endDate ? ` → ${fmtDate(endDate)}` : ''}
+            </span>
           </div>
         </div>
         <div className="text-right shrink-0">
-          <p className="font-bold text-white">${Number(booking.total_cost || 0).toLocaleString()}</p>
+          <p className={`font-bold ${grandTotal > 0 ? 'text-amber-400' : 'text-stone-500'}`}>
+            ${Number(grandTotal).toLocaleString()}
+          </p>
           <p className="text-[10px] text-stone-500">{pax} pax · {n}N</p>
         </div>
         <button onClick={() => setOpen(!open)}
@@ -94,68 +140,72 @@ function BookingCard({ booking }) {
         <div className="border-t border-white/5 divide-y divide-white/5">
           <div className="px-4 py-3 space-y-1">
             <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500 mb-2">Travel Documents</p>
-            <InfoRow label="Passport No."      value={booking.passport_number}  mono />
-            <InfoRow label="Passport Expiry"   value={fmtDate(booking.passport_expiry)} />
-            <InfoRow label="Nationality"       value={booking.nationality} />
-            <InfoRow label="Emergency Contact" value={booking.emergency_contact} />
-            <InfoRow label="Client Email"      value={booking.client_email} />
-            <InfoRow label="Client Phone"      value={booking.client_phone} />
+            <InfoRow label="Passport No."      value={passportNo}            mono />
+            <InfoRow label="Passport Expiry"   value={fmtDate(passportExp)} />
+            <InfoRow label="Nationality"       value={nationality} />
+            <InfoRow label="Emergency Contact" value={emergency} />
+            <InfoRow label="Client Email"      value={clientEmail} />
+            <InfoRow label="Client Phone"      value={clientPhone} />
           </div>
 
-          {(booking.flight_arrival || booking.flight_return) && (
+          {hasFlights && (
             <div className="px-4 py-3 space-y-2">
               <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500 mb-2">Flights</p>
               <FlightBlock
                 label="Inbound (to Paro)"
-                sector={booking.flight_arrival}
-                flightNo={booking.flight_arrival_no}
-                depart={booking.flight_arrival_depart}
-                arrive={booking.flight_arrival_arrive}
-                date={booking.arrival_date}
+                sector={arrFlight?.sector       || booking.flight_arrival}
+                flightNo={arrFlight?.flight_no  || booking.flight_arrival_no}
+                depart={arrFlight?.departure_time || booking.flight_arrival_depart}
+                arrive={arrFlight?.arrival_time   || booking.flight_arrival_arrive}
+                date={arrFlight?.date           || booking.arrival_date}
               />
               <FlightBlock
                 label="Outbound (from Paro)"
-                sector={booking.flight_return}
-                flightNo={booking.flight_return_no}
-                depart={booking.flight_return_depart}
-                arrive={booking.flight_return_arrive}
-                date={booking.return_date}
+                sector={depFlight?.sector       || booking.flight_return}
+                flightNo={depFlight?.flight_no  || booking.flight_return_no}
+                depart={depFlight?.departure_time || booking.flight_return_depart}
+                arrive={depFlight?.arrival_time   || booking.flight_return_arrive}
+                date={depFlight?.date           || booking.return_date}
               />
             </div>
           )}
 
           <div className="px-4 py-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500 mb-2">SDF & Cost</p>
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2 space-y-1 text-xs mb-2">
-              <div className="flex justify-between">
-                <span className="text-stone-400">SDF formula</span>
-                <span className="text-stone-300 font-mono">{n} nights × {pax} pax × $100</span>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500 mb-2">Cost Breakdown</p>
+            {sdfTotal > 0 && (
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2 space-y-1 text-xs mb-2">
+                <div className="flex justify-between">
+                  <span className="text-stone-400">SDF</span>
+                  <span className="text-stone-300 font-mono">{n}N × {pax} pax × $100</span>
+                </div>
+                <div className="flex justify-between font-bold">
+                  <span className="text-amber-400">SDF Total</span>
+                  <span className="text-amber-400">${Number(sdfTotal).toLocaleString()} USD</span>
+                </div>
               </div>
-              <div className="flex justify-between font-bold">
-                <span className="text-amber-400">SDF Total</span>
-                <span className="text-amber-400">${sdf.toLocaleString()} USD</span>
-              </div>
-            </div>
+            )}
             <div className="flex justify-between text-xs mb-1">
               <span className="text-stone-500">Sub-total</span>
-              <span className="text-stone-300">${Number(booking.subtotal || 0).toLocaleString()}</span>
+              <span className="text-stone-300">${Number(subtotal).toLocaleString()}</span>
             </div>
             <div className="flex justify-between text-xs mb-1">
               <span className="text-stone-500">GST (5%)</span>
-              <span className="text-stone-300">${Number(booking.gst || 0).toLocaleString()}</span>
+              <span className="text-stone-300">${Number(gst).toLocaleString()}</span>
             </div>
             <div className="flex justify-between text-sm font-bold border-t border-white/10 pt-1 mt-1">
               <span className="text-stone-300">Grand Total</span>
-              <span className="text-white">${Number(booking.total_cost || 0).toLocaleString()} USD</span>
+              <span className={grandTotal > 0 ? 'text-amber-400' : 'text-stone-500'}>
+                ${Number(grandTotal).toLocaleString()} USD
+              </span>
             </div>
           </div>
 
           <div className="px-4 py-3">
             <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500 mb-2">Stay Details</p>
-            <InfoRow label="Hotel Tier"  value={booking.hotel_tier} />
-            <InfoRow label="Group Size"  value={`${booking.group_size || '—'} pax`} />
+            <InfoRow label="Hotel Tier"  value={booking.tour_summary?.hotel_tier || booking.hotel_tier} />
+            <InfoRow label="Group Size"  value={`${pax || '—'} pax`} />
             <InfoRow label="Nights"      value={`${n} nights`} />
-            <InfoRow label="Payment"     value={booking.payment_status === 'PAID' ? '✓ Paid' : '⏳ Unpaid'} />
+            <InfoRow label="Ref"         value={booking.booking_reference || booking.reference_number || booking.booking_ref} mono />
           </div>
         </div>
       )}
@@ -253,8 +303,8 @@ export default function AdminUserDrawer({ profile, bookings, onClose, onDelete, 
           <div className="grid grid-cols-3 gap-2">
             {[
               { label: 'Bookings',    value: bookings.length },
-              { label: 'Confirmed',   value: bookings.filter((b) => b.status === 'CONFIRMED').length, color: 'text-emerald-400' },
-              { label: 'Total Spend', value: `$${bookings.reduce((s, b) => s + Number(b.total_cost || 0), 0).toLocaleString()}`, color: 'text-amber-400' },
+              { label: 'Confirmed',   value: bookings.filter((b) => ['CONFIRMED', 'confirmed'].includes(b.status)).length, color: 'text-emerald-400' },
+              { label: 'Total Spend', value: `$${bookings.reduce((s, b) => s + Number(b.pricing?.grand_total ?? b.total_cost ?? 0), 0).toLocaleString()}`, color: 'text-amber-400' },
             ].map(({ label, value, color = 'text-white' }) => (
               <div key={label} className="bg-white/10 rounded-xl px-3 py-2 text-center">
                 <p className="text-stone-400 text-[9px] uppercase tracking-wider">{label}</p>
@@ -440,7 +490,10 @@ export default function AdminUserDrawer({ profile, bookings, onClose, onDelete, 
 
           {/* Travel documents — prefer profile data, fall back to latest booking */}
           {(profile.passport_number || profile.passport_expiry || profile.emergency_contact ||
-            latest?.passport_number || latest?.nationality || latest?.passport_expiry || latest?.emergency_contact) && (
+            latest?.passport_number || latest?.client_info?.passport_number ||
+            latest?.nationality    || latest?.client_info?.nationality      ||
+            latest?.passport_expiry || latest?.client_info?.passport_expiry ||
+            latest?.emergency_contact || latest?.client_info?.emergency_contact) && (
             <div className="bg-stone-800 rounded-2xl border border-white/5 overflow-hidden">
               <div className="px-4 py-3 border-b border-white/5">
                 <p className="font-semibold text-white text-sm">Travel Documents</p>
@@ -449,10 +502,10 @@ export default function AdminUserDrawer({ profile, bookings, onClose, onDelete, 
                 </p>
               </div>
               <div className="px-4 py-3">
-                <InfoRow label="Passport Number"   value={profile.passport_number   || latest?.passport_number}  mono />
-                <InfoRow label="Passport Expiry"   value={fmtDate(profile.passport_expiry   || latest?.passport_expiry)} />
-                <InfoRow label="Nationality"       value={profile.nationality       || latest?.nationality} />
-                <InfoRow label="Emergency Contact" value={profile.emergency_contact || latest?.emergency_contact} />
+                <InfoRow label="Passport Number"   value={profile.passport_number   || latest?.passport_number   || latest?.client_info?.passport_no || latest?.client_info?.passport_number}  mono />
+                <InfoRow label="Passport Expiry"   value={fmtDate(profile.passport_expiry   || latest?.passport_expiry   || latest?.client_info?.passport_expiry)} />
+                <InfoRow label="Nationality"       value={profile.nationality       || latest?.nationality       || latest?.client_info?.nationality} />
+                <InfoRow label="Emergency Contact" value={profile.emergency_contact || latest?.emergency_contact || latest?.client_info?.emergency_contact} />
               </div>
             </div>
           )}
