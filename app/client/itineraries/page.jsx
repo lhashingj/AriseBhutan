@@ -4,21 +4,50 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { MapPin, FileText, Clock, CheckCircle2, Package } from 'lucide-react'
+import { MapPin, Calendar, ChevronRight, ExternalLink, CheckCircle2, Clock } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
 
-function StatusBadge({ status }) {
-  const cfg = {
-    enquiry_pending: { label: 'Enquiry',    color: 'bg-rose-100 text-rose-700',   bar: 'bg-rose-400' },
-    pending_review:  { label: 'In Review',  color: 'bg-amber-100 text-amber-700', bar: 'bg-amber-500' },
-    quoted:          { label: 'Quoted',     color: 'bg-blue-100 text-blue-700',   bar: 'bg-blue-400' },
-    confirmed:       { label: 'Confirmed',  color: 'bg-green-100 text-green-700', bar: 'bg-green-500' },
-  }[status] || { label: 'In Review', color: 'bg-amber-100 text-amber-700', bar: 'bg-amber-500' }
+const STATUS = {
+  enquiry_pending: {
+    label:  'Enquiry',
+    bg:     'bg-rose-500/15',
+    text:   'text-rose-400',
+    border: 'border-rose-500/30',
+    dot:    'bg-rose-400',
+    card:   'border-rose-500/20',
+  },
+  pending_review: {
+    label:  'In Review',
+    bg:     'bg-amber-500/15',
+    text:   'text-amber-400',
+    border: 'border-amber-500/30',
+    dot:    'bg-amber-400',
+    card:   'border-amber-500/20',
+  },
+  quoted: {
+    label:  'Quoted',
+    bg:     'bg-blue-500/15',
+    text:   'text-blue-400',
+    border: 'border-blue-500/30',
+    dot:    'bg-blue-400',
+    card:   'border-blue-500/20',
+  },
+  confirmed: {
+    label:  'Confirmed',
+    bg:     'bg-emerald-500/15',
+    text:   'text-emerald-400',
+    border: 'border-emerald-500/30',
+    dot:    'bg-emerald-400',
+    card:   'border-emerald-500/20',
+  },
+}
 
+function StatusBadge({ status }) {
+  const s = STATUS[status] || STATUS.pending_review
   return (
-    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold flex-shrink-0 ${cfg.color}`}>
-      {status === 'confirmed' ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-      {cfg.label}
+    <span className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide ${s.bg} ${s.text} border ${s.border} flex-shrink-0`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+      {s.label}
     </span>
   )
 }
@@ -76,98 +105,98 @@ export default function ClientItinerariesPage() {
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          {itineraries.map((itin) => {
-            const barColor = {
-              enquiry_pending: 'bg-rose-400',
-              pending_review:  'bg-amber-500',
-              quoted:          'bg-blue-400',
-              confirmed:       'bg-green-500',
-            }[itin.status] || 'bg-amber-500'
-
-            const name   = itin.tour_summary?.tour_package || 'Custom Itinerary'
-            const tier   = itin.tour_summary?.hotel_tier
-            const nights = itin.tour_summary?.duration_nights
-            const guests = itin.tour_summary?.group_size
-            const total  = Number(itin.pricing?.grand_total || 0)
-            const ref    = itin.booking_reference
-            const isConfirmed = itin.status === 'confirmed'
-            const isQuoted    = itin.status === 'quoted'
+          {itineraries.map((it) => {
+            const s        = STATUS[it.status] || STATUS.pending_review
+            const hasPrice = it.pricing?.grand_total > 0
+            const ref      = it.booking_reference
 
             return (
-              <div key={itin.id} className="bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-                <div className={`h-1 ${barColor}`} />
-
-                <div className="p-5 space-y-4 flex-1 flex flex-col">
-                  {/* Title + status */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-stone-900 text-sm leading-snug line-clamp-2">{name}</p>
-                      {tier && (
-                        <p className="text-xs text-stone-400 mt-0.5">
-                          {tier}{guests ? ` · ${guests} pax` : ''}
-                        </p>
-                      )}
-                    </div>
-                    <StatusBadge status={itin.status} />
+              <div
+                key={it.id}
+                className={`bg-stone-900 rounded-2xl border ${s.card} p-5 flex flex-col gap-4 hover:border-opacity-60 transition-all`}
+              >
+                {/* Card header */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-mono text-xs text-stone-500 tracking-wider">
+                      {ref || '—'}
+                    </p>
+                    <p className="text-white font-serif font-semibold text-base mt-0.5 line-clamp-1">
+                      {it.tour_summary?.tour_package || 'Custom Itinerary'}
+                    </p>
                   </div>
+                  <StatusBadge status={it.status} />
+                </div>
 
-                  {/* Trip details */}
-                  {(nights || guests) && (
-                    <div className="flex items-center gap-3 text-xs text-stone-500">
-                      {nights != null && (
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" /> {nights} night{nights !== 1 ? 's' : ''}
-                        </span>
+                {/* Tour meta */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="bg-stone-800/60 rounded-xl p-2.5 text-center">
+                    <p className="text-[10px] text-stone-600 uppercase tracking-wider">Nights</p>
+                    <p className="text-stone-200 font-bold text-sm mt-0.5">
+                      {it.tour_summary?.duration_nights || '—'}
+                    </p>
+                  </div>
+                  <div className="bg-stone-800/60 rounded-xl p-2.5 text-center">
+                    <p className="text-[10px] text-stone-600 uppercase tracking-wider">Guests</p>
+                    <p className="text-stone-200 font-bold text-sm mt-0.5">
+                      {it.tour_summary?.group_size || '—'}
+                    </p>
+                  </div>
+                  <div className="bg-stone-800/60 rounded-xl p-2.5 text-center">
+                    <p className="text-[10px] text-stone-600 uppercase tracking-wider">Tier</p>
+                    <p className="text-stone-200 font-bold text-[11px] mt-0.5 truncate">
+                      {it.tour_summary?.hotel_tier || '—'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Departure */}
+                {it.tour_summary?.departure_date && (
+                  <div className="flex items-center gap-2 text-xs text-stone-500">
+                    <Calendar className="w-3.5 h-3.5 shrink-0" />
+                    <span>
+                      {new Date(it.tour_summary.departure_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      {it.tour_summary?.return_date && (
+                        <> → {new Date(it.tour_summary.return_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</>
                       )}
-                      {guests && (
-                        <span className="flex items-center gap-1">
-                          <Package className="w-3 h-3" /> {guests} pax
-                        </span>
-                      )}
-                    </div>
-                  )}
+                    </span>
+                  </div>
+                )}
 
-                  {/* Spacer */}
-                  <div className="flex-1" />
+                {/* Price */}
+                {hasPrice && (
+                  <div className="flex items-center justify-between pt-1 border-t border-white/5">
+                    <span className="text-xs text-stone-500">Grand Total</span>
+                    <span className="text-amber-400 font-bold font-mono text-sm">
+                      ${Number(it.pricing.grand_total).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                    </span>
+                  </div>
+                )}
 
-                  {/* Cost + voucher */}
-                  <div className="flex items-center justify-between pt-3 border-t border-stone-50">
-                    <div>
-                      <p className="text-[10px] text-stone-400 uppercase tracking-wider">Total</p>
-                      {total > 0
-                        ? <p className="font-bold text-stone-900 text-base">${total.toLocaleString()}</p>
-                        : <p className="text-xs text-stone-400 italic">Pricing pending</p>
-                      }
-                    </div>
-                    {ref && (
+                {/* Actions */}
+                <div className="flex items-center gap-2 pt-1">
+                  {ref ? (
+                    <>
                       <button
                         onClick={() => router.push(`/itinerary/${ref}`)}
-                        className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-3 py-2 rounded-xl transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/30 text-amber-400 text-xs font-semibold transition-colors"
                       >
-                        <FileText className="w-3.5 h-3.5" /> View Voucher
+                        View Itinerary
+                        <ChevronRight className="w-3.5 h-3.5" />
                       </button>
-                    )}
-                  </div>
-
-                  {ref && (
-                    <p className="text-[9px] text-stone-300 font-mono">{ref}</p>
-                  )}
-
-                  {/* Status message */}
-                  {isConfirmed && ref ? (
-                    <div className="rounded-xl p-3 text-xs bg-green-50 border border-green-200">
-                      <p className="font-semibold text-green-700">✅ Your trip is confirmed! Open your voucher above.</p>
-                    </div>
-                  ) : isQuoted ? (
-                    <div className="rounded-xl p-3 text-xs bg-blue-50 border border-blue-200">
-                      <p className="font-semibold text-blue-700 mb-1">💰 Your quote is ready</p>
-                      <p className="text-stone-600">Contact us to confirm your booking.</p>
-                      <p className="text-stone-500 mt-1">📞 +975 77 319 405 · ✉ arisebhutan@gmail.com</p>
-                    </div>
+                      <a
+                        href={`/itinerary/${ref}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-400 hover:text-white transition-colors"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    </>
                   ) : (
-                    <div className="rounded-xl p-3 text-xs bg-amber-50 border border-amber-200">
-                      <p className="font-semibold text-amber-800">⏳ Our team is preparing your itinerary</p>
-                      <p className="text-stone-600 mt-1">We'll be in touch shortly with your personalised quote.</p>
+                    <div className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-stone-800/60 border border-white/5 text-stone-600 text-xs font-semibold">
+                      <Clock className="w-3.5 h-3.5" />
+                      Itinerary being prepared
                     </div>
                   )}
                 </div>
