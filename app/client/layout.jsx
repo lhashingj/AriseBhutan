@@ -4,13 +4,14 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { LayoutDashboard, UserCircle, LogOut, Menu, MailWarning, RefreshCw } from 'lucide-react'
+import { LayoutDashboard, UserCircle, LogOut, Menu, MailWarning, RefreshCw, MapPin } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
 import { useEmailVerified } from '@/utils/useEmailVerified'
 
 const navItems = [
-  { label: 'Dashboard',  href: '/client/dashboard', icon: LayoutDashboard },
-  { label: 'My Profile', href: '/client/profile',   icon: UserCircle },
+  { label: 'Dashboard',      href: '/client/dashboard',   icon: LayoutDashboard },
+  { label: 'My Itineraries', href: '/client/itineraries', icon: MapPin },
+  { label: 'My Profile',     href: '/client/profile',     icon: UserCircle },
 ]
 
 export default function ClientLayout({ children }) {
