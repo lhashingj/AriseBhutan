@@ -33,14 +33,20 @@ export default function ClientDashboard() {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) return
 
-    const [{ data: prof }, { data: bks }, { data: allItins }] = await Promise.all([
+    const [{ data: prof }, { data: bks }, { data: itinsByUserId }, { data: itinsByEmail }] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', session.user.id).single(),
       supabase.from('bookings').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false }),
-      // Fetch all itineraries linked to this user — by user_id OR by email in client_info
-      supabase.from('itineraries').select('*').or(
-        `user_id.eq.${session.user.id},client_info->>email.eq.${session.user.email}`
-      ).order('created_at', { ascending: false }),
+      supabase.from('itineraries').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false }),
+      supabase.from('itineraries').select('*').filter('client_info->>email', 'eq', session.user.email).order('created_at', { ascending: false }),
     ])
+
+    // Merge and deduplicate itineraries from both queries
+    const seen = new Set()
+    const allItins = [...(itinsByUserId || []), ...(itinsByEmail || [])].filter(i => {
+      if (seen.has(i.id)) return false
+      seen.add(i.id)
+      return true
+    }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
 
     setProfile(prof)
     const bookingList = bks || []
