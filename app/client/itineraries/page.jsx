@@ -44,7 +44,7 @@ export default function ClientItinerariesPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-7">
+    <div className="space-y-7">
 
       {/* Header */}
       <div className="flex items-end justify-between gap-4">
@@ -66,7 +66,7 @@ export default function ClientItinerariesPage() {
           <p className="text-stone-400 text-sm mt-1">Our team will prepare your personalised Bhutan itinerary here.</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-4 max-w-2xl">
+        <div className="flex flex-col gap-5">
           {itineraries.map(itin => (
             <ItineraryCard key={itin.id} itin={itin} />
           ))}
