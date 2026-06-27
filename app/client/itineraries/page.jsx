@@ -66,7 +66,7 @@ export default function ClientItinerariesPage() {
           <p className="text-stone-400 text-sm mt-1">Our team will prepare your personalised Bhutan itinerary here.</p>
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="flex flex-col gap-4 max-w-2xl">
           {itineraries.map(itin => (
             <ItineraryCard key={itin.id} itin={itin} />
           ))}

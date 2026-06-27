@@ -254,7 +254,7 @@ export default function ClientDashboard() {
 
           <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
             {adminItins.map(itin => (
-              <ItineraryCard key={itin.id} itin={itin} />
+              <ItineraryCard key={itin.id} itin={itin} showDayPlan={false} />
             ))}
           </div>
         </div>

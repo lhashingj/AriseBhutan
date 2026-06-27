@@ -27,7 +27,7 @@ function MealPills({ meals }) {
   )
 }
 
-export default function ItineraryCard({ itin }) {
+export default function ItineraryCard({ itin, showDayPlan = true }) {
   const router     = useRouter()
   const [open, setOpen] = useState(false)
 
@@ -121,7 +121,7 @@ export default function ItineraryCard({ itin }) {
       </div>
 
       {/* ── Day Plan toggle ── */}
-      {days.length > 0 && (
+      {showDayPlan && days.length > 0 && (
         <button
           onClick={() => setOpen(v => !v)}
           className="w-full flex items-center justify-between px-5 py-3 bg-stone-50 hover:bg-stone-100 border-t border-stone-100 transition-colors text-left group"
@@ -135,7 +135,7 @@ export default function ItineraryCard({ itin }) {
       )}
 
       {/* ── Day Plan content ── */}
-      {open && days.length > 0 && (
+      {showDayPlan && open && days.length > 0 && (
         <div className="border-t border-stone-100">
           {days.map((d, i) => {
             const parts      = (d.programme || '').split('·').map(p => p.trim()).filter(Boolean)
