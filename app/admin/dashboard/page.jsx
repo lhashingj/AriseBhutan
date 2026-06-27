@@ -6,7 +6,7 @@ import { useEffect, useState, useMemo } from 'react'
 import {
   Users, Clock, DollarSign, CheckCircle2, Search,
   ChevronUp, ChevronDown, RefreshCw, Trash2, Eye,
-  XCircle, Loader2, FileText, ExternalLink, X,
+  XCircle, Loader2, FileText, ExternalLink, X, Mail, UserPlus, Send,
 } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/utils/supabase/client'
@@ -193,6 +193,123 @@ const ITIN_STATUS = {
   confirmed:       { label: 'Confirmed',   cls: 'bg-emerald-500/20 text-emerald-300 ring-1 ring-inset ring-emerald-400/50' },
 }
 
+function InviteModal({ onClose }) {
+  const [name,    setName]    = useState('')
+  const [email,   setEmail]   = useState('')
+  const [sending, setSending] = useState(false)
+  const [sent,    setSent]    = useState(false)
+  const [err,     setErr]     = useState('')
+
+  async function send() {
+    if (!email.trim()) { setErr('Email is required.'); return }
+    setSending(true)
+    setErr('')
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/invite-client', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+      body: JSON.stringify({ name: name.trim(), email: email.trim() }),
+    })
+    const json = await res.json()
+    setSending(false)
+    if (!res.ok) { setErr(json.error || 'Failed to send invitation.'); return }
+    setSent(true)
+  }
+
+  const inp = 'w-full bg-stone-800 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-stone-100 placeholder:text-stone-500 focus:outline-none focus:border-amber-500/50 transition-colors'
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
+      <div className="bg-[#1C1C1F] border border-[#2E2E33] rounded-2xl shadow-2xl w-full max-w-md">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/15 flex items-center justify-center">
+              <UserPlus className="w-4 h-4 text-amber-400" />
+            </div>
+            <div>
+              <h3 className="font-bold text-white text-base">Invite Client</h3>
+              <p className="text-[11px] text-stone-500">Send a registration invitation by email</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl text-stone-400 hover:text-white hover:bg-white/10 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {sent ? (
+          /* Success state */
+          <div className="px-5 py-10 flex flex-col items-center gap-3 text-center">
+            <div className="w-14 h-14 rounded-full bg-green-500/15 flex items-center justify-center">
+              <Send className="w-6 h-6 text-green-400" />
+            </div>
+            <p className="font-bold text-white text-base">Invitation sent!</p>
+            <p className="text-sm text-stone-400">
+              An invitation email has been sent to <span className="text-white font-medium">{email}</span> with a link to register.
+            </p>
+            <button onClick={onClose}
+              className="mt-4 px-6 py-2.5 rounded-xl bg-stone-700 hover:bg-stone-600 text-white text-sm font-semibold transition-colors">
+              Done
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* Body */}
+            <div className="px-5 py-5 space-y-4">
+              <p className="text-sm text-stone-400">
+                The client will receive a branded invitation email with a link to create their Arise Bhutan account.
+              </p>
+              <div>
+                <label className="text-[11px] text-stone-400 uppercase tracking-wider font-semibold block mb-1.5">
+                  Client Name <span className="text-stone-600 normal-case font-normal">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  placeholder="e.g. Tenzin Wangchuk"
+                  className={inp}
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="text-[11px] text-stone-400 uppercase tracking-wider font-semibold block mb-1.5">
+                  Email Address <span className="text-red-400">*</span>
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-500" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={e => { setEmail(e.target.value); setErr('') }}
+                    placeholder="client@example.com"
+                    className={`${inp} pl-9`}
+                    onKeyDown={e => e.key === 'Enter' && send()}
+                  />
+                </div>
+              </div>
+              {err && <p className="text-red-400 text-xs">{err}</p>}
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-3 px-5 py-4 border-t border-white/10">
+              <button onClick={onClose}
+                className="flex-1 text-sm font-semibold text-stone-300 bg-stone-700 hover:bg-stone-600 py-2.5 rounded-xl transition-colors">
+                Cancel
+              </button>
+              <button onClick={send} disabled={sending}
+                className="flex-1 flex items-center justify-center gap-2 text-sm font-semibold bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white py-2.5 rounded-xl transition-colors">
+                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                Send Invitation
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function AdminDashboard() {
   const [profiles, setProfiles]           = useState([])
   const [bookings, setBookings]           = useState([])
@@ -209,6 +326,7 @@ export default function AdminDashboard() {
   const [confirmDeleteItin, setConfirmDeleteItin] = useState(null)
   const [deletingItin, setDeletingItin]   = useState(false)
   const [pricingTarget, setPricingTarget] = useState(null)
+  const [showInvite, setShowInvite]       = useState(false)
 
   async function load() {
     setRefreshing(true)
@@ -853,14 +971,21 @@ export default function AdminDashboard() {
       <div>
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h2 className="text-lg font-serif font-bold text-white">Client Directory</h2>
-          <div className="relative w-full sm:w-auto">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-500" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search name, email, role…"
-              className="pl-9 pr-4 py-2.5 text-sm border border-white/10 rounded-xl bg-stone-900 text-white placeholder:text-stone-500 focus:outline-none focus:border-amber-500 w-full sm:w-64"
-            />
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={() => setShowInvite(true)}
+              className="flex items-center gap-1.5 text-xs font-semibold text-amber-400 hover:text-amber-300 border border-amber-500/30 hover:bg-amber-500/10 px-3 py-2 rounded-xl transition-colors">
+              <UserPlus className="w-3.5 h-3.5" /> Invite Client
+            </button>
+            <div className="relative w-full sm:w-auto">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-500" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search name, email, role…"
+                className="pl-9 pr-4 py-2.5 text-sm border border-white/10 rounded-xl bg-stone-900 text-white placeholder:text-stone-500 focus:outline-none focus:border-amber-500 w-full sm:w-64"
+              />
+            </div>
           </div>
         </div>
 
@@ -1002,6 +1127,9 @@ export default function AdminDashboard() {
           onUpdate={handleProfileUpdate}
         />
       )}
+
+      {/* ── Invite Client Modal ── */}
+      {showInvite && <InviteModal onClose={() => setShowInvite(false)} />}
 
       {/* ── Pricing Modal ── */}
       {pricingTarget && (
