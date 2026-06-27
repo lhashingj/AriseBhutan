@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { PlusCircle, FileText, Clock, CheckCircle2, XCircle, Package, Pencil } from 'lucide-react'
+import { PlusCircle, FileText, Clock, CheckCircle2, XCircle, Package, Pencil, MapPin } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
 import PackageBuilder from '@/components/PackageBuilder'
 
@@ -24,6 +24,7 @@ export default function ClientDashboard() {
   const [profile, setProfile]         = useState(null)
   const [bookings, setBookings]       = useState([])
   const [itinMap, setItinMap]         = useState({})
+  const [adminItins, setAdminItins]   = useState([])
   const [loading, setLoading]         = useState(true)
   const [showBuilder, setBuilder]     = useState(false)
   const [editingBooking, setEditing]  = useState(null)
@@ -32,35 +33,47 @@ export default function ClientDashboard() {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) return
 
-    const [{ data: prof }, { data: bks }] = await Promise.all([
+    const [{ data: prof }, { data: bks }, { data: allItins }] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', session.user.id).single(),
       supabase.from('bookings').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false }),
+      // Fetch all itineraries linked to this user — by user_id OR by email in client_info
+      supabase.from('itineraries').select('*').or(
+        `user_id.eq.${session.user.id},client_info->>email.eq.${session.user.email}`
+      ).order('created_at', { ascending: false }),
     ])
 
     setProfile(prof)
     const bookingList = bks || []
     setBookings(bookingList)
 
-    // Fetch corresponding itineraries to get admin-edited pricing & references
-    if (bookingList.length > 0) {
-      const refs = bookingList.map(b => getRef(b))
-      const { data: itins } = await supabase
-        .from('itineraries')
-        .select('booking_reference, pricing, status')
-        .in('booking_reference', refs)
-      const map = Object.fromEntries((itins || []).map(i => [i.booking_reference, i]))
-      setItinMap(map)
-    }
+    const itineraryList = allItins || []
+
+    // Build ref map for bookings that have a matching admin itinerary
+    const selfRefs = new Set(bookingList.map(b => getRef(b)))
+    const map = Object.fromEntries(
+      itineraryList
+        .filter(i => i.booking_reference && selfRefs.has(i.booking_reference))
+        .map(i => [i.booking_reference, i])
+    )
+    setItinMap(map)
+
+    // Admin-created itineraries: those NOT already represented by a self-submitted booking
+    const adminCreated = itineraryList.filter(
+      i => !i.booking_reference || !selfRefs.has(i.booking_reference)
+    )
+    setAdminItins(adminCreated)
 
     setLoading(false)
   }
 
   useEffect(() => { load() }, [])
 
+  const adminConfirmed = adminItins.filter(i => i.status === 'confirmed').length
   const stats = {
-    total:     bookings.length,
-    pending:   bookings.filter((b) => b.status === 'PENDING').length,
-    confirmed: bookings.filter((b) => b.status === 'CONFIRMED').length,
+    total:     bookings.length + adminItins.length,
+    pending:   bookings.filter((b) => b.status === 'PENDING').length +
+               adminItins.filter(i => ['enquiry_pending','pending_review','quoted'].includes(i.status)).length,
+    confirmed: bookings.filter((b) => b.status === 'CONFIRMED').length + adminConfirmed,
   }
 
   if (loading) {
@@ -111,10 +124,14 @@ export default function ClientDashboard() {
         </div>
 
         {bookings.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-stone-100 border-dashed p-16 text-center">
+          <div className="bg-white rounded-2xl border border-stone-100 border-dashed p-12 text-center">
             <Package className="w-10 h-10 text-stone-300 mx-auto mb-3" />
-            <p className="text-stone-500 font-medium">No packages yet</p>
-            <p className="text-stone-400 text-sm mt-1 mb-5">Build your first custom Bhutan itinerary to get started.</p>
+            <p className="text-stone-500 font-medium">No packages submitted yet</p>
+            <p className="text-stone-400 text-sm mt-1 mb-5">
+              {adminItins.length > 0
+                ? 'Your itineraries prepared by our team are shown below.'
+                : 'Build your first custom Bhutan itinerary to get started.'}
+            </p>
             <button onClick={() => setBuilder(true)} className="btn-primary text-sm">
               <PlusCircle className="w-4 h-4" /> Build Your First Package
             </button>
@@ -216,6 +233,116 @@ export default function ClientDashboard() {
           </div>
         )}
       </div>
+
+      {/* Admin-Created Itineraries */}
+      {adminItins.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-serif font-bold text-stone-900">My Itineraries</h2>
+              <p className="text-xs text-stone-400 mt-0.5">Prepared by the Arise Bhutan team</p>
+            </div>
+            <span className="text-xs text-stone-400">{adminItins.length} itinerar{adminItins.length === 1 ? 'y' : 'ies'}</span>
+          </div>
+
+          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            {adminItins.map((itin) => {
+              const status  = itin.status || 'pending_review'
+              const isConfirmed = status === 'confirmed'
+              const isQuoted    = status === 'quoted'
+
+              const statusCfg = {
+                enquiry_pending: { label: 'Enquiry',  color: 'bg-rose-100 text-rose-700',   barColor: 'bg-rose-400' },
+                pending_review:  { label: 'In Review', color: 'bg-amber-100 text-amber-700', barColor: 'bg-amber-500' },
+                quoted:          { label: 'Quoted',   color: 'bg-blue-100 text-blue-700',    barColor: 'bg-blue-400' },
+                confirmed:       { label: 'Confirmed', color: 'bg-green-100 text-green-700', barColor: 'bg-green-500' },
+              }[status] || { label: 'Review', color: 'bg-amber-100 text-amber-700', barColor: 'bg-amber-500' }
+
+              const name    = itin.tour_summary?.tour_package || 'Custom Itinerary'
+              const tier    = itin.tour_summary?.hotel_tier
+              const nights  = itin.tour_summary?.duration_nights
+              const guests  = itin.tour_summary?.group_size
+              const total   = Number(itin.pricing?.grand_total || 0)
+              const ref     = itin.booking_reference
+
+              return (
+                <div key={itin.id} className="bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+                  {/* Status bar */}
+                  <div className={`h-1 ${statusCfg.barColor}`} />
+
+                  <div className="p-5 space-y-4">
+                    {/* Title + status */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <MapPin className="w-3 h-3 text-amber-500 flex-shrink-0" />
+                          <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wider">Admin Itinerary</p>
+                        </div>
+                        <p className="font-semibold text-stone-900 text-sm leading-snug line-clamp-2">{name}</p>
+                        {tier && <p className="text-xs text-stone-400 mt-0.5">{tier}{guests ? ` · ${guests} pax` : ''}</p>}
+                      </div>
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold flex-shrink-0 ${statusCfg.color}`}>
+                        {isConfirmed ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                        {statusCfg.label}
+                      </span>
+                    </div>
+
+                    {/* Trip summary */}
+                    {(nights || guests) && (
+                      <p className="text-xs text-stone-500">
+                        {nights != null ? `${nights} night${nights !== 1 ? 's' : ''}` : ''}
+                        {nights && guests ? ' · ' : ''}
+                        {guests ? `${guests} pax` : ''}
+                      </p>
+                    )}
+
+                    {/* Cost + actions */}
+                    <div className="flex items-center justify-between pt-1 border-t border-stone-50">
+                      <div>
+                        <p className="text-[10px] text-stone-400 uppercase tracking-wider">Total</p>
+                        {total > 0
+                          ? <p className="font-bold text-stone-900 text-base">${total.toLocaleString()}</p>
+                          : <p className="text-xs text-stone-400 italic">Pricing pending</p>
+                        }
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {ref && <p className="text-[9px] text-stone-300 font-mono">{ref}</p>}
+                        {ref && (
+                          <button
+                            onClick={() => router.push(`/itinerary/${ref}`)}
+                            title="View voucher"
+                            className="p-2 rounded-xl bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors"
+                          >
+                            <FileText className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Status message */}
+                    {(isConfirmed && ref) ? (
+                      <div className="rounded-xl p-3 text-xs bg-green-50 border border-green-200">
+                        <p className="font-semibold text-green-700">✅ Your trip is confirmed! View your full voucher below.</p>
+                      </div>
+                    ) : isQuoted ? (
+                      <div className="rounded-xl p-3 text-xs bg-blue-50 border border-blue-200">
+                        <p className="font-semibold text-blue-700 mb-1">💰 Your quote is ready</p>
+                        <p className="text-stone-600">Contact us to confirm your booking.</p>
+                        <p className="text-stone-500 mt-1">📞 +975 77 319 405 &nbsp;·&nbsp; ✉ arisebhutan@gmail.com</p>
+                      </div>
+                    ) : (
+                      <div className="rounded-xl p-3 text-xs bg-amber-50 border border-amber-200">
+                        <p className="font-semibold text-amber-800">⏳ Our team is preparing your itinerary</p>
+                        <p className="text-stone-600 mt-1">We'll be in touch shortly with your personalised quote.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* New Package Builder */}
       {showBuilder && (
