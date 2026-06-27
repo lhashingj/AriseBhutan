@@ -139,7 +139,7 @@ export default function ItineraryVoucherPage() {
               </Link>
             </div>
           ) : (
-            <a href="/" className="text-xs text-stone-400 hover:text-stone-600 transition-colors">← Back to website</a>
+            <a href="/client/dashboard" className="text-xs text-stone-400 hover:text-stone-600 transition-colors">← Back to dashboard</a>
           )}
           <button
             onClick={async () => {
