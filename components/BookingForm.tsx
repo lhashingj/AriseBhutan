@@ -2,6 +2,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Check, ChevronRight, AlertCircle, Minus, Plus, Star, Loader2 } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
+import CountrySelect from '@/components/CountrySelect'
+import PhoneInput from '@/components/PhoneInput'
 
 interface Activity {
   id: string; name: string; location: string
@@ -13,13 +15,8 @@ interface FormData {
   tourInterest: string; travelDate: string
   groupSize: number; nights: number; hotelTier: string
   selectedActivities: Activity[]
-  interests: string[]; message: string
+  message: string
 }
-
-const INTERESTS = [
-  'Cultural Heritage', 'Trekking & Adventure', 'Festival Experience', 'Photography',
-  'Wellness & Meditation', 'Luxury Travel', 'Wildlife & Nature', 'Spiritual Journey',
-]
 
 const HOTEL_TIERS = [
   { id: '3-Star',        label: '3-Star Heritage', desc: 'Comfortable heritage hotels',          stars: 3 },
@@ -74,16 +71,11 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
     tourInterest: defaultTour, travelDate: '',
     groupSize: 2, nights: 5, hotelTier: '4-Star',
     selectedActivities: [],
-    interests: [], message: '',
+    message: '',
   })
 
   const set = <K extends keyof FormData>(k: K, v: FormData[K]) =>
     setData(d => ({ ...d, [k]: v }))
-
-  const toggleInterest = (i: string) =>
-    set('interests', data.interests.includes(i)
-      ? data.interests.filter(x => x !== i)
-      : [...data.interests, i])
 
   const toggleActivity = (a: Activity) =>
     set('selectedActivities', data.selectedActivities.some(x => x.id === a.id)
@@ -175,7 +167,6 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
               groupSize: String(data.groupSize),
               nights: data.nights,
               hotelTier: data.hotelTier,
-              interests: data.interests,
               message: data.message,
               activitiesSelected: data.selectedActivities,
             }),
@@ -209,13 +200,21 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-1.5">Phone / WhatsApp</label>
-                <input value={data.phone} onChange={e => set('phone', e.target.value)}
-                  className={inputCls} placeholder="+1 234 567 8900" />
+                <PhoneInput
+                  id="phone"
+                  value={data.phone}
+                  onChange={v => set('phone', v)}
+                  placeholder="Phone number"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-1.5">Country of Residence *</label>
-                <input required value={data.country} onChange={e => set('country', e.target.value)}
-                  className={inputCls} placeholder="e.g. United States" />
+                <CountrySelect
+                  id="country"
+                  value={data.country}
+                  onChange={v => set('country', v)}
+                  placeholder="Search country…"
+                />
               </div>
             </div>
             <button type="button" onClick={() => setStep(1)}
@@ -231,7 +230,7 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
           <div className="space-y-6">
             <div>
               <h3 className="font-serif text-lg font-bold text-stone-900">Build Your Trip</h3>
-              <p className="text-stone-500 text-xs mt-1">Set your trip basics, then pick activities to include.</p>
+              <p className="text-stone-500 text-xs mt-1">Set your trip duration, group size, and accommodation tier.</p>
             </div>
 
             {/* Nights + Guests */}
@@ -283,6 +282,18 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
               </div>
             </div>
 
+            <div className="flex gap-3">
+              <button type="button" onClick={() => setStep(0)} className="btn-outline flex-1">Back</button>
+              <button type="button" onClick={() => setStep(2)} className="btn-primary flex-1">
+                Continue <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Step 2: Preferences ── */}
+        {step === 2 && (
+          <div className="space-y-5">
             {/* Tour + Travel Date */}
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
@@ -382,37 +393,6 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
               )}
             </div>
 
-            <div className="flex gap-3">
-              <button type="button" onClick={() => setStep(0)} className="btn-outline flex-1">Back</button>
-              <button type="button" onClick={() => setStep(2)} className="btn-primary flex-1">
-                Continue <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ── Step 2: Preferences ── */}
-        {step === 2 && (
-          <div className="space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-3">Special Interests (select all that apply)</label>
-              <div className="grid grid-cols-2 gap-2">
-                {INTERESTS.map(interest => (
-                  <button
-                    type="button" key={interest}
-                    onClick={() => toggleInterest(interest)}
-                    className={`text-left px-3 py-2.5 rounded-xl border text-xs sm:text-sm transition-all min-h-[44px] ${
-                      data.interests.includes(interest)
-                        ? 'border-amber-500 bg-amber-50 text-amber-700 font-medium'
-                        : 'border-stone-200 text-stone-600 hover:border-amber-300'
-                    }`}
-                  >
-                    {data.interests.includes(interest) && <Check className="w-3 h-3 inline mr-1 flex-shrink-0" />}
-                    {interest}
-                  </button>
-                ))}
-              </div>
-            </div>
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-1.5">Additional Notes or Questions</label>
               <textarea value={data.message} onChange={e => set('message', e.target.value)} rows={4}

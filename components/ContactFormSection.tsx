@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Check, AlertCircle, Zap, Compass } from 'lucide-react'
 import BookingForm from '@/components/BookingForm'
+import PhoneInput from '@/components/PhoneInput'
 
 const inputCls =
   'w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors bg-white placeholder:text-stone-400'
@@ -85,11 +86,11 @@ function QuickEnquiryForm() {
 
       <div>
         <label className="block text-sm font-medium text-stone-700 mb-1.5">Mobile</label>
-        <input
+        <PhoneInput
+          id="phone"
           value={data.phone}
-          onChange={(e) => set('phone', e.target.value)}
-          className={inputCls}
-          placeholder="+1 234 567 8900"
+          onChange={v => set('phone', v)}
+          placeholder="Phone number"
         />
       </div>
 

@@ -100,6 +100,9 @@ export default function ItineraryVoucherPage() {
   const px     = it.pricing       || {}
   const nights = Number(tour.duration_nights) || 1
   const guests = Number(tour.group_size) || 1
+  const guestList = tour.guests || []
+  const currSym  = px.is_saarc ? '₹' : '$'
+  const isNewPricingFormat = px.service_total !== undefined || px.service_rate !== undefined
   const isPending  = it.status === 'enquiry_pending' || it.status === 'pending_review'
   const showPricing = it.status === 'quoted' || it.status === 'confirmed'
   const cfg = STATUS_CFG[it.status] || STATUS_CFG.pending_review
@@ -257,6 +260,7 @@ export default function ItineraryVoucherPage() {
                     ['Category',      tour.category || '—'],
                     ['Duration',      tour.duration_nights ? `${Number(tour.duration_nights) + 1} Days / ${tour.duration_nights} Nights` : '—'],
                     ['Group Size',    tour.group_size ? `${tour.group_size} Pax` : '—'],
+                    ['Room Config',   tour.room_config || null],
                     ['Departure',     fmtDate(tour.departure_date)],
                     ['Return',        fmtDate(tour.return_date)],
                     ['Guide',         tour.guide_name || (isPending ? 'Assigned on confirmation' : null)],
@@ -270,6 +274,50 @@ export default function ItineraryVoucherPage() {
                 </div>
               </div>
             </div>
+
+            {/* ── GUEST LIST ── */}
+            {guestList.length > 1 && (
+              <div className="page-break-avoid">
+                <SectionHead>Guest &amp; Passenger Details</SectionHead>
+                <div className="overflow-x-auto mt-3">
+                  <table className="w-full border-collapse text-xs min-w-[480px]">
+                    <thead>
+                      <tr className="bg-stone-800 text-white text-[10px] uppercase tracking-wider">
+                        <th className="px-3 py-2.5 text-center font-semibold w-10">#</th>
+                        <th className="px-3 py-2.5 text-left font-semibold">Guest Name</th>
+                        <th className="px-3 py-2.5 text-left font-semibold">Nationality</th>
+                        <th className="px-3 py-2.5 text-left font-semibold">Category</th>
+                        <th className="px-3 py-2.5 text-left font-semibold">Passport No.</th>
+                        <th className="px-3 py-2.5 text-left font-semibold">Passport Expiry</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {guestList.map((g, i) => {
+                        const catLabel = g.age_category === 'child_6_11' ? 'Child (6–11)'
+                          : g.age_category === 'infant' ? 'Infant / ≤5'
+                          : 'Adult (12+)'
+                        return (
+                          <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-stone-50'}>
+                            <td className="px-3 py-2.5 text-center text-stone-500 border border-stone-100">{i + 1}</td>
+                            <td className="px-3 py-2.5 font-semibold text-stone-800 border border-stone-100">{g.name || '—'}</td>
+                            <td className="px-3 py-2.5 text-stone-600 border border-stone-100">{g.nationality || '—'}</td>
+                            <td className="px-3 py-2.5 border border-stone-100">
+                              <span className={`inline-block text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                                g.age_category === 'infant' ? 'bg-blue-50 text-blue-700'
+                                : g.age_category === 'child_6_11' ? 'bg-amber-50 text-amber-700'
+                                : 'bg-stone-100 text-stone-700'
+                              }`}>{catLabel}</span>
+                            </td>
+                            <td className="px-3 py-2.5 font-mono text-stone-600 border border-stone-100">{g.passport_no || '—'}</td>
+                            <td className="px-3 py-2.5 text-stone-500 border border-stone-100">{g.passport_expiry ? fmtDate(g.passport_expiry) : '—'}</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
             {/* ── FLIGHT DETAILS ── */}
             {!isPending && (it.flights || []).length > 0 && (
@@ -415,67 +463,162 @@ export default function ItineraryVoucherPage() {
             {/* ── COST BREAKDOWN ── */}
             {showPricing && px.grand_total > 0 && (
               <div className="page-break-avoid">
-                <SectionHead>Cost Breakdown &amp; Pricing Summary</SectionHead>
+                <SectionHead>Package Cost &amp; Pricing Summary</SectionHead>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mt-3">
-                  {/* Left: breakdown table */}
+                  {/* Left: itemized breakdown table */}
                   <div className="rounded-xl overflow-hidden border border-stone-200 overflow-x-auto">
                     <table className="w-full border-collapse text-xs min-w-[320px]">
                       <thead>
                         <tr className="bg-stone-800 text-white text-[10px] uppercase tracking-wider">
-                          <th className="px-4 py-2.5 text-left font-semibold">Cost Item</th>
-                          <th className="px-4 py-2.5 text-left font-semibold">Calculation</th>
-                          <th className="px-4 py-2.5 text-right font-semibold">Amount (USD)</th>
+                          <th className="px-4 py-2.5 text-left font-semibold">Item</th>
+                          <th className="px-4 py-2.5 text-right font-semibold">
+                            Amount ({px.is_saarc ? 'INR / Nu.' : 'USD'})
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-stone-100">
-                        <tr className="bg-white">
-                          <td className="px-4 py-2.5 text-stone-700">Package Rate (per person)</td>
-                          <td className="px-4 py-2.5 text-stone-400">${fmtMoney(px.package_rate_per_pax, 0)} × {guests} pax</td>
-                          <td className="px-4 py-2.5 text-right font-semibold text-stone-800">
-                            ${fmtMoney(Number(px.package_rate_per_pax || 0) * guests)}
-                          </td>
-                        </tr>
-                        <tr className="bg-stone-50">
-                          <td className="px-4 py-2.5 text-stone-700">
-                            Sustainable Development Fee
-                            <p className="text-[9px] text-stone-400">Mandatory Royal Govt. of Bhutan levy</p>
-                          </td>
-                          <td className="px-4 py-2.5 text-stone-400">${100}/pax/night × {nights} × {guests}</td>
-                          <td className="px-4 py-2.5 text-right font-semibold text-stone-800">${fmtMoney(px.sdf_total)}</td>
-                        </tr>
-                        {px.service_fee > 0 && (
+                        {/* SDF */}
+                        {px.sdf_total > 0 && (
                           <tr className="bg-white">
-                            <td className="px-4 py-2.5 text-stone-700">Service &amp; Handling Fee</td>
-                            <td className="px-4 py-2.5 text-stone-400">${fmtMoney(px.service_fee, 0)}/pax × {guests}</td>
-                            <td className="px-4 py-2.5 text-right font-semibold text-stone-800">${fmtMoney(Number(px.service_fee || 0))}</td>
+                            <td className="px-4 py-2.5 text-stone-700">
+                              Sustainable Development Fee (SDF)
+                              <p className="text-[9px] text-stone-400">
+                                {px.is_saarc
+                                  ? `${px.is_saarc && info.nationality === 'India' ? '₹1,200/adult + ₹600/child' : '₹1,200'}/night · Royal Govt. levy`
+                                  : `$100/pax/night × ${nights} nights × ${guests} pax`}
+                              </p>
+                            </td>
+                            <td className="px-4 py-2.5 text-right font-semibold text-stone-800">
+                              {currSym}{fmtMoney(px.sdf_total, 0)}
+                            </td>
                           </tr>
                         )}
+
+                        {/* Visa */}
+                        {px.is_saarc ? (
+                          <tr className="bg-stone-50">
+                            <td className="px-4 py-2.5 text-stone-500">
+                              {info.nationality === 'India' ? 'Entry Permit (Visa)' : 'Visa on Arrival'}
+                            </td>
+                            <td className="px-4 py-2.5 text-right font-semibold text-emerald-600">Exempt</td>
+                          </tr>
+                        ) : px.visa_total > 0 && (
+                          <tr className="bg-stone-50">
+                            <td className="px-4 py-2.5 text-stone-700">
+                              Visa Processing Fee
+                              <p className="text-[9px] text-stone-400">$40 × {guests} pax</p>
+                            </td>
+                            <td className="px-4 py-2.5 text-right font-semibold text-stone-800">
+                              ${fmtMoney(px.visa_total, 0)}
+                            </td>
+                          </tr>
+                        )}
+
+                        {/* Service */}
+                        {isNewPricingFormat && px.service_total > 0 && (
+                          <tr className="bg-white">
+                            <td className="px-4 py-2.5 text-stone-700">
+                              Guide, Vehicle, Meals &amp; Service
+                              <p className="text-[9px] text-stone-400">{currSym}{fmtMoney(px.service_rate, 0)}/pax/night × {nights} nights</p>
+                            </td>
+                            <td className="px-4 py-2.5 text-right font-semibold text-stone-800">
+                              {currSym}{fmtMoney(px.service_total, 0)}
+                            </td>
+                          </tr>
+                        )}
+
+                        {/* Old format package rate */}
+                        {!isNewPricingFormat && px.package_rate_per_pax > 0 && (
+                          <tr className="bg-white">
+                            <td className="px-4 py-2.5 text-stone-700">Package Rate (per person)</td>
+                            <td className="px-4 py-2.5 text-right font-semibold text-stone-800">
+                              ${fmtMoney(Number(px.package_rate_per_pax) * guests, 0)}
+                            </td>
+                          </tr>
+                        )}
+
+                        {/* Entrance Fees */}
+                        {px.entrance_total > 0 && (
+                          <tr className="bg-stone-50">
+                            <td className="px-4 py-2.5 text-stone-700">Entrance Fees</td>
+                            <td className="px-4 py-2.5 text-right font-semibold text-stone-800">
+                              {currSym}{fmtMoney(px.entrance_total, 0)}
+                            </td>
+                          </tr>
+                        )}
+
+                        {/* Special Experiences */}
+                        {px.specials_total > 0 && (
+                          <tr className="bg-white">
+                            <td className="px-4 py-2.5 text-stone-700">Signature Experiences &amp; Special Meals</td>
+                            <td className="px-4 py-2.5 text-right font-semibold text-stone-800">
+                              {currSym}{fmtMoney(px.specials_total, 0)}
+                            </td>
+                          </tr>
+                        )}
+
+                        {/* Flights */}
+                        {px.flights_total > 0 && (
+                          <tr className="bg-stone-50">
+                            <td className="px-4 py-2.5 text-stone-700">International Flights</td>
+                            <td className="px-4 py-2.5 text-right font-semibold text-stone-800">
+                              {currSym}{fmtMoney(px.flights_total, 0)}
+                            </td>
+                          </tr>
+                        )}
+
+                        {/* Wire transfer */}
+                        {px.wire_transfer > 0 && (
+                          <tr className="bg-white">
+                            <td className="px-4 py-2.5 text-stone-700">Wire / Bank Transfer Fee</td>
+                            <td className="px-4 py-2.5 text-right font-semibold text-stone-800">
+                              {currSym}{fmtMoney(px.wire_transfer, 0)}
+                            </td>
+                          </tr>
+                        )}
+
+                        {/* Package Cost */}
                         <tr className="bg-amber-50">
-                          <td className="px-4 py-2.5 font-bold text-stone-900" colSpan={2}>Sub-total</td>
-                          <td className="px-4 py-2.5 text-right font-bold text-stone-900">${fmtMoney(px.subtotal)}</td>
+                          <td className="px-4 py-2.5 font-bold text-stone-900">
+                            Package Cost
+                          </td>
+                          <td className="px-4 py-2.5 text-right font-bold text-stone-900">
+                            {currSym}{fmtMoney(px.package_cost || px.subtotal, 0)}
+                          </td>
                         </tr>
-                        <tr className="bg-white">
-                          <td className="px-4 py-2.5 text-stone-600" colSpan={2}>GST (5%)</td>
-                          <td className="px-4 py-2.5 text-right text-stone-700">5% on sub-total</td>
-                        </tr>
-                        <tr className="bg-white">
-                          <td className="px-4 py-2.5 text-right text-stone-700 font-semibold" colSpan={2}>GST Amount</td>
-                          <td className="px-4 py-2.5 text-right font-semibold text-stone-800">${fmtMoney(px.gst)}</td>
-                        </tr>
+
+                        {/* GST — only on service charge */}
+                        {px.gst > 0 && (
+                          <tr className="bg-white">
+                            <td className="px-4 py-2.5 text-stone-600">
+                              GST (5%)
+                              <p className="text-[9px] text-stone-400">Applicable on service charge only</p>
+                            </td>
+                            <td className="px-4 py-2.5 text-right text-stone-700 font-semibold">
+                              {currSym}{fmtMoney(px.gst, 0)}
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
                       <tfoot>
                         <tr style={{ background: 'linear-gradient(90deg, #1C1410, #2D1A08)' }}>
-                          <td className="px-4 py-3 font-bold text-white text-sm" colSpan={2}>Grand Total (USD)</td>
+                          <td className="px-4 py-3 font-bold text-white text-sm">
+                            Grand Total ({px.is_saarc ? 'INR / Nu.' : 'USD'})
+                          </td>
                           <td className="px-4 py-3 text-right font-black text-lg" style={{ color: '#F59E0B', fontFamily: 'monospace' }}>
-                            ${fmtMoney(px.grand_total)}
+                            {currSym}{fmtMoney(px.grand_total, 0)}
                           </td>
                         </tr>
-                        <tr className="bg-stone-100">
-                          <td className="px-4 py-2 text-stone-500 text-[10px]" colSpan={2}>Equivalent (INR @ ₹83.5)</td>
-                          <td className="px-4 py-2 text-right font-mono text-stone-700 text-xs font-bold">
-                            ₹{Number(px.equivalent_inr || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-                          </td>
-                        </tr>
+                        {!px.is_saarc && px.equivalent_inr > 0 && (
+                          <tr className="bg-stone-100">
+                            <td className="px-4 py-2 text-stone-500 text-[10px]">
+                              Approx. equivalent (INR @ ₹{px.inr_rate || '83.5'})
+                            </td>
+                            <td className="px-4 py-2 text-right font-mono text-stone-700 text-xs font-bold">
+                              ₹{Number(px.equivalent_inr || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                            </td>
+                          </tr>
+                        )}
                       </tfoot>
                     </table>
                   </div>
@@ -488,9 +631,9 @@ export default function ItineraryVoucherPage() {
                       </div>
                       <ul className="divide-y divide-stone-100">
                         {[
-                          '30% deposit to confirm reservation',
-                          'Balance due 30 days before departure',
-                          'USD bank transfer or credit card',
+                          '50% deposit to confirm reservation & book flights',
+                          'Balance due 60 days before arrival',
+                          px.is_saarc ? 'Bank transfer (INR / Nu.)' : 'USD bank transfer or credit card (5% fee)',
                         ].map((t, i) => (
                           <li key={i} className="flex items-start gap-2 px-4 py-2.5 text-xs text-stone-600">
                             <span className="text-amber-500 shrink-0 mt-0.5">›</span>{t}
@@ -505,11 +648,15 @@ export default function ItineraryVoucherPage() {
                       </div>
                       <ul className="divide-y divide-stone-100">
                         {[
-                          'SDF is non-negotiable — set by Royal Govt.',
-                          'INR equivalent shown for reference only.',
+                          'SDF is mandatory — set by Royal Govt. of Bhutan.',
+                          px.is_saarc
+                            ? (info.nationality === 'India'
+                                ? 'Indian nationals: SDF ₹1,200/adult/night, ₹600/child(6–11)/night. Children ≤5 exempt.'
+                                : 'Regional rate applies: SDF ₹1,200/pax/night.')
+                            : 'International SDF: $100/pax/night.',
+                          'GST (5%) applies on guide, vehicle & meals charge only.',
                           'Quote valid 14 days from issue date.',
-                          'Child rates available on request.',
-                          'Group discounts available (10+ pax).',
+                          'Group discounts available for 10+ pax.',
                         ].map((n, i) => (
                           <li key={i} className="flex items-start gap-2 px-4 py-2.5 text-[10px] text-stone-500">
                             <span className="text-stone-300 shrink-0">›</span>{n}

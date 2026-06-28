@@ -13,6 +13,7 @@ alter table public.profiles
   add column if not exists avatar_url      text;
 
 -- Allow admins to update any user's profile
+drop policy if exists "profiles_update_admin" on public.profiles;
 create policy "profiles_update_admin" on public.profiles
   for update using (public.get_my_role() = 'ADMIN');
 

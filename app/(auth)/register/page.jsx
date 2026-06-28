@@ -7,6 +7,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Eye, EyeOff, UserPlus, AlertCircle, CheckCircle2, Mail } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
+import PhoneInput from '@/components/PhoneInput'
+import CountrySelect from '@/components/CountrySelect'
 
 function GoogleIcon() {
   return (
@@ -73,7 +75,7 @@ function RegisterForm() {
   const searchParams = useSearchParams()
   const next = searchParams.get('next') || ''
 
-  const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' })
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '', phone: '', country: '' })
   const [showPw, setShowPw]         = useState(false)
   const [error, setError]           = useState('')
   const [loading, setLoading]       = useState(false)
@@ -100,8 +102,9 @@ function RegisterForm() {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!pwMatch)  return setError('Passwords do not match.')
-    if (!pwStrong) return setError('Password must be at least 8 characters.')
+    if (!pwMatch)        return setError('Passwords do not match.')
+    if (!pwStrong)       return setError('Password must be at least 8 characters.')
+    if (!form.country)   return setError('Please select your country of residence so we can apply the correct SDF and visa rates.')
 
     // Block disposable email addresses before hitting the API
     if (isDisposableEmail(form.email)) {
@@ -116,7 +119,13 @@ function RegisterForm() {
     const { data, error: signUpErr } = await supabase.auth.signUp({
       email:    form.email,
       password: form.password,
-      options:  { data: { name: form.name } },
+      options:  {
+        data: {
+          name:        form.name,
+          phone:       form.phone       || null,
+          nationality: form.country     || null,
+        },
+      },
     })
 
     if (signUpErr) {
@@ -136,13 +145,16 @@ function RegisterForm() {
       return
     }
 
-    // Upsert profile row
-    if (data.user) {
+    // Upsert profile row — only runs when session exists (email confirmation off).
+    // When confirmation is required, the handle_new_user trigger saves the data instead.
+    if (data.user && data.session) {
       await supabase.from('profiles').upsert({
-        id:    data.user.id,
-        name:  form.name,
-        email: form.email,
-        role:  'CLIENT',
+        id:          data.user.id,
+        name:        form.name,
+        email:       form.email,
+        role:        'CLIENT',
+        phone:       form.phone    || null,
+        nationality: form.country  || null,
       })
     }
 
@@ -223,6 +235,27 @@ function RegisterForm() {
         </div>
 
         <div>
+          <label className="block text-sm font-medium text-stone-700 mb-1.5">Country of Residence *</label>
+          <CountrySelect
+            id="country"
+            value={form.country}
+            onChange={v => set('country', v)}
+            placeholder="Search country…"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-1.5">Phone / WhatsApp</label>
+          <PhoneInput
+            id="phone"
+            value={form.phone}
+            onChange={v => set('phone', v)}
+            placeholder="Phone number"
+          />
+        </div>
+
+        <div>
           <label className="block text-sm font-medium text-stone-700 mb-1.5">Email Address *</label>
           <input
             required
@@ -281,7 +314,7 @@ function RegisterForm() {
 
         <button
           type="submit"
-          disabled={loading || !form.name || !form.email || !pwStrong || !pwMatch}
+          disabled={loading || !form.name || !form.email || !pwStrong || !pwMatch || !form.country}
           className="btn-primary w-full mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading

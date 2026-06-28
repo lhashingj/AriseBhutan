@@ -95,8 +95,9 @@ export default function ClientDashboard() {
     <div className="max-w-6xl mx-auto space-y-8">
 
       {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="bg-gradient-to-br from-amber-50 via-stone-50 to-white border border-amber-100 rounded-2xl px-6 py-5 flex flex-wrap items-center justify-between gap-4">
         <div>
+          <p className="text-[11px] font-semibold text-amber-600 uppercase tracking-widest mb-1.5">Arise Bhutan · Client Portal</p>
           <h1 className="text-2xl font-serif font-bold text-stone-900">
             Welcome back, {profile?.name?.split(' ')[0] || 'Traveller'} 👋
           </h1>
@@ -112,39 +113,48 @@ export default function ClientDashboard() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Total Packages',  value: stats.total,     color: 'text-stone-900',  bg: 'bg-white' },
-          { label: 'Pending Review',  value: stats.pending,   color: 'text-amber-600',  bg: 'bg-amber-50' },
-          { label: 'Confirmed',       value: stats.confirmed, color: 'text-green-600',  bg: 'bg-green-50' },
-        ].map(({ label, value, color, bg }) => (
-          <div key={label} className={`${bg} rounded-2xl border border-stone-100 p-5 shadow-sm`}>
-            <p className="text-stone-500 text-xs font-medium uppercase tracking-wider">{label}</p>
-            <p className={`text-3xl font-bold mt-1 ${color}`}>{value}</p>
+          { label: 'Total Packages',  value: stats.total,     color: 'text-stone-900',  bg: 'bg-white',     Icon: Package,      iconBg: 'bg-stone-100',  iconColor: 'text-stone-500' },
+          { label: 'Pending Review',  value: stats.pending,   color: 'text-amber-600',  bg: 'bg-amber-50',  Icon: Clock,        iconBg: 'bg-amber-100',  iconColor: 'text-amber-500' },
+          { label: 'Confirmed',       value: stats.confirmed, color: 'text-green-600',  bg: 'bg-green-50',  Icon: CheckCircle2, iconBg: 'bg-green-100',  iconColor: 'text-green-600' },
+        ].map(({ label, value, color, bg, Icon, iconBg, iconColor }) => (
+          <div key={label} className={`${bg} rounded-2xl border border-stone-100 p-5 shadow-sm flex items-start justify-between gap-3`}>
+            <div>
+              <p className="text-stone-500 text-xs font-medium uppercase tracking-wider leading-none">{label}</p>
+              <p className={`text-3xl font-bold mt-2 ${color}`}>{value}</p>
+            </div>
+            <div className={`${iconBg} rounded-xl p-2.5 flex-shrink-0 mt-0.5`}>
+              <Icon className={`w-5 h-5 ${iconColor}`} />
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Bookings Grid */}
+      {/* My Packages / Itineraries — unified section */}
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-serif font-bold text-stone-900">My Packages</h2>
-          <span className="text-xs text-stone-400">{bookings.length} total</span>
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <div className="w-1 h-7 rounded-full bg-amber-500" />
+            <div>
+              <h2 className="text-lg font-serif font-bold text-stone-900 leading-tight">My Packages / Itineraries</h2>
+              <p className="text-xs text-stone-400 mt-0.5">Your bookings and itineraries prepared by the Arise Bhutan team</p>
+            </div>
+          </div>
+          <span className="text-xs font-semibold text-stone-400 bg-stone-100 px-3 py-1 rounded-full">{bookings.length + adminItins.length} total</span>
         </div>
 
-        {bookings.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-stone-100 border-dashed p-12 text-center">
+        {bookings.length === 0 && adminItins.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-dashed border-stone-200 p-12 text-center">
             <Package className="w-10 h-10 text-stone-300 mx-auto mb-3" />
-            <p className="text-stone-500 font-medium">No packages submitted yet</p>
-            <p className="text-stone-400 text-sm mt-1 mb-5">
-              {adminItins.length > 0
-                ? 'Your itineraries prepared by our team are shown below.'
-                : 'Build your first custom Bhutan itinerary to get started.'}
-            </p>
+            <p className="text-stone-500 font-medium">No packages or itineraries yet</p>
+            <p className="text-stone-400 text-sm mt-1 mb-5">Build your first custom Bhutan itinerary to get started.</p>
             <button onClick={() => setBuilder(true)} className="btn-primary text-sm">
               <PlusCircle className="w-4 h-4" /> Build Your First Package
             </button>
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+
+            {/* Self-submitted booking cards */}
             {bookings.map((booking) => {
               const cfg   = STATUS_CONFIG[booking.status] || STATUS_CONFIG.PENDING
               const Icon  = cfg.icon
@@ -157,11 +167,9 @@ export default function ClientDashboard() {
 
               return (
                 <div key={booking.id} className="bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-                  {/* Status bar */}
                   <div className={`h-1 ${booking.status === 'CONFIRMED' ? 'bg-green-500' : booking.status === 'CANCELLED' ? 'bg-red-400' : 'bg-amber-500'}`} />
 
                   <div className="p-5 space-y-4">
-                    {/* Title + status */}
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-stone-900 text-sm leading-snug line-clamp-2">
@@ -176,7 +184,6 @@ export default function ClientDashboard() {
                       </span>
                     </div>
 
-                    {/* Dates */}
                     {booking.arrival_date && (
                       <div className="text-xs text-stone-500 space-y-0.5">
                         <p>✈ {booking.flight_arrival || '—'}</p>
@@ -185,11 +192,10 @@ export default function ClientDashboard() {
                       </div>
                     )}
 
-                    {/* Cost + actions */}
                     <div className="flex items-center justify-between pt-1 border-t border-stone-50">
                       <div>
                         <p className="text-[10px] text-stone-400 uppercase tracking-wider">Total</p>
-                        <p className="font-bold text-stone-900 text-base">
+                        <p className="font-bold text-stone-900 text-lg">
                           ${Number(total).toLocaleString()}
                         </p>
                       </div>
@@ -214,7 +220,6 @@ export default function ClientDashboard() {
                       </div>
                     </div>
 
-                    {/* Payment instructions for pending bookings */}
                     {booking.status === 'PENDING' && (
                       <div className={`rounded-xl p-3 text-xs border ${
                         booking.payment_status === 'PAID'
@@ -237,28 +242,15 @@ export default function ClientDashboard() {
                 </div>
               )
             })}
-          </div>
-        )}
-      </div>
 
-      {/* Admin-Created Itineraries */}
-      {adminItins.length > 0 && (
-        <div>
-          <div className="flex items-end justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-serif font-bold text-stone-900">My Itineraries</h2>
-              <p className="text-xs text-stone-400 mt-0.5">Prepared by the Arise Bhutan team</p>
-            </div>
-            <span className="text-xs text-stone-400">{adminItins.length} itinerar{adminItins.length === 1 ? 'y' : 'ies'}</span>
-          </div>
-
-          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            {/* Admin-created itinerary cards */}
             {adminItins.map(itin => (
               <ItineraryCard key={itin.id} itin={itin} showDayPlan={false} />
             ))}
+
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* New Package Builder */}
       {showBuilder && (

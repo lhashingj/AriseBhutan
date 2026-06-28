@@ -8,6 +8,8 @@ import {
   User, Phone, Globe, CreditCard, Calendar, Heart,
 } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
+import CountrySelect from '@/components/CountrySelect'
+import PhoneInput from '@/components/PhoneInput'
 
 const inputCls = 'w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors bg-white placeholder:text-stone-400'
 
@@ -151,17 +153,21 @@ export default function ClientProfilePage() {
   return (
     <div className="max-w-2xl mx-auto space-y-8">
       {/* Page header */}
-      <div>
+      <div className="bg-gradient-to-br from-amber-50 via-stone-50 to-white border border-amber-100 rounded-2xl px-6 py-5">
+        <p className="text-[11px] font-semibold text-amber-600 uppercase tracking-widest mb-1.5">Arise Bhutan · Client Portal</p>
         <h1 className="text-2xl font-serif font-bold text-stone-900">My Profile</h1>
         <p className="text-stone-500 text-sm mt-1">Manage your account details and travel documents.</p>
       </div>
 
       {/* ── Avatar ── */}
       <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-6">
-        <h2 className="font-semibold text-stone-900 mb-5">Profile Picture</h2>
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-1 h-6 rounded-full bg-amber-500" />
+          <h2 className="font-semibold text-stone-900">Profile Picture</h2>
+        </div>
         <div className="flex items-center gap-5">
           <div className="relative w-20 h-20 flex-shrink-0">
-            <div className="w-20 h-20 rounded-full overflow-hidden bg-amber-50 border-2 border-amber-100 flex items-center justify-center">
+            <div className="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-amber-100 to-amber-50 border-2 border-amber-200 flex items-center justify-center">
               {avatarSrc ? (
                 <img src={avatarSrc} alt="Profile" className="w-full h-full object-cover" />
               ) : (
@@ -197,7 +203,10 @@ export default function ClientProfilePage() {
 
       {/* ── Personal Information ── */}
       <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-6">
-        <h2 className="font-semibold text-stone-900 mb-5">Personal Information</h2>
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-1 h-6 rounded-full bg-amber-500" />
+          <h2 className="font-semibold text-stone-900">Personal Information</h2>
+        </div>
         <div className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
@@ -215,11 +224,11 @@ export default function ClientProfilePage() {
               <label className="flex items-center gap-1.5 text-sm font-medium text-stone-700 mb-1.5">
                 <Phone className="w-3.5 h-3.5 text-stone-400" /> Phone Number
               </label>
-              <input
+              <PhoneInput
+                id="phone"
                 value={form.phone}
-                onChange={(e) => setForm(f => ({ ...f, phone: e.target.value }))}
-                className={inputCls}
-                placeholder="+91 98765 43210"
+                onChange={(v) => setForm(f => ({ ...f, phone: v }))}
+                placeholder="Phone number"
               />
             </div>
           </div>
@@ -229,11 +238,11 @@ export default function ClientProfilePage() {
               <label className="flex items-center gap-1.5 text-sm font-medium text-stone-700 mb-1.5">
                 <Globe className="w-3.5 h-3.5 text-stone-400" /> Nationality
               </label>
-              <input
+              <CountrySelect
+                id="nationality"
                 value={form.nationality}
-                onChange={(e) => setForm(f => ({ ...f, nationality: e.target.value }))}
-                className={inputCls}
-                placeholder="e.g. Indian, British"
+                onChange={(v) => setForm(f => ({ ...f, nationality: v }))}
+                placeholder="Search country…"
               />
             </div>
             <div>
@@ -293,7 +302,10 @@ export default function ClientProfilePage() {
 
       {/* ── Security ── */}
       <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-6 space-y-7">
-        <h2 className="font-semibold text-stone-900">Security</h2>
+        <div className="flex items-center gap-3">
+          <div className="w-1 h-6 rounded-full bg-amber-500" />
+          <h2 className="font-semibold text-stone-900">Security</h2>
+        </div>
 
         {/* Change Email */}
         <div className="pb-7 border-b border-stone-100">

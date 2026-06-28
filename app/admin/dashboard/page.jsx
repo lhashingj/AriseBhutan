@@ -348,7 +348,46 @@ export default function AdminDashboard() {
   const totalClients    = profiles.filter((p) => p.role === 'CLIENT').length
   const pendingCount    = bookings.filter((b) => b.status === 'PENDING').length
   const confirmedItins  = itineraries.filter((i) => i.status === 'confirmed')
-  const revenue         = confirmedItins.reduce((s, i) => s + Number(i.pricing?.grand_total || 0), 0)
+  // Sum all confirmed into both currencies for the revenue card
+  const totalInr = confirmedItins.reduce((s, i) => {
+    const isInr = i.pricing?.is_saarc || i.pricing?.currency === 'INR'
+    const val   = Number(i.pricing?.grand_total || 0)
+    if (isInr) return s + val
+    const fx = Number(i.pricing?.inr_rate) || 83.5
+    return s + (Number(i.pricing?.equivalent_inr) || val * fx)
+  }, 0)
+  const totalUsd = confirmedItins.reduce((s, i) => {
+    const isInr = i.pricing?.is_saarc || i.pricing?.currency === 'INR'
+    const val   = Number(i.pricing?.grand_total || 0)
+    if (!isInr) return s + val
+    const fx = Number(i.pricing?.inr_rate) || 83.5
+    return s + val / fx
+  }, 0)
+  // Still keep separate for panel header text
+  const inrRevenue = confirmedItins
+    .filter(i => i.pricing?.is_saarc || i.pricing?.currency === 'INR')
+    .reduce((s, i) => s + Number(i.pricing?.grand_total || 0), 0)
+  const usdRevenue = confirmedItins
+    .filter(i => !i.pricing?.is_saarc && i.pricing?.currency !== 'INR')
+    .reduce((s, i) => s + Number(i.pricing?.grand_total || 0), 0)
+
+  function itinFmt(it) {
+    const isInr  = it.pricing?.is_saarc || it.pricing?.currency === 'INR'
+    const total  = Number(it.pricing?.grand_total || 0)
+    if (!total) return null
+    if (isInr) {
+      const inrStr = `Nu. ${total.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
+      const fx     = Number(it.pricing?.inr_rate) || 83.5
+      const usdStr = `$${(total / fx).toLocaleString('en-US', { maximumFractionDigits: 0 })}`
+      return { primary: inrStr, secondary: usdStr }
+    } else {
+      const usdStr = `$${total.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
+      const fx     = Number(it.pricing?.inr_rate) || 83.5
+      const eqInr  = Number(it.pricing?.equivalent_inr) || total * fx
+      const inrStr = `Nu. ${eqInr.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
+      return { primary: usdStr, secondary: inrStr }
+    }
+  }
 
   // ── Booking CRUD ─────────────────────────────────────────────────────────────
   async function confirmBookingInline(bkId) {
@@ -550,8 +589,11 @@ export default function AdminDashboard() {
           </div>
           <div>
             <p className="text-stone-500 text-[10px] font-bold uppercase tracking-widest">Confirmed Revenue</p>
-            <p className="text-3xl font-bold text-emerald-400 mt-0.5">
-              ${revenue.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+            <p className="text-2xl font-bold text-emerald-400 mt-0.5 leading-tight">
+              Nu. {totalInr.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+            </p>
+            <p className="text-base font-bold text-emerald-600 leading-tight">
+              ${totalUsd.toLocaleString('en-US', { maximumFractionDigits: 0 })}
             </p>
             <p className="text-[10px] text-stone-500 mt-0.5">{confirmedItins.length} itinerar{confirmedItins.length === 1 ? 'y' : 'ies'}</p>
           </div>
@@ -711,7 +753,7 @@ export default function AdminDashboard() {
             <h2 className="font-semibold text-white flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-green-400" /> Confirmed Itineraries
               <span className="text-xs font-normal text-stone-400 ml-1">
-                ({confirmedItins.length} · ${revenue.toLocaleString('en-US', { maximumFractionDigits: 0 })} total)
+                ({confirmedItins.length}{inrRevenue > 0 ? ` · Nu. ${inrRevenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : ''}{usdRevenue > 0 ? ` · $${usdRevenue.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : ''} total)
               </span>
             </h2>
             <button onClick={() => setActivePanel(null)} className="text-xs text-stone-400 hover:text-white">✕ Close</button>
@@ -761,7 +803,12 @@ export default function AdminDashboard() {
                         <span className="font-mono text-xs text-stone-500">{it.booking_reference || '—'}</span>
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className="font-bold text-green-400">${total.toLocaleString()}</span>
+                        {(() => { const f = itinFmt(it); return f ? (
+                          <div>
+                            <p className="font-bold text-green-400 text-sm">{f.primary}</p>
+                            <p className="text-xs text-stone-500 mt-0.5">{f.secondary}</p>
+                          </div>
+                        ) : <span className="text-stone-600 text-xs italic">Not set</span> })()}
                       </td>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2">
@@ -789,7 +836,9 @@ export default function AdminDashboard() {
           {confirmedItins.length > 0 && (
             <div className="px-5 py-3 border-t border-white/5 bg-stone-900/30 flex items-center justify-between">
               <p className="text-xs text-stone-500">{confirmedItins.length} confirmed itineraries</p>
-              <p className="text-sm font-bold text-green-400">Total Revenue: ${revenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+              <p className="text-sm font-bold text-green-400">
+                Total:{inrRevenue > 0 ? ` Nu. ${inrRevenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : ''}{inrRevenue > 0 && usdRevenue > 0 ? ' +' : ''}{usdRevenue > 0 ? ` $${usdRevenue.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : ''}
+              </p>
             </div>
           )}
         </div>
@@ -874,7 +923,7 @@ export default function AdminDashboard() {
                     <th className="px-5 py-3.5 text-left">Tour Package</th>
                     <th className="px-5 py-3.5 text-left">Status</th>
                     <th className="px-5 py-3.5 text-left">Trip</th>
-                    <th className="px-5 py-3.5 text-left">Total (USD)</th>
+                    <th className="px-5 py-3.5 text-left">Total</th>
                     <th className="px-5 py-3.5 text-left">Reference</th>
                     <th className="px-5 py-3.5 text-left">Actions</th>
                   </tr>
@@ -925,10 +974,12 @@ export default function AdminDashboard() {
                           {guests ? ` · ${guests} pax` : ''}
                         </td>
                         <td className="px-5 py-3.5">
-                          {total > 0
-                            ? <span className="font-bold font-mono text-amber-400 text-sm">${Number(total).toLocaleString()}</span>
-                            : <span className="text-stone-600 text-xs italic">Not set</span>
-                          }
+                          {(() => { const f = itinFmt(it); return f ? (
+                            <div>
+                              <p className="font-bold font-mono text-amber-400 text-sm">{f.primary}</p>
+                              <p className="text-xs text-stone-500 mt-0.5 font-mono">{f.secondary}</p>
+                            </div>
+                          ) : <span className="text-stone-600 text-xs italic">Not set</span> })()}
                         </td>
                         <td className="px-5 py-3.5">
                           <span className="font-mono text-xs text-stone-500">{it.booking_reference || '—'}</span>

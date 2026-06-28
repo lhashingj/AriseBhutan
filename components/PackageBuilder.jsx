@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { X, ChevronRight, ChevronLeft, Check, Plane, Calendar, Users, Hotel, MapPin, Save, Loader2 } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
 import { tours } from '@/data/tours'
+import CountrySelect from '@/components/CountrySelect'
+import PhoneInput from '@/components/PhoneInput'
 
 // SDF is a mandatory Royal Government of Bhutan levy — displayed to clients
 const SDF_PER_PERSON_PER_NIGHT = 100   // USD
@@ -447,8 +449,12 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-stone-700 mb-1.5">Nationality *</label>
-                    <input value={nationality} onChange={(e) => setNationality(e.target.value)}
-                      className={inputCls} placeholder="e.g. Indian, British, American" />
+                    <CountrySelect
+                      id="nationality"
+                      value={nationality}
+                      onChange={(v) => setNationality(v)}
+                      placeholder="Search country…"
+                    />
                   </div>
                 </div>
 
@@ -460,8 +466,12 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-stone-700 mb-1.5">Phone Number *</label>
-                    <input type="tel" value={clientPhone} onChange={(e) => setClientPhone(e.target.value)}
-                      className={inputCls} placeholder="+91 98765 43210" />
+                    <PhoneInput
+                      id="clientPhone"
+                      value={clientPhone}
+                      onChange={(v) => setClientPhone(v)}
+                      placeholder="Phone number"
+                    />
                   </div>
                 </div>
 

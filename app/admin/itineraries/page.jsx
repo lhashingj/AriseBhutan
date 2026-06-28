@@ -98,19 +98,71 @@ function StatusBadge({ status }) {
   )
 }
 
-// ── Pricing computation (pure) ────────────────────────────────
-function computePricing(packageRate, serviceFee, nights, guests, inrRate) {
-  const rate  = Number(packageRate) || 0
-  const fee   = Number(serviceFee)  || 0
-  const n     = Number(nights)      || 1
-  const g     = Number(guests)      || 1
-  const fx    = Number(inrRate)     || 83.5
-  const sdf   = 100 * n * g
-  const sub   = (rate * g) + sdf + fee
-  const gst   = sub * 0.05
-  const total = sub + gst
-  const inr   = total * fx
-  return { sdfTotal: sdf, subtotal: sub, gst, grandTotal: total, equivalentInr: inr }
+// ── SAARC rate sets ───────────────────────────────────────────
+const SAARC_INDIA_SET = new Set(['India'])
+const SAARC_BD_MV_SET = new Set(['Bangladesh', 'Maldives'])
+const SAARC_ALL_SET   = new Set(['India', 'Bangladesh', 'Maldives'])
+
+// ── Pricing computation (nationality-aware) ───────────────────
+function computePricingDetailed({
+  nationality, nights, adultPax, child611Pax, infantPax,
+  serviceRate, entranceFeePerPax, specialsPerPax,
+  flightPerPax, includeFlights, wireTransfer,
+}) {
+  const n       = Math.max(0, Math.floor(Number(nights)      || 0))
+  const adults  = Math.max(0, Number(adultPax)   || 0)
+  const c611    = Math.max(0, Number(child611Pax) || 0)
+  const infants = Math.max(0, Number(infantPax)   || 0)
+  const totalPax = adults + c611 + infants
+
+  const isSaarcIndia = SAARC_INDIA_SET.has(nationality)
+  const isSaarcBdMv  = SAARC_BD_MV_SET.has(nationality)
+  const isSaarc      = isSaarcIndia || isSaarcBdMv
+  const currency     = isSaarc ? 'INR / Nu.' : 'USD ($)'
+  const sym          = isSaarc ? '₹' : '$'
+
+  // SDF — India: adults 1200/night, children 6-11 600/night, infants free
+  //        BD/MV: all paying pax 1200/night
+  //        International: all pax $100/night
+  let sdfAdult = 0, sdfChild = 0, sdfTotal = 0
+  if (isSaarcIndia) {
+    sdfAdult = 1200 * adults * n
+    sdfChild = 600  * c611   * n
+    sdfTotal = sdfAdult + sdfChild
+  } else if (isSaarcBdMv) {
+    sdfTotal = 1200 * (adults + c611) * n
+  } else {
+    sdfTotal = 100 * totalPax * n
+  }
+
+  // Visa — SAARC exempt (Entry Permit / Visa on Arrival, no advance fee)
+  const visaPerPax = isSaarc ? 0 : 40
+  const visaTotal  = visaPerPax * totalPax
+
+  // Service (Guide / Vehicle / Meals) — GST applies ONLY to this
+  const svcRate  = Number(serviceRate)       || 0
+  const svcTotal = svcRate * (adults + c611) * n
+
+  // Other items (no GST)
+  const entrTotal = (Number(entranceFeePerPax) || 0) * totalPax
+  const specTotal = (Number(specialsPerPax)    || 0) * totalPax
+  const fltTotal  = includeFlights ? (Number(flightPerPax) || 0) * totalPax : 0
+  const wire      = Number(wireTransfer) || 0
+
+  // GST 5% — on service charge only (not SDF, not visa, not entrance, not flights)
+  const gst       = svcTotal * 0.05
+  const pkgCost   = sdfTotal + visaTotal + svcTotal + entrTotal + specTotal + fltTotal + wire
+  const grandTotal = pkgCost + gst
+
+  return {
+    isSaarc, isSaarcIndia, isSaarcBdMv, currency, sym,
+    sdfAdult, sdfChild, sdfTotal,
+    visaPerPax, visaTotal,
+    svcRate, svcTotal,
+    entrTotal, specTotal, fltTotal, wire,
+    gst, pkgCost, grandTotal,
+    totalPax, adultsNum: adults, c611Num: c611, infantsNum: infants,
+  }
 }
 
 // ── Input / label style helpers ───────────────────────────────
@@ -129,10 +181,21 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
     email:             itinerary.client_info?.email             || '',
     phone:             itinerary.client_info?.phone             || '',
     nationality:       itinerary.client_info?.nationality       || '',
-    passport_no:       itinerary.client_info?.passport_no || itinerary.client_info?.passport_number || '',
-    passport_expiry:   itinerary.client_info?.passport_expiry   || '',
     emergency_contact: itinerary.client_info?.emergency_contact || '',
   })
+
+  // Multi-guest list (stored in tour_summary.guests)
+  const [guests, setGuests] = useState(
+    itinerary.tour_summary?.guests?.length
+      ? itinerary.tour_summary.guests.map(g => ({ ...g }))
+      : [{
+          name:            itinerary.client_info?.guest_name       || '',
+          nationality:     itinerary.client_info?.nationality      || '',
+          age_category:    'adult',
+          passport_no:     itinerary.client_info?.passport_no || itinerary.client_info?.passport_number || '',
+          passport_expiry: itinerary.client_info?.passport_expiry  || '',
+        }]
+  )
 
   const [tourSummary, setTourSummary] = useState({
     tour_package:    itinerary.tour_summary?.tour_package    || '',
@@ -144,6 +207,7 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
     hotel_tier:      itinerary.tour_summary?.hotel_tier      || '',
     guide_name:      itinerary.tour_summary?.guide_name      || '',
     vehicle_details: itinerary.tour_summary?.vehicle_details || '',
+    room_config:     itinerary.tour_summary?.room_config     || '',
     interests:       itinerary.tour_summary?.interests       || [],
     message:         itinerary.tour_summary?.message         || '',
   })
@@ -160,9 +224,19 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
     (itinerary.tour_summary?.accommodations || []).map(a => ({ ...a }))
   )
 
-  const [packageRate, setPackageRate] = useState(itinerary.pricing?.package_rate_per_pax ?? '')
-  const [serviceFee,  setServiceFee]  = useState(itinerary.pricing?.service_fee          ?? '')
-  const [inrRate,     setInrRate]     = useState(itinerary.pricing?.inr_rate             ?? 83.5)
+  // ── Pricing state (itemized) ───────────────────────────────
+  const [adultPax,    setAdultPax]    = useState(itinerary.pricing?.adult_pax    ?? (Number(itinerary.tour_summary?.group_size) || 1))
+  const [child611Pax, setChild611Pax] = useState(itinerary.pricing?.child_611_pax ?? 0)
+  const [infantPax,   setInfantPax]   = useState(itinerary.pricing?.infant_pax   ?? 0)
+  const [serviceRate, setServiceRate] = useState(
+    itinerary.pricing?.service_rate ?? itinerary.pricing?.package_rate_per_pax ?? ''
+  )
+  const [entranceFeePerPax, setEntranceFeePerPax] = useState(itinerary.pricing?.entrance_fee_per_pax ?? '')
+  const [specialsPerPax,    setSpecialsPerPax]    = useState(itinerary.pricing?.specials_per_pax     ?? '')
+  const [flightPerPax,      setFlightPerPax]      = useState(itinerary.pricing?.flight_per_pax       ?? '')
+  const [includeFlights,    setIncludeFlights]    = useState(itinerary.pricing?.include_flights      ?? false)
+  const [wireTransfer,      setWireTransfer]      = useState(itinerary.pricing?.wire_transfer        ?? '')
+  const [inrRate,           setInrRate]           = useState(itinerary.pricing?.inr_rate             ?? 83.5)
 
   const DEFAULT_INCLUSIONS = [
     'Accommodation as per itinerary',
@@ -199,14 +273,19 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
   const [saveErr,   setSaveErr]   = useState('')
 
   const nights = Number(tourSummary.duration_nights) || 1
-  const guests = Number(tourSummary.group_size)      || 1
+  const primaryNationality = clientInfo.nationality || ''
 
   const calc = useMemo(
-    () => computePricing(packageRate, serviceFee, nights, guests, inrRate),
-    [packageRate, serviceFee, nights, guests, inrRate]
+    () => computePricingDetailed({
+      nationality: primaryNationality,
+      nights,
+      adultPax, child611Pax, infantPax,
+      serviceRate, entranceFeePerPax, specialsPerPax,
+      flightPerPax, includeFlights, wireTransfer,
+    }),
+    [primaryNationality, nights, adultPax, child611Pax, infantPax,
+     serviceRate, entranceFeePerPax, specialsPerPax, flightPerPax, includeFlights, wireTransfer]
   )
-
-  const fmt = n => Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
   // ── flight helpers ─────────────────────────────────────────
   function addFlight() {
@@ -244,21 +323,51 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
     setAccommodations(prev => prev.filter((_, i) => i !== idx))
   }
 
+  // ── guest helpers ──────────────────────────────────────────
+  function addGuest() {
+    setGuests(prev => [...prev, { name: '', nationality: '', age_category: 'adult', passport_no: '', passport_expiry: '' }])
+  }
+  function updateGuest(idx, field, val) {
+    setGuests(prev => prev.map((g, i) => i === idx ? { ...g, [field]: val } : g))
+  }
+  function removeGuest(idx) {
+    setGuests(prev => prev.filter((_, i) => i !== idx))
+  }
+
   // ── save ───────────────────────────────────────────────────
   async function handleSave(nextStatus) {
     setSaving(true)
     setSaveErr('')
 
     const pricingPayload = {
-      package_rate_per_pax: Number(packageRate) || 0,
+      // inputs
+      adult_pax:            Number(adultPax)          || 0,
+      child_611_pax:        Number(child611Pax)        || 0,
+      infant_pax:           Number(infantPax)          || 0,
+      service_rate:         Number(serviceRate)        || 0,
+      entrance_fee_per_pax: Number(entranceFeePerPax)  || 0,
+      specials_per_pax:     Number(specialsPerPax)     || 0,
+      flight_per_pax:       Number(flightPerPax)       || 0,
+      include_flights:      includeFlights,
+      wire_transfer:        Number(wireTransfer)       || 0,
+      inr_rate:             Number(inrRate)            || 83.5,
+      // computed
+      is_saarc:             calc.isSaarc,
+      currency:             calc.currency,
       sdf_total:            calc.sdfTotal,
-      service_fee:          Number(serviceFee)  || 0,
-      subtotal:             calc.subtotal,
+      visa_total:           calc.visaTotal,
+      service_total:        calc.svcTotal,
+      entrance_total:       calc.entrTotal,
+      specials_total:       calc.specTotal,
+      flights_total:        calc.fltTotal,
       gst:                  calc.gst,
+      package_cost:         calc.pkgCost,
       grand_total:          calc.grandTotal,
-      inr_rate:             Number(inrRate)     || 83.5,
-      equivalent_inr:       calc.equivalentInr,
+      equivalent_inr:       !calc.isSaarc ? calc.grandTotal * (Number(inrRate) || 83.5) : 0,
     }
+
+    // Sync group_size with total pax if all pax fields are set
+    const totalPaxCount = (Number(adultPax) || 0) + (Number(child611Pax) || 0) + (Number(infantPax) || 0)
 
     const { data, error } = await supabase
       .from('itineraries')
@@ -267,12 +376,13 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
         tour_summary: {
           ...itinerary.tour_summary,
           ...tourSummary,
+          guests,
           accommodations:  accommodations,
           inclusions:      inclusions,
           exclusions:      exclusions,
           cancellation:    cancellationPolicy,
           duration_nights: Number(tourSummary.duration_nights) || itinerary.tour_summary?.duration_nights || 1,
-          group_size:      Number(tourSummary.group_size)      || itinerary.tour_summary?.group_size      || 1,
+          group_size:      totalPaxCount || Number(tourSummary.group_size) || itinerary.tour_summary?.group_size || 1,
         },
         flights,
         day_by_day: days,
@@ -352,76 +462,173 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
 
           {/* ── Client Tab ── */}
           {activeTab === 'client' && (
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className={lbl}>Guest Name</label>
-                  <input
-                    type="text"
-                    value={clientInfo.guest_name}
-                    onChange={e => setClientInfo(p => ({ ...p, guest_name: e.target.value }))}
-                    placeholder="Full name"
-                    className={inp}
-                  />
+            <div className="space-y-4">
+
+              {/* Primary Contact */}
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-amber-500/70 mb-3">Primary Contact</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className={lbl}>Guest Name</label>
+                    <input
+                      type="text"
+                      value={clientInfo.guest_name}
+                      onChange={e => setClientInfo(p => ({ ...p, guest_name: e.target.value }))}
+                      placeholder="Full name"
+                      className={inp}
+                    />
+                  </div>
+                  <div>
+                    <label className={lbl}>Nationality</label>
+                    <input
+                      type="text"
+                      value={clientInfo.nationality}
+                      onChange={e => setClientInfo(p => ({ ...p, nationality: e.target.value }))}
+                      placeholder="e.g. India, United States"
+                      className={inp}
+                    />
+                  </div>
+                  <div>
+                    <label className={lbl}>Email</label>
+                    <input
+                      type="email"
+                      value={clientInfo.email}
+                      onChange={e => setClientInfo(p => ({ ...p, email: e.target.value }))}
+                      placeholder="email@example.com"
+                      className={inp}
+                    />
+                  </div>
+                  <div>
+                    <label className={lbl}>Phone / WhatsApp</label>
+                    <input
+                      type="text"
+                      value={clientInfo.phone}
+                      onChange={e => setClientInfo(p => ({ ...p, phone: e.target.value }))}
+                      placeholder="+1 234 567 8900"
+                      className={inp}
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className={lbl}>Emergency Contact</label>
+                    <input
+                      type="text"
+                      value={clientInfo.emergency_contact}
+                      onChange={e => setClientInfo(p => ({ ...p, emergency_contact: e.target.value }))}
+                      placeholder="Name · Relationship · Phone"
+                      className={inp}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className={lbl}>Email</label>
-                  <input
-                    type="email"
-                    value={clientInfo.email}
-                    onChange={e => setClientInfo(p => ({ ...p, email: e.target.value }))}
-                    placeholder="email@example.com"
-                    className={inp}
-                  />
+              </div>
+
+              {/* Guest List */}
+              <div className="border-t border-white/10 pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Guest List</p>
+                    <p className="text-[10px] text-stone-600 mt-0.5">
+                      {guests.length} guest{guests.length !== 1 ? 's' : ''} ·{' '}
+                      {guests.filter(g => g.age_category === 'adult').length} adult
+                      {guests.filter(g => g.age_category === 'child_6_11').length > 0 && `, ${guests.filter(g => g.age_category === 'child_6_11').length} child(6–11)`}
+                      {guests.filter(g => g.age_category === 'infant').length > 0 && `, ${guests.filter(g => g.age_category === 'infant').length} infant`}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addGuest}
+                    className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 px-2.5 py-1.5 rounded-lg transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add Guest
+                  </button>
                 </div>
-                <div>
-                  <label className={lbl}>Phone / WhatsApp</label>
-                  <input
-                    type="text"
-                    value={clientInfo.phone}
-                    onChange={e => setClientInfo(p => ({ ...p, phone: e.target.value }))}
-                    placeholder="+1 234 567 8900"
-                    className={inp}
-                  />
-                </div>
-                <div>
-                  <label className={lbl}>Nationality</label>
-                  <input
-                    type="text"
-                    value={clientInfo.nationality}
-                    onChange={e => setClientInfo(p => ({ ...p, nationality: e.target.value }))}
-                    placeholder="e.g. United States"
-                    className={inp}
-                  />
-                </div>
-                <div>
-                  <label className={lbl}>Passport No.</label>
-                  <input
-                    type="text"
-                    value={clientInfo.passport_no}
-                    onChange={e => setClientInfo(p => ({ ...p, passport_no: e.target.value }))}
-                    placeholder="e.g. A12345678"
-                    className={inp}
-                  />
-                </div>
-                <div>
-                  <label className={lbl}>Passport Expiry</label>
-                  <input
-                    type="date"
-                    value={clientInfo.passport_expiry}
-                    onChange={e => setClientInfo(p => ({ ...p, passport_expiry: e.target.value }))}
-                    className={inp}
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className={lbl}>Emergency Contact</label>
-                  <input
-                    type="text"
-                    value={clientInfo.emergency_contact}
-                    onChange={e => setClientInfo(p => ({ ...p, emergency_contact: e.target.value }))}
-                    placeholder="Name · Relationship · Phone"
-                    className={inp}
-                  />
+
+                <div className="space-y-2.5">
+                  {guests.map((g, idx) => (
+                    <div key={idx} className="bg-stone-800/60 rounded-xl border border-white/5 p-3">
+                      <div className="flex items-center justify-between mb-2.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400 font-bold text-[10px] shrink-0">
+                            {idx + 1}
+                          </div>
+                          <p className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">
+                            {idx === 0 ? 'Primary Guest' : `Guest ${idx + 1}`}
+                          </p>
+                          {g.age_category === 'infant' && (
+                            <span className="text-[9px] bg-blue-500/15 text-blue-400 border border-blue-500/25 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                              SDF Exempt (≤5)
+                            </span>
+                          )}
+                          {g.age_category === 'child_6_11' && SAARC_INDIA_SET.has(clientInfo.nationality) && (
+                            <span className="text-[9px] bg-amber-500/15 text-amber-400 border border-amber-500/25 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                              Half SDF ₹600
+                            </span>
+                          )}
+                        </div>
+                        {idx > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => removeGuest(idx)}
+                            className="p-1 rounded text-stone-600 hover:text-red-400 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="col-span-2">
+                          <label className="text-[10px] text-stone-500 block mb-1">Full Name</label>
+                          <input
+                            type="text"
+                            value={g.name}
+                            onChange={e => updateGuest(idx, 'name', e.target.value)}
+                            placeholder="Full name"
+                            className={inp}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-stone-500 block mb-1">Nationality</label>
+                          <input
+                            type="text"
+                            value={g.nationality}
+                            onChange={e => updateGuest(idx, 'nationality', e.target.value)}
+                            placeholder="e.g. India"
+                            className={inp}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-stone-500 block mb-1">Age Category</label>
+                          <select
+                            value={g.age_category}
+                            onChange={e => updateGuest(idx, 'age_category', e.target.value)}
+                            className={inp}
+                          >
+                            <option value="adult">Adult (12+)</option>
+                            <option value="child_6_11">Child (6–11)</option>
+                            <option value="infant">Infant / Under 5</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-stone-500 block mb-1">Passport No.</label>
+                          <input
+                            type="text"
+                            value={g.passport_no}
+                            onChange={e => updateGuest(idx, 'passport_no', e.target.value)}
+                            placeholder="e.g. A12345678"
+                            className={inp}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-stone-500 block mb-1">Passport Expiry</label>
+                          <input
+                            type="date"
+                            value={g.passport_expiry}
+                            onChange={e => updateGuest(idx, 'passport_expiry', e.target.value)}
+                            className={inp}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -521,6 +728,16 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
                     value={tourSummary.vehicle_details}
                     onChange={e => setTourSummary(p => ({ ...p, vehicle_details: e.target.value }))}
                     placeholder="e.g. Land Cruiser · Karma Wangdi"
+                    className={inp}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className={lbl}>Room Configuration</label>
+                  <input
+                    type="text"
+                    value={tourSummary.room_config}
+                    onChange={e => setTourSummary(p => ({ ...p, room_config: e.target.value }))}
+                    placeholder="e.g. 2 Twin/Double + 1 Single"
                     className={inp}
                   />
                 </div>
@@ -944,95 +1161,293 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
           {/* ── Pricing Tab ── */}
           {activeTab === 'pricing' && (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+              {/* Rate type banner */}
+              <div className={`rounded-xl p-3.5 border flex items-center justify-between gap-3 ${
+                calc.isSaarc ? 'bg-blue-500/10 border-blue-500/20' : 'bg-stone-800 border-white/10'
+              }`}>
                 <div>
-                  <label className={lbl}>Package Rate / Pax (USD)</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">$</span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="50"
-                      value={packageRate}
-                      onChange={e => setPackageRate(e.target.value)}
-                      placeholder="0"
-                      className={`${inp} pl-7`}
-                    />
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-stone-500 mb-0.5">Rate Type — auto from Nationality</p>
+                  <p className={`text-sm font-bold ${calc.isSaarc ? 'text-blue-300' : 'text-stone-200'}`}>
+                    {calc.isSaarcIndia
+                      ? 'India — Entry Permit · INR / Nu.'
+                      : calc.isSaarcBdMv
+                      ? 'Bangladesh / Maldives — Visa on Arrival · INR / Nu.'
+                      : primaryNationality
+                      ? `${primaryNationality} — International · USD ($)`
+                      : 'Set Nationality in Client tab'}
+                  </p>
+                  <p className="text-[11px] text-stone-500 mt-0.5">
+                    {calc.isSaarcIndia
+                      ? 'SDF: ₹1,200/adult/night · ₹600/child(6–11)/night · Infants free · No visa fee'
+                      : calc.isSaarcBdMv
+                      ? 'SDF: ₹1,200/person/night · No advance visa fee'
+                      : 'SDF: $100/person/night · Visa: $40/person'}
+                  </p>
+                </div>
+                <div className={`shrink-0 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1.5 rounded-lg border ${
+                  calc.isSaarc
+                    ? 'bg-blue-500/15 text-blue-400 border-blue-500/30'
+                    : 'bg-stone-700 text-stone-400 border-white/10'
+                }`}>
+                  {calc.isSaarc ? 'INR' : 'USD'}
+                </div>
+              </div>
+
+              {/* Pax breakdown */}
+              <div className="bg-stone-800/60 rounded-xl border border-white/5 p-4">
+                <p className={lbl}>Group Breakdown</p>
+                <div className="grid grid-cols-3 gap-3 mt-2">
+                  <div>
+                    <label className="text-[10px] text-stone-500 block mb-1">Adults (12+)</label>
+                    <input type="number" min="0" value={adultPax}
+                      onChange={e => setAdultPax(e.target.value)} className={inp} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-stone-500 block mb-1">
+                      {calc.isSaarcIndia ? 'Children 6–11 (₹600)' : 'Children 6–11'}
+                    </label>
+                    <input type="number" min="0" value={child611Pax}
+                      onChange={e => setChild611Pax(e.target.value)} className={inp} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-stone-500 block mb-1">
+                      {calc.isSaarcIndia ? 'Infants ≤5 (free)' : 'Infants / ≤5'}
+                    </label>
+                    <input type="number" min="0" value={infantPax}
+                      onChange={e => setInfantPax(e.target.value)} className={inp} />
                   </div>
                 </div>
-                <div>
-                  <label className={lbl}>Service Fee (USD)</label>
+                <p className="text-[10px] text-stone-600 mt-2">
+                  Total: {calc.totalPax} pax · {nights} nights
+                  {calc.isSaarcIndia && calc.infantsNum > 0 ? ` · ${calc.infantsNum} infant(s) exempt from SDF` : ''}
+                </p>
+              </div>
+
+              {/* Itemized rate inputs */}
+              <div className="space-y-2">
+                <p className={lbl}>Itemized Costs</p>
+
+                {/* Service Rate */}
+                <div className="bg-stone-800/60 rounded-xl border border-white/5 p-3">
+                  <label className="text-[10px] text-stone-400 uppercase tracking-wider block mb-1.5">
+                    Service (Guide / Vehicle / Meals) — per pax / night
+                  </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">$</span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="10"
-                      value={serviceFee}
-                      onChange={e => setServiceFee(e.target.value)}
-                      placeholder="0"
-                      className={`${inp} pl-7`}
-                    />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">{calc.sym}</span>
+                    <input type="number" min="0" step="100" value={serviceRate}
+                      onChange={e => setServiceRate(e.target.value)}
+                      placeholder="0" className={`${inp} pl-7`} />
+                  </div>
+                  {serviceRate > 0 && (
+                    <p className="text-[10px] text-stone-500 mt-1.5">
+                      {calc.sym}{Number(serviceRate).toLocaleString()} × {calc.adultsNum + calc.c611Num} pax × {nights} nights = {calc.sym}{calc.svcTotal.toLocaleString()}
+                    </p>
+                  )}
+                  <p className="text-[10px] text-amber-600/70 mt-0.5">GST (5%) applies to this amount only</p>
+                </div>
+
+                {/* Entrance Fees */}
+                <div className="bg-stone-800/60 rounded-xl border border-white/5 p-3">
+                  <label className="text-[10px] text-stone-400 uppercase tracking-wider block mb-1.5">Entrance Fees — per pax</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">{calc.sym}</span>
+                    <input type="number" min="0" step="100" value={entranceFeePerPax}
+                      onChange={e => setEntranceFeePerPax(e.target.value)}
+                      placeholder="0" className={`${inp} pl-7`} />
+                  </div>
+                  {entranceFeePerPax > 0 && (
+                    <p className="text-[10px] text-stone-500 mt-1.5">
+                      {calc.sym}{Number(entranceFeePerPax).toLocaleString()} × {calc.totalPax} pax = {calc.sym}{calc.entrTotal.toLocaleString()}
+                    </p>
+                  )}
+                </div>
+
+                {/* Special Experiences */}
+                <div className="bg-stone-800/60 rounded-xl border border-white/5 p-3">
+                  <label className="text-[10px] text-stone-400 uppercase tracking-wider block mb-1.5">Special Experiences &amp; Meals — per pax</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">{calc.sym}</span>
+                    <input type="number" min="0" step="100" value={specialsPerPax}
+                      onChange={e => setSpecialsPerPax(e.target.value)}
+                      placeholder="0" className={`${inp} pl-7`} />
+                  </div>
+                  {specialsPerPax > 0 && (
+                    <p className="text-[10px] text-stone-500 mt-1.5">
+                      {calc.sym}{Number(specialsPerPax).toLocaleString()} × {calc.totalPax} pax = {calc.sym}{calc.specTotal.toLocaleString()}
+                    </p>
+                  )}
+                </div>
+
+                {/* Flights */}
+                <div className="bg-stone-800/60 rounded-xl border border-white/5 p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <input type="checkbox" id="incl-flights" checked={includeFlights}
+                      onChange={e => setIncludeFlights(e.target.checked)}
+                      className="rounded accent-amber-500 w-3.5 h-3.5 cursor-pointer" />
+                    <label htmlFor="incl-flights" className="text-[10px] text-stone-400 uppercase tracking-wider cursor-pointer">
+                      Include Flights in Package — per pax
+                    </label>
+                  </div>
+                  {includeFlights && (
+                    <>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">{calc.sym}</span>
+                        <input type="number" min="0" step="100" value={flightPerPax}
+                          onChange={e => setFlightPerPax(e.target.value)}
+                          placeholder="0" className={`${inp} pl-7`} />
+                      </div>
+                      {flightPerPax > 0 && (
+                        <p className="text-[10px] text-stone-500 mt-1.5">
+                          {calc.sym}{Number(flightPerPax).toLocaleString()} × {calc.totalPax} pax = {calc.sym}{calc.fltTotal.toLocaleString()}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {/* Wire Transfer */}
+                <div className="bg-stone-800/60 rounded-xl border border-white/5 p-3">
+                  <label className="text-[10px] text-stone-400 uppercase tracking-wider block mb-1.5">Wire / Bank Transfer Fee (flat)</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">{calc.sym}</span>
+                    <input type="number" min="0" step="10" value={wireTransfer}
+                      onChange={e => setWireTransfer(e.target.value)}
+                      placeholder="0" className={`${inp} pl-7`} />
                   </div>
                 </div>
               </div>
 
-              <div className="bg-stone-950 rounded-2xl p-5 space-y-3 border border-white/5">
-                <div className="flex justify-between text-stone-400 text-sm">
-                  <span>Package Rate × {guests} guests</span>
-                  <span className="font-mono text-stone-200">${fmt(Number(packageRate || 0) * guests)}</span>
-                </div>
-                <div className="flex justify-between text-stone-400 text-sm">
-                  <span>SDF ($100 × {nights} nights × {guests} guests)</span>
-                  <span className="font-mono text-stone-200">${fmt(calc.sdfTotal)}</span>
-                </div>
-                <div className="flex justify-between text-stone-400 text-sm">
-                  <span>Service Fee</span>
-                  <span className="font-mono text-stone-200">${fmt(Number(serviceFee || 0))}</span>
-                </div>
-                <div className="border-t border-white/10 pt-3 flex justify-between text-white text-sm font-semibold">
-                  <span>Subtotal</span>
-                  <span className="font-mono">${fmt(calc.subtotal)}</span>
-                </div>
-                <div className="flex justify-between text-stone-400 text-sm">
-                  <span>GST (5%)</span>
-                  <span className="font-mono text-stone-200">${fmt(calc.gst)}</span>
+              {/* Cost summary */}
+              <div className="bg-stone-950 rounded-2xl p-5 space-y-2.5 border border-white/5">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-stone-500 mb-3">Cost Summary</p>
+
+                {/* SDF rows */}
+                {calc.isSaarcIndia ? (
+                  <>
+                    {calc.adultsNum > 0 && (
+                      <div className="flex justify-between text-stone-400 text-sm">
+                        <span>SDF ₹1,200 × {calc.adultsNum} adult{calc.adultsNum > 1 ? 's' : ''} × {nights} nights</span>
+                        <span className="font-mono text-stone-200">₹{calc.sdfAdult.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {calc.c611Num > 0 && (
+                      <div className="flex justify-between text-stone-400 text-sm">
+                        <span>SDF ₹600 × {calc.c611Num} child(6–11) × {nights} nights</span>
+                        <span className="font-mono text-stone-200">₹{calc.sdfChild.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {calc.infantsNum > 0 && (
+                      <div className="flex justify-between text-stone-400 text-sm">
+                        <span>SDF — {calc.infantsNum} infant(s) / ≤5</span>
+                        <span className="font-mono text-emerald-400 text-xs">Exempt</span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex justify-between text-stone-400 text-sm">
+                    <span>SDF ({calc.isSaarc ? '₹1,200' : '$100'} × {calc.isSaarc ? calc.adultsNum + calc.c611Num : calc.totalPax} pax × {nights} nights)</span>
+                    <span className="font-mono text-stone-200">{calc.sym}{calc.sdfTotal.toLocaleString()}</span>
+                  </div>
+                )}
+
+                {/* Visa */}
+                {calc.isSaarc ? (
+                  <div className="flex justify-between text-stone-400 text-sm">
+                    <span>{calc.isSaarcIndia ? 'Entry Permit (Visa)' : 'Visa on Arrival'}</span>
+                    <span className="font-mono text-emerald-400 text-xs">Exempt</span>
+                  </div>
+                ) : calc.totalPax > 0 && (
+                  <div className="flex justify-between text-stone-400 text-sm">
+                    <span>Visa Processing ($40 × {calc.totalPax} pax)</span>
+                    <span className="font-mono text-stone-200">${calc.visaTotal.toLocaleString()}</span>
+                  </div>
+                )}
+
+                {/* Service */}
+                {calc.svcTotal > 0 && (
+                  <div className="flex justify-between text-stone-400 text-sm">
+                    <span>Guide / Vehicle / Meals</span>
+                    <span className="font-mono text-stone-200">{calc.sym}{calc.svcTotal.toLocaleString()}</span>
+                  </div>
+                )}
+
+                {/* Entrance */}
+                {calc.entrTotal > 0 && (
+                  <div className="flex justify-between text-stone-400 text-sm">
+                    <span>Entrance Fees</span>
+                    <span className="font-mono text-stone-200">{calc.sym}{calc.entrTotal.toLocaleString()}</span>
+                  </div>
+                )}
+
+                {/* Specials */}
+                {calc.specTotal > 0 && (
+                  <div className="flex justify-between text-stone-400 text-sm">
+                    <span>Special Experiences &amp; Meals</span>
+                    <span className="font-mono text-stone-200">{calc.sym}{calc.specTotal.toLocaleString()}</span>
+                  </div>
+                )}
+
+                {/* Flights */}
+                {includeFlights && calc.fltTotal > 0 && (
+                  <div className="flex justify-between text-stone-400 text-sm">
+                    <span>International Flights</span>
+                    <span className="font-mono text-stone-200">{calc.sym}{calc.fltTotal.toLocaleString()}</span>
+                  </div>
+                )}
+
+                {/* Wire */}
+                {calc.wire > 0 && (
+                  <div className="flex justify-between text-stone-400 text-sm">
+                    <span>Wire / Bank Transfer</span>
+                    <span className="font-mono text-stone-200">{calc.sym}{calc.wire.toLocaleString()}</span>
+                  </div>
+                )}
+
+                <div className="border-t border-white/10 pt-3 flex justify-between text-white font-semibold text-sm">
+                  <span>Package Cost</span>
+                  <span className="font-mono">{calc.sym}{Math.round(calc.pkgCost).toLocaleString()}</span>
                 </div>
 
-                {/* Grand Total — premium glow row */}
+                {calc.gst > 0 && (
+                  <div className="flex justify-between text-stone-400 text-sm">
+                    <span>GST (5%) — on service charge only</span>
+                    <span className="font-mono text-stone-200">{calc.sym}{Math.round(calc.gst).toLocaleString()}</span>
+                  </div>
+                )}
+
+                {/* Grand Total glow */}
                 <div className="rounded-xl overflow-hidden mt-2"
                   style={{ background: 'linear-gradient(135deg, #1C1007, #2D1A08)', boxShadow: '0 0 20px 2px rgba(217,119,6,0.18), inset 0 1px 0 rgba(245,158,11,0.2)' }}>
                   <div className="flex items-center justify-between px-4 py-3.5">
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600/70">Grand Total</p>
-                      <p className="text-white text-sm font-bold mt-0.5">USD · All inclusive</p>
+                      <p className="text-white text-sm font-bold mt-0.5">{calc.currency} · All inclusive</p>
                     </div>
                     <p className="font-black text-2xl tracking-tight"
                       style={{ color: '#F59E0B', fontFamily: 'monospace', textShadow: '0 0 24px rgba(245,158,11,0.6)' }}>
-                      ${fmt(calc.grandTotal)}
+                      {calc.sym}{Math.round(calc.grandTotal).toLocaleString()}
                     </p>
                   </div>
-                  <div className="border-t border-amber-900/40 px-4 py-2 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] text-amber-700/60 whitespace-nowrap">INR Rate ₹</span>
-                      <input
-                        type="number"
-                        min="1"
-                        step="0.5"
-                        value={inrRate}
-                        onChange={e => setInrRate(e.target.value)}
-                        className="w-20 bg-transparent border border-amber-900/50 rounded-lg px-2 py-0.5 text-xs text-amber-600 font-mono focus:outline-none focus:border-amber-600/60 text-center"
-                      />
+                  {/* Show INR equivalent for USD bookings */}
+                  {!calc.isSaarc && (
+                    <div className="border-t border-amber-900/40 px-4 py-2 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] text-amber-700/60 whitespace-nowrap">INR Rate ₹</span>
+                        <input
+                          type="number" min="1" step="0.5" value={inrRate}
+                          onChange={e => setInrRate(e.target.value)}
+                          className="w-20 bg-transparent border border-amber-900/50 rounded-lg px-2 py-0.5 text-xs text-amber-600 font-mono focus:outline-none focus:border-amber-600/60 text-center"
+                        />
+                      </div>
+                      <span className="font-mono text-amber-600 text-xs font-semibold">
+                        ₹{(calc.grandTotal * (Number(inrRate) || 83.5)).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                      </span>
                     </div>
-                    <span className="font-mono text-amber-600 text-xs font-semibold">
-                      ₹{calc.equivalentInr.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-                    </span>
-                  </div>
+                  )}
                 </div>
               </div>
-              <p className="text-xs text-stone-600">
-                Nights ({nights}) and group size ({guests}) are synced from the Tour tab.
-              </p>
+              <p className="text-xs text-stone-600">Nights ({nights}) synced from Tour tab. GST applies only to service/guide/meals charge.</p>
             </div>
           )}
 
@@ -1183,7 +1598,7 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
 
           <button
             onClick={() => handleSave('quoted')}
-            disabled={saving || !packageRate}
+            disabled={saving || calc.grandTotal === 0}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white text-sm font-semibold transition-colors"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
