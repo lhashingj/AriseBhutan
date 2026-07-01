@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Calendar, ChevronDown, ChevronRight, ExternalLink, BedDouble, Clock } from 'lucide-react'
+import { Calendar, ChevronDown, ChevronRight, ExternalLink, BedDouble, Clock, Utensils } from 'lucide-react'
+import { tours } from '@/data/tours'
 
 const STATUS_CFG = {
   enquiry_pending: { label: 'Enquiry',   borderL: 'border-l-rose-400',  badge: 'bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200',   dot: 'bg-rose-400' },
@@ -11,17 +12,94 @@ const STATUS_CFG = {
   confirmed:       { label: 'Confirmed', borderL: 'border-l-green-500', badge: 'bg-green-50 text-green-700 ring-1 ring-inset ring-green-200', dot: 'bg-green-500' },
 }
 
-function MealPills({ meals }) {
-  if (!meals) return null
-  const label = { B: 'Breakfast', L: 'Lunch', D: 'Dinner' }
+const MEAL_LABELS = { B: 'Breakfast', L: 'Lunch', D: 'Dinner' }
+
+function parseMeals(raw) {
+  if (!raw) return []
+  return raw.split(/[,/\s]+/).map(m => m.trim().toUpperCase()).filter(m => m === 'B' || m === 'L' || m === 'D')
+}
+
+function DayAccordion({ d, index, defaultOpen = false, staticDay = null }) {
+  const [open, setOpen] = useState(defaultOpen)
+  const dayNum = d.day ?? index + 1
+
+  const title       = staticDay?.title       || (d.programme || '').split('·')[0]?.trim() || `Day ${dayNum}`
+  const description = staticDay?.description || null
+  const activities  = staticDay?.activities  || (d.programme || '').split('·').slice(1).map(p => p.trim()).filter(Boolean)
+  const accom       = staticDay?.accommodation || d.accommodation_name || null
+  const mealStr     = staticDay?.meals        || parseMeals(d.meals).map(m => MEAL_LABELS[m] || m).join(' · ')
+
+  const dateStr = d.date
+    ? new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    : null
+
   return (
-    <div className="flex items-center gap-1">
-      {meals.split(',').map(m => m.trim()).filter(Boolean).map(m => (
-        <span key={m} title={label[m] || m}
-          className="text-[9px] font-bold bg-amber-50 text-amber-600 border border-amber-100 px-1.5 py-0.5 rounded-md">
-          {m}
+    <div className="border border-stone-200 rounded-xl overflow-hidden">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center gap-3 px-4 py-3.5 bg-white hover:bg-stone-50 transition-colors text-left"
+      >
+        {/* D1 badge */}
+        <span className="w-10 h-10 rounded-lg bg-amber-100 text-amber-700 font-bold text-sm flex items-center justify-center shrink-0">
+          D{dayNum}
         </span>
-      ))}
+
+        <div className="flex-1 min-w-0">
+          {/* Title + date on same row */}
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <p className="text-sm sm:text-base font-semibold text-stone-800 leading-snug">{title}</p>
+            {dateStr && (
+              <span className="text-xs text-stone-400 font-normal shrink-0">{dateStr}</span>
+            )}
+          </div>
+          {mealStr && <p className="text-xs text-stone-400 mt-0.5">{mealStr}</p>}
+        </div>
+
+        <ChevronDown className={`w-4 h-4 text-stone-400 shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="px-4 sm:px-5 pb-5 pt-3 bg-stone-50 border-t border-stone-100 space-y-4">
+          {description && (
+            <p className="text-sm sm:text-[15px] text-stone-600 leading-relaxed text-justify">{description}</p>
+          )}
+
+          {activities.length > 0 && (
+            <div>
+              <p className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-2">Activities</p>
+              <ul className="space-y-1.5">
+                {activities.map((a, j) => (
+                  <li key={j} className="flex items-start gap-2 text-sm text-stone-600">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0 mt-2" />
+                    {a}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {accom && (
+              <div>
+                <p className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1">Accommodation</p>
+                <p className="flex items-center gap-1.5 text-sm text-stone-600">
+                  <BedDouble className="w-4 h-4 text-stone-400 shrink-0" />
+                  {accom}
+                </p>
+              </div>
+            )}
+            {mealStr && (
+              <div>
+                <p className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1">Meals</p>
+                <p className="flex items-center gap-1.5 text-sm text-stone-600">
+                  <Utensils className="w-4 h-4 text-stone-400 shrink-0" />
+                  {mealStr}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -41,8 +119,14 @@ export default function ItineraryCard({ itin, showDayPlan = true }) {
   const days   = (itin.day_by_day || []).slice().sort((a, b) => (a.day ?? 0) - (b.day ?? 0))
   const hasPrice = total > 0
 
-  const fmtDate  = d => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-  const fmtShort = d => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  // Match to static tour for rich day descriptions
+  const pkg = name.toLowerCase()
+  const matchedTour = tours.find(t =>
+    t.title.toLowerCase().includes(pkg) ||
+    pkg.includes(t.title.toLowerCase().replace(' tour', '').replace(' trek', ''))
+  )
+
+  const fmtDate = d => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 
   return (
     <div className={`bg-white rounded-2xl shadow-sm border border-stone-100 border-l-4 ${s.borderL} overflow-hidden`}>
@@ -137,56 +221,11 @@ export default function ItineraryCard({ itin, showDayPlan = true }) {
 
       {/* ── Day Plan content ── */}
       {showDayPlan && open && days.length > 0 && (
-        <div className="border-t border-stone-100 divide-y divide-stone-50 sm:grid sm:grid-cols-2 sm:divide-y-0 sm:divide-x">
+        <div className="border-t border-stone-100 p-4 sm:p-6 space-y-2">
           {days.map((d, i) => {
-            const parts      = (d.programme || '').split('·').map(p => p.trim()).filter(Boolean)
-            const route      = parts[0] || ''
-            const activities = parts.slice(1)
-            const dateStr    = d.date ? fmtShort(d.date) : ''
-
-            return (
-              <div key={i} className="flex gap-3 px-4 sm:px-6 py-4 border-b border-stone-50 last:border-b-0">
-
-                {/* Day circle */}
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-xs shrink-0 mt-0.5">
-                  {d.day ?? i + 1}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  {/* Header row */}
-                  <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
-                    <span className="text-xs font-bold text-stone-800">Day {d.day ?? i + 1}</span>
-                    {dateStr && <span className="text-[10px] text-stone-400">{dateStr}</span>}
-                    <MealPills meals={d.meals} />
-                  </div>
-
-                  {/* Route / title */}
-                  {route && (
-                    <p className="text-xs font-medium text-stone-700 leading-relaxed mb-1">{route}</p>
-                  )}
-
-                  {/* Activities */}
-                  {activities.length > 0 && (
-                    <ul className="space-y-0.5 mb-1.5">
-                      {activities.map((a, j) => (
-                        <li key={j} className="text-[11px] text-stone-500 flex items-start gap-1.5">
-                          <span className="w-1 h-1 rounded-full bg-amber-400 shrink-0 mt-1.5" />
-                          {a}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-
-                  {/* Accommodation */}
-                  {d.accommodation_name && (
-                    <p className="text-[10px] text-stone-400 flex items-center gap-1 mt-1">
-                      <BedDouble className="w-3 h-3 shrink-0" />
-                      {d.accommodation_name}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )
+            const dayNum    = d.day ?? i + 1
+            const staticDay = matchedTour?.itinerary?.find(s => s.day === dayNum) || null
+            return <DayAccordion key={i} d={d} index={i} defaultOpen={i === 0} staticDay={staticDay} />
           })}
         </div>
       )}

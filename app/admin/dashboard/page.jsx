@@ -497,7 +497,11 @@ export default function AdminDashboard() {
   }
 
   // ── Sort / filter ────────────────────────────────────────────────────────────
-  const bookingCount = (uid) => bookings.filter((b) => b.user_id === uid).length
+  const bookingCount = (uid) => {
+    const profile = profiles.find(p => p.id === uid)
+    if (!profile?.email) return bookings.filter((b) => b.user_id === uid).length
+    return itineraries.filter((i) => i.client_info?.email === profile.email).length
+  }
 
   const filtered = profiles
     .filter((p) => {

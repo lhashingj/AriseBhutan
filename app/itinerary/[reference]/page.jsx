@@ -176,7 +176,8 @@ export default function ItineraryVoucherPage() {
               {/* Logo + tagline */}
               <div className="flex items-center gap-3 sm:gap-4">
                 <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-white/20 backdrop-blur overflow-hidden flex items-center justify-center border-2 border-white/40 flex-shrink-0">
-                  <Image src="/images/logo.jpeg" alt="Arise Bhutan" width={56} height={56} className="object-contain" />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/images/logo.jpeg" alt="Arise Bhutan" width={56} height={56} className="object-contain w-full h-full" crossOrigin="anonymous" />
                 </div>
                 <div>
                   <p className="font-serif font-bold text-white text-lg sm:text-xl leading-tight">Arise Bhutan</p>
@@ -777,8 +778,7 @@ export default function ItineraryVoucherPage() {
                   <p>📞 +61 435 341 033</p>
                   <p>✉ arisebhutan@gmail.com</p>
                   <p>🌐 www.arisebhutan.com</p>
-                  <p>💬 WhatsApp: +975 77 319 405</p>
-                  <p>💬 WhatsApp: +61 435 341 033</p>
+
                 </div>
               </div>
               <div>

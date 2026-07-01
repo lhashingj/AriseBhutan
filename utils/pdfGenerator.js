@@ -22,6 +22,18 @@ export async function generateVoucherPDF(
   const el = document.getElementById(elementId)
   if (!el) throw new Error(`Element #${elementId} not found`)
 
+  // Wait for all images in the element to fully load before capturing
+  await Promise.all(
+    Array.from(el.querySelectorAll('img')).map(img =>
+      img.complete
+        ? Promise.resolve()
+        : new Promise(resolve => {
+            img.onload = resolve
+            img.onerror = resolve
+          })
+    )
+  )
+
   const canvas = await html2canvas(el, {
     scale: 2,
     useCORS: true,
