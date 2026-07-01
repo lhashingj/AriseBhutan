@@ -1,6 +1,18 @@
+import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Shield, Heart, Leaf, Award, Users, Globe, Download, FileCheck } from 'lucide-react'
+
+export const metadata: Metadata = {
+  title: 'About Us — Licensed Bhutan Tour Agency | Arise Bhutan',
+  description: 'Arise Bhutan Tours & Travels is a DOT-licensed tour operator based in Paro, Bhutan. Learn about our team, our values, and our commitment to authentic, sustainable Bhutan travel experiences.',
+  alternates: { canonical: 'https://www.arisebhutan.com/about' },
+  openGraph: {
+    title: 'About Arise Bhutan — DOT-Licensed Tour Agency in Paro',
+    description: 'Meet the team behind Arise Bhutan. Licensed by the Royal Government of Bhutan (DOT Lic. 50001567). Expert local guides. Fully private tours.',
+    url: 'https://www.arisebhutan.com/about',
+  },
+}
 
 const values = [
   { icon: Heart,  title: 'Authentic Experiences',   desc: 'We go beyond the tourist trail, connecting you with real Bhutanese people, culture, and daily life.' },
@@ -45,7 +57,7 @@ export default function AboutPage() {
                   Arise Bhutan was founded with a single conviction: that Bhutan deserves to be experienced deeply, not just seen briefly. Too many travelers arrive, tick the Tiger&apos;s Nest off their list, and leave — missing the ancient soul of this remarkable kingdom.
                 </p>
                 <p>
-                  Our founder, a Paro native and third-generation guide, created Arise Bhutan to build the bridge between curious travelers and authentic Bhutanese culture. The name &ldquo;Arise&rdquo; captures our core belief: that the best journeys don&apos;t just take you somewhere new — they awaken something within you.
+                  Our founder created Arise Bhutan to build the bridge between curious travelers and authentic Bhutanese culture. The name &ldquo;Arise&rdquo; captures our core belief: that the best journeys don&apos;t just take you somewhere new — they awaken something within you.
                 </p>
                 <p>
                   Every itinerary we craft is designed to create that awakening: a morning hike where prayer flags flutter in mountain mist, a festival moment where centuries-old dance dissolves time, a quiet afternoon in a farmhouse where a family shares their ema datshi and stories of the land.

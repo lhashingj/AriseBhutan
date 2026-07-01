@@ -101,7 +101,7 @@ export const tours: Tour[] = [
       },
     ],
     inclusions: ['4 nights 3-star hotels', 'All ground transportation in private vehicle', 'Licensed English-speaking guide', 'Bhutan SDF (Sustainable Development Fee) — $100/day', 'Visa processing assistance', 'All monastery & site entrance fees', 'Meals per itinerary', 'Airport transfers', 'Traditional hot stone bath (dotsho)', 'Traditional Bhutanese costume set (returnable)'],
-    exclusions: ['International airfare', 'Travel insurance (strongly recommended)', 'Personal expenses & souvenirs', 'Alcoholic beverages', 'Tips for guide & driver'],
+    exclusions: ['Travel insurance (strongly recommended)', 'Personal expenses & souvenirs', 'Alcoholic beverages', 'Tips for guide & driver'],
   },
 
   {
@@ -178,7 +178,7 @@ export const tours: Tour[] = [
       },
     ],
     inclusions: ['6 nights accommodation', 'All transportation in private vehicle', 'Licensed English-speaking guide', 'Bhutan SDF & visa processing', 'All entrance fees', 'Meals per itinerary', 'Farmhouse lunch experience', 'Traditional hot stone bath', 'Airport transfers'],
-    exclusions: ['International flights', 'Travel insurance', 'Personal expenses', 'Alcoholic beverages', 'Tips'],
+    exclusions: ['Travel insurance', 'Personal expenses', 'Alcoholic beverages', 'Tips'],
   },
 
   {
@@ -274,7 +274,7 @@ export const tours: Tour[] = [
       },
     ],
     inclusions: ['9 nights hotels and guesthouses', 'All transportation in private vehicle', 'Licensed English-speaking guide', 'Bhutan SDF & visa processing', 'All entrance fees', 'Most meals per itinerary', 'Farmhouse lunch experience', 'Hot stone bath', 'Airport transfers'],
-    exclusions: ['International airfare', 'Travel insurance', 'Personal expenses', 'Tips'],
+    exclusions: ['Travel insurance', 'Personal expenses', 'Tips'],
   },
 
   // ─── ADVENTURE & TREKKING ──────────────────────────────────────────
@@ -405,7 +405,7 @@ export const tours: Tour[] = [
       },
     ],
     inclusions: ['2 nights 3-star hotel in Paro', '4 nights tented camping (sleeping bags, mats, tents)', '1 night monastery guesthouse or camp at Phajoding', '2 nights 3-star hotel in Thimphu', 'Experienced licensed trekking guide', 'Dedicated support crew (cook, camp assistants)', 'Pack horses for gear transport', 'All trek and camp meals (camp chef)', 'All national park and trekking permits', 'Emergency first aid plan', 'Bhutan SDF & visa processing', 'Airport transfers'],
-    exclusions: ['International airfare', 'Personal trekking gear (boots, poles, rain gear)', 'Travel and helicopter evacuation insurance', 'Personal spending', 'Tips for trek crew'],
+    exclusions: ['Personal trekking gear (boots, poles, rain gear)', 'Travel and helicopter evacuation insurance', 'Personal spending', 'Tips for trek crew'],
   },
 
   {
@@ -493,7 +493,7 @@ export const tours: Tour[] = [
       },
     ],
     inclusions: ['Full tented camping setup & equipment', 'Expert licensed mountain guide', 'Pack animals for gear', 'Chef-prepared trek meals throughout', 'Emergency first aid plan', 'All trekking permits', '2 nights hotel in Paro'],
-    exclusions: ['International airfare', 'Bhutan visa & SDF', 'Personal hiking gear', 'Travel insurance', 'Helicopter evacuation insurance (strongly recommended)'],
+    exclusions: ['Bhutan visa & SDF', 'Personal hiking gear', 'Travel insurance', 'Helicopter evacuation insurance (strongly recommended)'],
   },
 
   // ─── FESTIVAL TOURS ────────────────────────────────────────────────
@@ -559,7 +559,7 @@ export const tours: Tour[] = [
       },
     ],
     inclusions: ['4 nights accommodation', 'Licensed guide with deep festival knowledge', 'Bhutan SDF & visa processing', 'All festival venue access', 'All transportation in private vehicle', 'Meals per itinerary', 'Airport transfers'],
-    exclusions: ['International airfare', 'Travel insurance', 'Personal expenses', 'Alcoholic beverages', 'Tips'],
+    exclusions: ['Travel insurance', 'Personal expenses', 'Alcoholic beverages', 'Tips'],
   },
 
   {
@@ -635,7 +635,7 @@ export const tours: Tour[] = [
       },
     ],
     inclusions: ['6 nights accommodation', 'Licensed guide with festival expertise', 'Bhutan SDF & visa processing', 'All transportation', 'Festival access', 'Meals per itinerary', 'Airport transfers'],
-    exclusions: ['International flights', 'Travel insurance', 'Personal spending', 'Tips'],
+    exclusions: ['Travel insurance', 'Personal spending', 'Tips'],
   },
 
   {
@@ -699,7 +699,7 @@ export const tours: Tour[] = [
       },
     ],
     inclusions: ['4 nights hotels', 'Licensed guide with festival expertise', 'Bhutan SDF & visa processing', 'All transportation', 'Festival access', 'Meals per itinerary', 'Airport transfers'],
-    exclusions: ['International flights', 'Travel insurance', 'Personal expenses', 'Tips'],
+    exclusions: ['Travel insurance', 'Personal expenses', 'Tips'],
   },
 
   // ─── LUXURY & WELLNESS ─────────────────────────────────────────────
@@ -778,7 +778,7 @@ export const tours: Tour[] = [
       },
     ],
     inclusions: ['6 nights 5-star boutique lodge accommodation', 'Senior private guide (15+ years experience)', 'Luxury private vehicle throughout', 'Sunrise helicopter mountain scenic flight', 'Private monastery ceremony', 'All gourmet chef-prepared meals', 'Traditional dotsho hot stone spa', 'Sound healing session', 'Bhutan SDF ($100/day) & visa processing', 'All private and restricted site access fees', 'VIP airport reception and departure service'],
-    exclusions: ['International airfare', 'Additional helicopter flights', 'Personal shopping', 'Gratuities (minimum $50/day suggested for private guides)'],
+    exclusions: ['Additional helicopter flights', 'Personal shopping', 'Gratuities (minimum $50/day suggested for private guides)'],
   },
 
   {
@@ -860,7 +860,7 @@ export const tours: Tour[] = [
       },
     ],
     inclusions: ['7 nights wellness accommodation', 'Licensed wellness guide', 'Daily yoga & meditation sessions', 'Traditional medicine consultation & Sowa Rigpa treatment', 'Dotsho hot stone bath', 'Sound healing session', 'All organic meals', 'Bhutan SDF & visa processing', 'All transportation', 'Airport transfers'],
-    exclusions: ['International airfare', 'Additional spa treatments', 'Personal shopping', 'Tips'],
+    exclusions: ['Additional spa treatments', 'Personal shopping', 'Tips'],
   },
 ];
 

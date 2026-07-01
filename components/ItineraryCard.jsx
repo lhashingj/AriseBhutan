@@ -35,8 +35,9 @@ export default function ItineraryCard({ itin, showDayPlan = true }) {
   const nights = itin.tour_summary?.duration_nights
   const guests = itin.tour_summary?.group_size
   const tier   = itin.tour_summary?.hotel_tier
-  const total  = Number(itin.pricing?.grand_total || 0)
-  const ref    = itin.booking_reference
+  const total   = Number(itin.pricing?.grand_total || 0)
+  const currSym = itin.pricing?.is_saarc ? '₹' : '$'
+  const ref     = itin.booking_reference
   const days   = (itin.day_by_day || []).slice().sort((a, b) => (a.day ?? 0) - (b.day ?? 0))
   const hasPrice = total > 0
 
@@ -47,13 +48,13 @@ export default function ItineraryCard({ itin, showDayPlan = true }) {
     <div className={`bg-white rounded-2xl shadow-sm border border-stone-100 border-l-4 ${s.borderL} overflow-hidden`}>
 
       {/* ── Main card body ── */}
-      <div className="p-4 sm:p-6">
+      <div className="p-5 sm:p-6">
 
         {/* Header: ref + name + badge */}
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="min-w-0 flex-1">
             {ref && <p className="text-[10px] font-mono text-stone-400 tracking-widest mb-1">{ref}</p>}
-            <h3 className="font-serif font-bold text-stone-900 text-base sm:text-lg leading-snug truncate" title={name}>{name}</h3>
+            <h3 className="font-serif font-bold text-stone-900 text-base sm:text-xl leading-snug line-clamp-2 sm:truncate sm:line-clamp-none" title={name}>{name}</h3>
           </div>
           <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide flex-shrink-0 ${s.badge}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
@@ -64,15 +65,15 @@ export default function ItineraryCard({ itin, showDayPlan = true }) {
         {/* Stats + date row */}
         <div className="flex flex-wrap items-center gap-2 mb-4">
           {(nights != null || guests || tier) && (
-            <div className="flex gap-1.5 flex-wrap">
+            <div className="flex gap-2 flex-wrap">
               {[
                 { label: 'Nights', value: nights ?? '—' },
                 { label: 'Guests', value: guests ?? '—' },
                 { label: 'Tier',   value: tier   || '—' },
               ].map(({ label, value }) => (
-                <div key={label} className="bg-stone-50 border border-stone-100 rounded-lg px-3 py-2 text-center min-w-[56px]">
+                <div key={label} className="bg-stone-50 border border-stone-100 rounded-xl px-3 py-2.5 text-center min-w-[64px]">
                   <p className="text-[9px] text-stone-400 uppercase tracking-wider font-semibold">{label}</p>
-                  <p className="text-stone-800 font-bold text-xs mt-0.5">{value}</p>
+                  <p className="text-stone-800 font-bold text-sm sm:text-base mt-0.5">{value}</p>
                 </div>
               ))}
             </div>
@@ -94,7 +95,7 @@ export default function ItineraryCard({ itin, showDayPlan = true }) {
           <div>
             <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">Grand Total</p>
             {hasPrice
-              ? <p className="font-bold text-stone-900 text-lg sm:text-xl leading-tight">${total.toLocaleString('en-US', { maximumFractionDigits: 0 })}</p>
+              ? <p className="font-bold text-stone-900 text-xl sm:text-2xl leading-tight">{currSym}{total.toLocaleString('en-US', { maximumFractionDigits: 0 })}</p>
               : <p className="text-sm text-stone-400 italic">Pricing pending</p>
             }
           </div>
@@ -103,7 +104,7 @@ export default function ItineraryCard({ itin, showDayPlan = true }) {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => router.push(`/itinerary/${ref}`)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 text-sm font-semibold transition-colors whitespace-nowrap"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold transition-colors whitespace-nowrap shadow-sm"
               >
                 View Itinerary <ChevronRight className="w-4 h-4" />
               </button>

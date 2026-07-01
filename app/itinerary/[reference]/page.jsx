@@ -774,10 +774,11 @@ export default function ItineraryVoucherPage() {
                 <p className="font-bold text-stone-900 text-sm mb-2">Contact &amp; Support</p>
                 <div className="space-y-0.5 text-xs text-stone-500">
                   <p>📞 +975 77 319 405</p>
-                  <p>📞 +975 2 272 929 (Office)</p>
+                  <p>📞 +61 435 341 033</p>
                   <p>✉ arisebhutan@gmail.com</p>
                   <p>🌐 www.arisebhutan.com</p>
                   <p>💬 WhatsApp: +975 77 319 405</p>
+                  <p>💬 WhatsApp: +61 435 341 033</p>
                 </div>
               </div>
               <div>

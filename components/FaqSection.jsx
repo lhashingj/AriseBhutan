@@ -54,6 +54,14 @@ export default function FaqSection() {
               <Phone className="w-4 h-4" />
               +975 77 319 405
             </a>
+            <a
+              href="https://wa.me/61435341033"
+              className="btn-outline border-stone-600 text-stone-300 hover:bg-stone-700 hover:text-white hover:border-stone-700"
+              target="_blank" rel="noopener noreferrer"
+            >
+              <Phone className="w-4 h-4" />
+              +61 435 341 033
+            </a>
           </div>
         </div>
       </div>

@@ -7,6 +7,45 @@ import { Clock, Users, Star, MapPin, Mountain, CheckCircle, XCircle, Calendar, C
 import { getTourBySlug } from '@/data/tours'
 import BookTourButton from '@/components/BookTourButton'
 
+const DESTINATIONS: Record<string, { description: string; icon: string }> = {
+  'Paro': {
+    icon: '🏔️',
+    description: "Gateway to Bhutan at 2,200m. Home to Tiger's Nest Monastery, Rinpung Dzong, and picturesque rice-paddy valleys lined with traditional farmhouses. Paro International Airport is one of the world's most dramatic landings.",
+  },
+  'Thimphu': {
+    icon: '🏛️',
+    description: "Bhutan's vibrant capital — a city without a single traffic light. Home to the 169-ft gilded Buddha Dordenma statue, Tashichho Dzong (the Royal seat of government), and the country's finest cultural museums.",
+  },
+  'Punakha': {
+    icon: '🌸',
+    description: "Bhutan's warm subtropical former capital. The spectacular 6-storey Punakha Dzong stands at the confluence of two sacred rivers and was the site of the 2011 Royal Wedding. Purple jacaranda trees bloom here in February.",
+  },
+  'Wangdue Phodrang': {
+    icon: '🏯',
+    description: "One of Bhutan's oldest and most historically significant districts. Dramatic mountain scenery surrounds the ancient Wangdue Dzong, perched on a ridge above the Pho Chhu river.",
+  },
+  'Wangdue': {
+    icon: '🏯',
+    description: "One of Bhutan's oldest and most historically significant districts. Dramatic mountain scenery surrounds the ancient Wangdue Dzong, perched on a ridge above the Pho Chhu river.",
+  },
+  'Gangtey': {
+    icon: '🦢',
+    description: "The pristine Phobjikha glacial valley — one of Bhutan's most breathtaking landscapes and the winter sanctuary of the endangered Black-Necked Crane. The 17th-century Gangtey Monastery crowns the valley rim.",
+  },
+  'Trongsa': {
+    icon: '👑',
+    description: "Ancestral home of Bhutan's royal Wangchuck dynasty. Trongsa Dzong (built 1644) commands the only route between eastern and western Bhutan from a sheer gorge cliff. The Taa Dzong Royal Heritage Museum holds 500-year-old royal artefacts.",
+  },
+  'Bumthang': {
+    icon: '⛩️',
+    description: "Bhutan's spiritual heartland, where Guru Rinpoche arrived in 746 AD. Home to some of the kingdom's oldest and most sacred temples — Kurjey Lhakhang, Jambay Lhakhang (built in a single day), and Tamshing Goemba.",
+  },
+  'Jangothang': {
+    icon: '⛺',
+    description: "Remote high-altitude base camp at 4,080m beneath the sacred pyramid of Jomolhari (7,314m). Waking to this Himalayan giant filling the entire horizon is one of the great mountain moments in all of Asia.",
+  },
+}
+
 const TABS = ['Overview', 'Itinerary', 'Inclusions', 'Book Now'] as const
 type Tab = typeof TABS[number]
 
@@ -118,6 +157,28 @@ export default function TourDetailPage({ params }: { params: { slug: string } })
                   ))}
                 </ul>
 
+                {/* Places You'll Visit */}
+                {tour.locations.some((loc) => DESTINATIONS[loc]) && (
+                  <div className="mt-10">
+                    <h3 className="font-serif text-xl font-bold text-stone-900 mb-5">Places You&apos;ll Visit</h3>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      {tour.locations.map((loc) => {
+                        const info = DESTINATIONS[loc]
+                        if (!info) return null
+                        return (
+                          <div key={loc} className="flex gap-4 p-4 bg-stone-50 rounded-xl border border-stone-100 hover:border-amber-200 transition-colors">
+                            <span className="text-2xl flex-shrink-0 mt-0.5">{info.icon}</span>
+                            <div>
+                              <p className="font-semibold text-stone-900 text-sm mb-1">{loc}</p>
+                              <p className="text-stone-500 text-xs leading-relaxed">{info.description}</p>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Gallery strip */}
                 {tour.gallery.length > 1 && (
                   <div className="mt-10">
@@ -203,6 +264,10 @@ export default function TourDetailPage({ params }: { params: { slug: string } })
                     <CheckCircle className="w-5 h-5 text-green-500" /> What&apos;s Included
                   </h2>
                   <ul className="space-y-3">
+                    <li className="flex items-start gap-3 text-sm">
+                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-stone-700 font-medium">International flight search &amp; booking assistance</span>
+                    </li>
                     {tour.inclusions.map((item) => (
                       <li key={item} className="flex items-start gap-3 text-sm">
                         <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />

@@ -1850,7 +1850,7 @@ export default function AdminItinerariesPage() {
                   <div className="flex items-center justify-between pt-1 border-t border-white/5">
                     <span className="text-xs text-stone-500">Grand Total</span>
                     <span className="text-amber-400 font-bold font-mono text-sm">
-                      ${Number(it.pricing.grand_total).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                      {it.pricing?.is_saarc ? '₹' : '$'}{Number(it.pricing.grand_total).toLocaleString('en-US', { maximumFractionDigits: 0 })}
                     </span>
                   </div>
                 )}

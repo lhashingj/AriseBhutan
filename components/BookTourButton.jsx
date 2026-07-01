@@ -52,7 +52,7 @@ export default function BookTourButton({ tour, className, children }) {
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 text-sm text-amber-800">
             <p className="font-semibold mb-1">🎉 Booking submitted successfully!</p>
             <p>Your package is under review. Download this voucher and contact us to arrange payment.</p>
-            <p className="text-amber-600 mt-1">📞 +975 77 319 405 &nbsp;·&nbsp; ✉ arisebhutan@gmail.com</p>
+            <p className="text-amber-600 mt-1">📞 +975 77 319 405 &nbsp;·&nbsp; 💬 +61 435 341 033 &nbsp;·&nbsp; ✉ arisebhutan@gmail.com</p>
           </div>
 
           <BookingVoucher booking={buildVoucherData(savedBooking, profile)} />

@@ -1,12 +1,25 @@
+import type { Metadata } from 'next'
 import { Mail, Phone, MapPin, Clock, MessageCircle } from 'lucide-react'
 import ContactFormSection from '@/components/ContactFormSection'
+
+export const metadata: Metadata = {
+  title: 'Contact Us — Book a Bhutan Tour | Arise Bhutan',
+  description: 'Get in touch with Arise Bhutan Tours & Travels. Based in Paro, Bhutan. WhatsApp +975 77 319 405 or +61 435 341 033. We respond within 24 hours to help plan your Bhutan journey.',
+  alternates: { canonical: 'https://www.arisebhutan.com/contact' },
+  openGraph: {
+    title: 'Contact Arise Bhutan — Plan Your Bhutan Journey',
+    description: 'Talk to our Bhutan travel specialists. Paro-based, DOT-licensed. WhatsApp, email, or online form — we respond within 24 hours.',
+    url: 'https://www.arisebhutan.com/contact',
+  },
+}
 
 const MAPS_EMBED_SRC =
   'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3541.543822755736!2d89.4225462!3d27.4211577!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39e19db6bc9e290d%3A0x423ce3020a2693d1!2sArise%20Bhutan%20Tours%20%26%20Travels!5e0!3m2!1sen!2sbt!4v1782362871699!5m2!1sen!2sbt'
 
 const contactInfo = [
   { icon: Phone,         label: 'Phone',              value: '+975 77 319 405',       href: 'tel:+97577319405' },
-  { icon: MessageCircle, label: 'WhatsApp',           value: 'Message us directly',   href: 'https://wa.me/97577319405' },
+  { icon: MessageCircle, label: 'WhatsApp (Bhutan)',    value: '+975 77 319 405',        href: 'https://wa.me/97577319405' },
+  { icon: MessageCircle, label: 'WhatsApp (Australia)', value: '+61 435 341 033',        href: 'https://wa.me/61435341033' },
   { icon: Mail,          label: 'Email',              value: 'arisebhutan@gmail.com', href: 'mailto:arisebhutan@gmail.com' },
   { icon: MapPin,        label: 'Office',             value: 'Nyamaizampa, Paro 12001', href: undefined },
   { icon: Clock,         label: 'Response Time',      value: 'Within 24 hours',       href: undefined },
@@ -121,9 +134,28 @@ export default function ContactPage() {
       <section className="py-10 sm:py-12 bg-stone-900">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-stone-400 text-xs mb-5 tracking-widest uppercase font-medium">Trusted by travelers from</p>
-          <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-white font-semibold text-base sm:text-lg opacity-70">
-            {['🇺🇸 USA', '🇬🇧 UK', '🇩🇪 Germany', '🇸🇬 Singapore', '🇯🇵 Japan', '🇦🇺 Australia', '🇮🇳 India', '🇨🇦 Canada'].map((c) => (
-              <span key={c}>{c}</span>
+          <div className="flex flex-wrap justify-center gap-5 sm:gap-8 opacity-70">
+            {[
+              { code: 'us', label: 'USA' },
+              { code: 'gb', label: 'UK' },
+              { code: 'sg', label: 'Singapore' },
+              { code: 'jp', label: 'Japan' },
+              { code: 'au', label: 'Australia' },
+              { code: 'in', label: 'India' },
+              { code: 'ca', label: 'Canada' },
+              { code: 'cn', label: 'China' },
+            ].map(({ code, label }) => (
+              <span key={code} className="flex items-center gap-2 text-white font-semibold text-sm sm:text-base">
+                <img
+                  src={`https://flagcdn.com/w20/${code}.png`}
+                  srcSet={`https://flagcdn.com/w40/${code}.png 2x`}
+                  width={20}
+                  height={15}
+                  alt={label}
+                  className="rounded-sm"
+                />
+                {label}
+              </span>
             ))}
           </div>
         </div>

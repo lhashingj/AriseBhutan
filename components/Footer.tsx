@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Mail, Phone, MapPin, Facebook, Instagram, Youtube } from 'lucide-react'
+import NewsletterForm from '@/components/NewsletterForm'
 
 const quickLinks = [
   { label: 'Classic Cultural Tour', href: '/tours/classic-bhutan-cultural-tour' },
@@ -66,7 +67,7 @@ export default function Footer() {
               {[
                 { label: 'About Us', href: '/about' },
                 { label: 'All Tours', href: '/tours' },
-                { label: 'Festival Calendar', href: '/tours?cat=festival' },
+                { label: 'Festival Calendar', href: '/festival-calendar' },
                 { label: 'Travel FAQ', href: '/faq' },
                 { label: 'Contact Us', href: '/contact' },
                 { label: 'Book a Tour', href: '/contact' },
@@ -95,6 +96,12 @@ export default function Footer() {
                 </a>
               </div>
               <div className="flex items-center gap-3">
+                <Phone className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                <a href="https://wa.me/61435341033" className="text-sm text-stone-400 hover:text-amber-400 transition-colors">
+                  +61 435 341 033 (WhatsApp AU)
+                </a>
+              </div>
+              <div className="flex items-center gap-3">
                 <Mail className="w-4 h-4 text-amber-500 flex-shrink-0" />
                 <a href="mailto:arisebhutan@gmail.com" className="text-sm text-stone-400 hover:text-amber-400 transition-colors">
                   arisebhutan@gmail.com
@@ -104,19 +111,7 @@ export default function Footer() {
 
             {/* Newsletter */}
             <p className="text-sm font-medium text-white mb-3">Get Bhutan Travel Tips</p>
-            <form className="flex flex-col sm:flex-row gap-2">
-              <input
-                type="email"
-                placeholder="Your email"
-                className="flex-1 px-3 py-2.5 bg-stone-800 border border-stone-700 rounded-lg text-sm text-white placeholder-stone-500 focus:outline-none focus:border-amber-500 transition-colors min-w-0"
-              />
-              <button
-                type="submit"
-                className="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors whitespace-nowrap"
-              >
-                Subscribe
-              </button>
-            </form>
+            <NewsletterForm />
           </div>
         </div>
       </div>

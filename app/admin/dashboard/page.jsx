@@ -12,6 +12,11 @@ import Link from 'next/link'
 import { supabase } from '@/utils/supabase/client'
 import AdminUserDrawer from '@/components/AdminUserDrawer'
 
+function getRef(booking) {
+  const year = new Date(booking.created_at).getFullYear()
+  return `ARB-${year}-${booking.id.slice(0, 6).toUpperCase()}`
+}
+
 function computePricing(packageRate, serviceFee, nights, guests, inrRate) {
   const rate = Number(packageRate) || 0
   const fee  = Number(serviceFee)  || 0
@@ -519,6 +524,11 @@ export default function AdminDashboard() {
       : <ChevronDown className="w-3 h-3 text-amber-500" />
   }
 
+  // Map booking_reference → itinerary for quick lookup in the Awaiting Confirmation cards
+  const itinByRef = Object.fromEntries(
+    itineraries.filter(i => i.booking_reference).map(i => [i.booking_reference, i])
+  )
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -856,8 +866,15 @@ export default function AdminDashboard() {
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {bookings.filter((b) => b.status === 'PENDING').slice(0, 6).map((bk) => {
-              const owner = profiles.find((p) => p.id === bk.user_id)
-              const busy  = processingId === bk.id
+              const owner   = profiles.find((p) => p.id === bk.user_id)
+              const busy    = processingId === bk.id
+              const itin    = itinByRef[getRef(bk)]
+              const total   = Number(itin?.pricing?.grand_total || bk.total_cost || 0)
+              const isSaarc = itin?.pricing?.is_saarc ?? false
+              const currSym = isSaarc ? '₹' : '$'
+              const fmtTotal = isSaarc
+                ? total.toLocaleString('en-IN', { maximumFractionDigits: 0 })
+                : total.toLocaleString('en-US', { maximumFractionDigits: 0 })
               return (
                 <div key={bk.id} className="bg-[#1C1914] rounded-2xl border border-[#D97706]/30 p-4 hover:border-[#D97706]/50 transition-all shadow-lg shadow-amber-950/20">
                   <div className="flex items-start justify-between gap-2 mb-2">
@@ -865,7 +882,9 @@ export default function AdminDashboard() {
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 flex-shrink-0">PENDING</span>
                   </div>
                   <p className="text-xs text-stone-400">{owner?.name || bk.client_name || '—'} · {bk.group_size || '—'} pax</p>
-                  <p className="text-base font-bold text-[#F59E0B] mt-1 mb-3">${Number(bk.total_cost).toLocaleString()}</p>
+                  <p className="text-base font-bold text-[#F59E0B] mt-1 mb-3">
+                    {total > 0 ? <>{currSym}{fmtTotal}</> : <span className="text-stone-500 text-sm font-normal italic">Pricing pending</span>}
+                  </p>
                   <div className="flex items-center gap-1.5 flex-wrap border-t border-[#D97706]/15 pt-2.5">
                     <button onClick={() => confirmBookingInline(bk.id)} disabled={busy}
                       className="flex items-center gap-1 text-[11px] font-semibold bg-green-600 hover:bg-green-700 text-white px-2.5 py-1.5 rounded-lg disabled:opacity-50 transition-colors">

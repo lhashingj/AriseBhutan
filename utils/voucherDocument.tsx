@@ -478,10 +478,11 @@ export function VoucherDocument({ booking }: { booking: any }) {
             <View style={s.footerCol}>
               <Text style={s.footerTitle}>Contact & Support</Text>
               <Text style={s.footerText}>+975 77 319 405</Text>
-              <Text style={s.footerText}>+975 2 272 929 (Office)</Text>
+              <Text style={s.footerText}>+61 435 341 033</Text>
               <Text style={s.footerText}>arisebhutan@gmail.com</Text>
               <Text style={s.footerText}>www.arisebhutan.com</Text>
               <Text style={s.footerText}>WhatsApp: +975 77 319 405</Text>
+              <Text style={s.footerText}>WhatsApp: +61 435 341 033</Text>
             </View>
             <View style={s.footerCol}>
               <Text style={s.footerTitle}>Travel Assurance</Text>

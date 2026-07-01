@@ -332,7 +332,7 @@ function buildGuestEmail({ name, tourInterest, parsedNights, groupSize, normaliz
         <p style="font-size: 12px; color: #a8a29e; margin: 12px 0 0;">
           Questions? Email us at
           <a href="mailto:arisebhutan@gmail.com" style="color: #b45309;">arisebhutan@gmail.com</a>
-          or WhatsApp <strong>+975 77 319 405</strong>
+          or WhatsApp <strong>+975 77 319 405</strong> / <strong>+61 435 341 033</strong>
         </p>
 
         <hr style="border: none; border-top: 1px solid #fde68a; margin: 20px 0;" />
