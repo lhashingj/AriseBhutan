@@ -229,6 +229,38 @@ export default function ItineraryCard({ itin, showDayPlan = true }) {
           })}
         </div>
       )}
+
+      {/* ── Requested Experiences ── */}
+      {(() => {
+        const interests = itin.tour_summary?.travel_interests || []
+        if (!interests.length) return null
+        return (
+          <div className="border-t border-stone-100 px-4 sm:px-6 py-4">
+            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+              <span className="w-1 h-4 rounded-full bg-amber-400 inline-block" />
+              Requested Experiences · {interests.length}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {interests.map((ti) => (
+                <span
+                  key={ti.id}
+                  className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-medium border ${
+                    ti.free === false
+                      ? 'bg-amber-50 text-amber-700 border-amber-200'
+                      : 'bg-green-50 text-green-700 border-green-200'
+                  }`}
+                >
+                  {ti.name}
+                  <span className="text-[10px] opacity-70">· {ti.priceLabel}</span>
+                </span>
+              ))}
+            </div>
+            <p className="text-[10px] text-stone-400 mt-2.5 italic">
+              Your specialist will incorporate these into your day-by-day itinerary.
+            </p>
+          </div>
+        )
+      })()}
     </div>
   )
 }

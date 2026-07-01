@@ -718,7 +718,17 @@ export default function AdminDashboard() {
                       </td>
                       <td className="px-5 py-3.5 text-sm text-stone-300 max-w-[200px]">
                         <p className="line-clamp-1">{bk.tour_title || 'Custom Package'}</p>
-                        <p className="text-xs text-stone-500">{bk.hotel_tier || '—'}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <p className="text-xs text-stone-500">{bk.hotel_tier || '—'}</p>
+                          {bk.travel_interests?.length > 0 && (
+                            <span
+                              title={bk.travel_interests.map(ti => ti.name).join(', ')}
+                              className="text-[10px] font-bold bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-full border border-amber-500/30 cursor-help"
+                            >
+                              {bk.travel_interests.length} interests
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-5 py-3.5 text-sm text-stone-400">
                         {bk.arrival_date ? new Date(bk.arrival_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
@@ -974,9 +984,19 @@ export default function AdminDashboard() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-5 py-3.5 max-w-[180px]">
+                        <td className="px-5 py-3.5 max-w-[200px]">
                           <p className="text-sm text-stone-300 line-clamp-1">{tour}</p>
-                          <p className="text-[11px] text-stone-500">{it.tour_summary?.hotel_tier || '—'}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <p className="text-[11px] text-stone-500">{it.tour_summary?.hotel_tier || '—'}</p>
+                            {it.tour_summary?.travel_interests?.length > 0 && (
+                              <span
+                                title={it.tour_summary.travel_interests.map(ti => ti.name).join(', ')}
+                                className="text-[10px] font-bold bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-full border border-amber-500/30 cursor-help"
+                              >
+                                {it.tour_summary.travel_interests.length} interests
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-5 py-3.5">
                           <select

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { X, ChevronRight, ChevronLeft, Check, Plane, Calendar, Users, Hotel, MapPin, Save, Loader2 } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
 import { tours } from '@/data/tours'
+import { TRAVEL_INTERESTS, INTEREST_CATEGORIES } from '@/data/travelInterests'
 import CountrySelect from '@/components/CountrySelect'
 import PhoneInput from '@/components/PhoneInput'
 
@@ -47,7 +48,7 @@ const CAT_COLOR = {
   Custom:    'border-stone-300  bg-stone-50  text-stone-600',
 }
 
-const STEP_LABELS = ['Template', 'Travel Details', 'Itinerary', 'Summary', 'Save']
+const STEP_LABELS = ['Template', 'Travel Details', 'Itinerary', 'Travel Interest', 'Summary', 'Save']
 
 // ─── Flight schedules ─────────────────────────────────────────────────────────
 const INBOUND_FLIGHTS = [
@@ -191,6 +192,8 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
   const [clientPhone, setClientPhone]       = useState(editBooking?.client_phone     || profile?.phone            || '')
   const [passportExpiry, setPassportExpiry] = useState(editBooking?.passport_expiry  || profile?.passport_expiry  || '')
   const [emergencyContact, setEmergency]    = useState(editBooking?.emergency_contact || profile?.emergency_contact || '')
+  const [travelInterests, setTravelInterests]   = useState([])
+  const [activeInterestCat, setActiveInterestCat] = useState('All')
   const [days, setDays]                 = useState(() => {
     if (isEditing) return editBooking.itinerary_days || []
     if (initialTourData) return buildInitialDays(initialTourData)
@@ -252,9 +255,19 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
     true,
     clientName && passportNum && nationality && clientEmail && clientPhone && pax >= 1,
     days.every((d) => d.title.trim()),
+    true, // Travel Interest — optional, always valid
     true,
     true,
   ]
+
+  const toggleInterest = (id) =>
+    setTravelInterests(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+
+  const visibleInterests = activeInterestCat === 'All'
+    ? TRAVEL_INTERESTS
+    : TRAVEL_INTERESTS.filter(ti => ti.category === activeInterestCat)
+
+  const selectedInterestObjects = TRAVEL_INTERESTS.filter(ti => travelInterests.includes(ti.id))
 
   async function save() {
     setSaving(true)
@@ -295,6 +308,9 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
       arrival_date:    arrivalDate || null,
       return_date:     returnDate  || null,
       itinerary_days:  days,
+      travel_interests: selectedInterestObjects.map(ti => ({
+        id: ti.id, name: ti.name, priceLabel: ti.priceLabel, category: ti.category,
+      })),
       cost_items:      [],
       subtotal:        null,
       gst:             null,
@@ -591,8 +607,86 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
             </div>
           )}
 
-          {/* ── Step 3: Booking Summary ── */}
+          {/* ── Step 3: Travel Interests ── */}
           {step === 3 && (
+            <div className="space-y-5">
+              <div>
+                <h3 className="font-semibold text-stone-900 mb-1">Travel Interests</h3>
+                <p className="text-stone-400 text-sm">Select the experiences you'd love to have. Prices are indicative — your specialist will confirm costs in the quote.</p>
+              </div>
+
+              {/* Category filter */}
+              <div className="flex flex-wrap gap-2">
+                {['All', ...INTEREST_CATEGORIES].map(cat => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setActiveInterestCat(cat)}
+                    className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-all ${
+                      activeInterestCat === cat
+                        ? 'bg-amber-600 text-white border-amber-600'
+                        : 'border-stone-200 text-stone-600 hover:border-amber-300 hover:text-amber-700'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              {/* Interest cards */}
+              <div className="grid sm:grid-cols-2 gap-2 max-h-[460px] overflow-y-auto pr-1 -mr-1">
+                {visibleInterests.map(ti => {
+                  const isSelected = travelInterests.includes(ti.id)
+                  return (
+                    <button
+                      key={ti.id}
+                      type="button"
+                      onClick={() => toggleInterest(ti.id)}
+                      className={`text-left rounded-xl border-2 px-3.5 py-3 transition-all duration-150 ${
+                        isSelected
+                          ? 'border-amber-500 bg-amber-50'
+                          : 'border-stone-200 hover:border-amber-200 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-stone-900 text-xs leading-snug">
+                            {ti.emoji} {ti.name}
+                          </p>
+                          <p className={`text-[11px] mt-0.5 font-medium ${ti.free ? 'text-green-600' : 'text-amber-700'}`}>
+                            {ti.priceLabel}
+                          </p>
+                        </div>
+                        <div className={`w-4 h-4 rounded border-2 flex-shrink-0 mt-0.5 flex items-center justify-center ${
+                          isSelected ? 'border-amber-500 bg-amber-500' : 'border-stone-300'
+                        }`}>
+                          {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
+                        </div>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+
+              {travelInterests.length > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                  <p className="text-xs font-semibold text-amber-800 mb-1.5">
+                    {travelInterests.length} interest{travelInterests.length !== 1 ? 's' : ''} selected:
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedInterestObjects.map(ti => (
+                      <span key={ti.id} className="text-[11px] bg-white border border-amber-200 text-amber-800 px-2 py-0.5 rounded-full font-medium">
+                        {ti.emoji} {ti.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Step 4: Booking Summary ── */}
+          {step === 4 && (
             <div className="space-y-5">
               <div>
                 <h3 className="font-semibold text-stone-900 mb-1">Booking Summary</h3>
@@ -645,6 +739,31 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
                 </div>
               </div>
 
+              {/* Travel Interests in summary */}
+              {selectedInterestObjects.length > 0 && (
+                <div className="rounded-2xl border border-stone-200 overflow-hidden">
+                  <div className="bg-amber-50 px-4 py-3 border-b border-amber-100">
+                    <p className="text-xs font-semibold text-amber-800 uppercase tracking-wide">
+                      Travel Interests · {selectedInterestObjects.length} selected
+                    </p>
+                  </div>
+                  <div className="bg-white px-4 py-3">
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedInterestObjects.map(ti => (
+                        <span key={ti.id} className={`text-[11px] px-2 py-1 rounded-full font-medium border ${
+                          ti.free
+                            ? 'bg-green-50 text-green-700 border-green-200'
+                            : 'bg-amber-50 text-amber-700 border-amber-200'
+                        }`}>
+                          {ti.emoji} {ti.name}
+                        </span>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-stone-400 mt-2">Charges applicable for non-free items — included in your personalised quote</p>
+                  </div>
+                </div>
+              )}
+
               {/* Quote note */}
               <div className="bg-blue-50 border border-blue-200 rounded-2xl px-4 py-4 flex gap-3 items-start">
                 <span className="text-blue-500 text-lg mt-0.5">ℹ</span>
@@ -659,8 +778,8 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
             </div>
           )}
 
-          {/* ── Step 4: Save ── */}
-          {step === 4 && (
+          {/* ── Step 5: Save ── */}
+          {step === 5 && (
             <div className="space-y-5">
               <div>
                 <h3 className="font-semibold text-stone-900 mb-1">Review & Save</h3>
@@ -680,6 +799,7 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
                   ['Duration',   `${totalDays} Days / ${nights} Nights`],
                   ['Group',      `${pax} pax`],
                   ['Hotel',      hotelTier],
+                  ['Interests',  travelInterests.length > 0 ? `${travelInterests.length} selected` : 'None'],
                 ].map(([label, val]) => (
                   <div key={label} className="flex items-center justify-between px-4 py-3">
                     <span className="text-xs text-stone-400 font-medium uppercase tracking-wide">{label}</span>
