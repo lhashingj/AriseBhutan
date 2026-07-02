@@ -51,7 +51,7 @@ function ToursContent() {
       </section>
 
       {/* Sticky filters */}
-      <section className="sticky top-18 z-30 bg-white border-b border-stone-100 shadow-sm">
+      <section className="sticky top-18 z-30 bg-white dark:bg-stone-950 border-b border-stone-100 dark:border-stone-800 shadow-sm dark:shadow-black/30 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex flex-col gap-3">
             {/* Category tabs — horizontal scroll on mobile */}
@@ -63,7 +63,7 @@ function ToursContent() {
                   className={`text-xs sm:text-sm font-semibold px-3.5 sm:px-4 py-2 rounded-full transition-all whitespace-nowrap flex-shrink-0 ${
                     activecat === id
                       ? 'bg-amber-600 text-white shadow-md'
-                      : 'bg-stone-100 text-stone-600 hover:bg-amber-50 hover:text-amber-700'
+                      : 'bg-stone-100 text-stone-600 hover:bg-amber-50 hover:text-amber-700 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-amber-500/15 dark:hover:text-amber-400'
                   }`}
                 >
                   {label} <span className="opacity-60">({count})</span>
@@ -79,7 +79,7 @@ function ToursContent() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search tours..."
-                  className="w-full pl-9 pr-4 py-2 border border-stone-200 rounded-xl text-sm focus:outline-none focus:border-amber-500 transition-colors"
+                  className="w-full pl-9 pr-4 py-2 border border-stone-200 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:placeholder:text-stone-500 rounded-xl text-sm focus:outline-none focus:border-amber-500 transition-colors"
                 />
               </div>
               <div className="relative">
@@ -87,7 +87,7 @@ function ToursContent() {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                  className="pl-9 pr-7 py-2 border border-stone-200 rounded-xl text-sm text-stone-700 focus:outline-none focus:border-amber-500 appearance-none bg-white"
+                  className="pl-9 pr-7 py-2 border border-stone-200 dark:border-stone-700 rounded-xl text-sm text-stone-700 dark:text-stone-200 focus:outline-none focus:border-amber-500 appearance-none bg-white dark:bg-stone-900 transition-colors"
                 >
                   <option value="rating">Top Rated</option>
                   <option value="duration">Shortest First</option>
@@ -99,7 +99,7 @@ function ToursContent() {
       </section>
 
       {/* Tours grid */}
-      <section className="py-12 sm:py-16 bg-stone-50">
+      <section className="py-12 sm:py-16 bg-stone-50 dark:bg-stone-900 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {filtered.length === 0 ? (
             <div className="text-center py-20 sm:py-24">
@@ -110,7 +110,7 @@ function ToursContent() {
             </div>
           ) : (
             <>
-              <p className="text-stone-500 text-sm mb-6 sm:mb-8">
+              <p className="text-stone-500 dark:text-stone-400 text-sm mb-6 sm:mb-8">
                 Showing {filtered.length} tour{filtered.length !== 1 ? 's' : ''}
               </p>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-7">
@@ -124,12 +124,12 @@ function ToursContent() {
       </section>
 
       {/* Custom Trip CTA */}
-      <section className="py-14 sm:py-16 bg-amber-50 border-t border-amber-100">
+      <section className="py-14 sm:py-16 bg-amber-50 dark:bg-stone-950 border-t border-amber-100 dark:border-stone-800 transition-colors duration-300">
         <div className="max-w-3xl mx-auto px-4 text-center">
-          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mb-3">
+          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-stone-50 mb-3">
             Don&apos;t See the Perfect Trip?
           </h2>
-          <p className="text-stone-600 mb-7 text-sm sm:text-base">
+          <p className="text-stone-600 dark:text-stone-400 mb-7 text-sm sm:text-base">
             Every Arise Bhutan tour can be fully customized. Tell us your dates, interests, and budget — we&apos;ll build it from scratch.
           </p>
           <a href="/contact" className="btn-primary">Request a Custom Itinerary</a>

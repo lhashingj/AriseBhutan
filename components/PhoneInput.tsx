@@ -338,7 +338,7 @@ export default function PhoneInput({
       {name && <input type="hidden" name={name} value={selected.dialCode + localNumber} />}
 
       {/* ── Unified input row ── */}
-      <div className={`flex w-full border border-stone-200 rounded-xl bg-white transition-colors
+      <div className={`flex w-full border border-stone-200 dark:border-stone-700 rounded-xl bg-white dark:bg-stone-800 transition-colors
         focus-within:border-amber-500 focus-within:ring-1 focus-within:ring-amber-500
         ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
 
@@ -347,11 +347,11 @@ export default function PhoneInput({
           type="button"
           disabled={disabled}
           onClick={() => setOpen(v => !v)}
-          className="flex items-center gap-1.5 pl-3 pr-2.5 py-3 border-r border-stone-200 bg-stone-50 hover:bg-stone-100 rounded-l-xl transition-colors shrink-0 focus:outline-none"
+          className="flex items-center gap-1.5 pl-3 pr-2.5 py-3 border-r border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900 hover:bg-stone-100 dark:hover:bg-stone-700 rounded-l-xl transition-colors shrink-0 focus:outline-none"
           aria-label="Select country code"
         >
           <FlagImg code={selected.code} />
-          <span className="text-sm font-semibold text-stone-700 tabular-nums">{selected.dialCode}</span>
+          <span className="text-sm font-semibold text-stone-700 dark:text-stone-200 tabular-nums">{selected.dialCode}</span>
           <ChevronDown className={`w-3.5 h-3.5 text-stone-400 transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />
         </button>
 
@@ -364,17 +364,17 @@ export default function PhoneInput({
           placeholder={placeholder}
           disabled={disabled}
           autoComplete="tel-national"
-          className="flex-1 min-w-0 px-3 py-3 text-sm bg-transparent focus:outline-none placeholder:text-stone-400 rounded-r-xl"
+          className="flex-1 min-w-0 px-3 py-3 text-sm bg-transparent focus:outline-none placeholder:text-stone-400 dark:placeholder:text-stone-500 dark:text-stone-100 rounded-r-xl"
         />
       </div>
 
       {/* ── Country code dropdown ── */}
       {open && (
-        <div className="absolute z-50 mt-1.5 w-72 bg-white border border-stone-200 rounded-xl shadow-lg overflow-hidden">
+        <div className="absolute z-50 mt-1.5 w-72 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl shadow-lg overflow-hidden">
 
           {/* Search */}
-          <div className="p-2 border-b border-stone-100">
-            <div className="flex items-center gap-2 bg-stone-50 rounded-lg px-3 py-2">
+          <div className="p-2 border-b border-stone-100 dark:border-stone-700">
+            <div className="flex items-center gap-2 bg-stone-50 dark:bg-stone-900 rounded-lg px-3 py-2">
               <Search className="w-3.5 h-3.5 text-stone-400 shrink-0" />
               <input
                 ref={searchRef}
@@ -382,7 +382,7 @@ export default function PhoneInput({
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 placeholder="Search country…"
-                className="flex-1 text-sm bg-transparent focus:outline-none placeholder:text-stone-400 text-stone-700"
+                className="flex-1 text-sm bg-transparent focus:outline-none placeholder:text-stone-400 dark:placeholder:text-stone-500 text-stone-700 dark:text-stone-200"
               />
             </div>
           </div>
@@ -414,7 +414,7 @@ export default function PhoneInput({
                   />
                 ))}
                 {filteredRest.length > 0 && (
-                  <li className="mx-3 my-1 border-t border-stone-100" role="separator" />
+                  <li className="mx-3 my-1 border-t border-stone-100 dark:border-stone-700" role="separator" />
                 )}
               </>
             )}
@@ -454,7 +454,7 @@ function CountryRow({
         type="button"
         onMouseDown={e => { e.preventDefault(); onPick() }}
         className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm text-left transition-colors
-          ${selected ? 'bg-amber-50 text-amber-900' : 'text-stone-700 hover:bg-stone-50'}`}
+          ${selected ? 'bg-amber-50 text-amber-900 dark:bg-amber-500/15 dark:text-amber-300' : 'text-stone-700 hover:bg-stone-50 dark:text-stone-300 dark:hover:bg-stone-700/60'}`}
       >
         <FlagImg code={country.code} className="shrink-0" />
         <span className={`flex-1 min-w-0 truncate ${selected ? 'font-semibold' : ''}`}>

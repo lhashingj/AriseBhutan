@@ -6,7 +6,7 @@ import BookingForm from '@/components/BookingForm'
 import PhoneInput from '@/components/PhoneInput'
 
 const inputCls =
-  'w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors bg-white placeholder:text-stone-400'
+  'w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors bg-white placeholder:text-stone-400 dark:bg-stone-900 dark:border-stone-700 dark:text-stone-100 dark:placeholder:text-stone-500'
 
 function QuickEnquiryForm() {
   const [data, setData] = useState({ name: '', email: '', phone: '', message: '' })
@@ -21,11 +21,11 @@ function QuickEnquiryForm() {
   if (submitted) {
     return (
       <div className="text-center py-10 sm:py-12">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Check className="w-8 h-8 text-green-600" />
+        <div className="w-16 h-16 bg-green-100 dark:bg-green-500/15 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Check className="w-8 h-8 text-green-600 dark:text-green-400" />
         </div>
-        <h3 className="font-serif text-2xl font-bold text-stone-900 mb-2">Message Sent!</h3>
-        <p className="text-stone-600 max-w-sm mx-auto text-sm leading-relaxed">
+        <h3 className="font-serif text-2xl font-bold text-stone-900 dark:text-stone-50 mb-2">Message Sent!</h3>
+        <p className="text-stone-600 dark:text-stone-400 max-w-sm mx-auto text-sm leading-relaxed">
           Thank you, <strong>{submittedName}</strong>! Our Bhutan travel team will get back to you
           within 24 hours.
         </p>
@@ -62,7 +62,7 @@ function QuickEnquiryForm() {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1.5">Your Name *</label>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Your Name *</label>
           <input
             required
             value={data.name}
@@ -72,7 +72,7 @@ function QuickEnquiryForm() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1.5">E-mail *</label>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">E-mail *</label>
           <input
             required
             type="email"
@@ -85,7 +85,7 @@ function QuickEnquiryForm() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-stone-700 mb-1.5">Mobile</label>
+        <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Mobile</label>
         <PhoneInput
           id="phone"
           value={data.phone}
@@ -95,7 +95,7 @@ function QuickEnquiryForm() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-stone-700 mb-1.5">Message *</label>
+        <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Message *</label>
         <textarea
           required
           value={data.message}
@@ -107,7 +107,7 @@ function QuickEnquiryForm() {
       </div>
 
       {error && (
-        <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
+        <div className="flex items-start gap-2.5 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 text-sm px-4 py-3 rounded-xl">
           <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
@@ -128,7 +128,7 @@ function QuickEnquiryForm() {
         )}
       </button>
 
-      <p className="text-xs text-stone-400 text-center">We respond within 24 hours. No payment required.</p>
+      <p className="text-xs text-stone-400 dark:text-stone-500 text-center">We respond within 24 hours. No payment required.</p>
     </form>
   )
 }
@@ -139,12 +139,12 @@ export default function ContactFormSection() {
   const [mode, setMode] = useState<Mode>('quick')
 
   return (
-    <div className="bg-white rounded-3xl shadow-lg border border-stone-100 p-6 sm:p-8 md:p-10">
+    <div className="bg-white dark:bg-stone-900 rounded-3xl shadow-lg dark:shadow-black/40 border border-stone-100 dark:border-stone-800 p-6 sm:p-8 md:p-10 transition-colors duration-300">
       <div className="mb-6">
-        <h2 className="font-serif text-2xl font-bold text-stone-900 mb-2">
+        <h2 className="font-serif text-2xl font-bold text-stone-900 dark:text-stone-50 mb-2">
           {mode === 'quick' ? 'Contact Us' : 'Send Us Your Enquiry'}
         </h2>
-        <p className="text-stone-500 text-sm">
+        <p className="text-stone-500 dark:text-stone-400 text-sm">
           {mode === 'quick'
             ? 'Drop us a message and our team will respond within 24 hours.'
             : 'Fill in the form below — our specialist will respond with a custom quote and itinerary within 24 hours.'}
@@ -152,14 +152,14 @@ export default function ContactFormSection() {
       </div>
 
       {/* Toggle */}
-      <div className="flex items-center gap-1.5 p-1.5 bg-stone-100 rounded-2xl mb-7">
+      <div className="flex items-center gap-1.5 p-1.5 bg-stone-100 dark:bg-stone-800 rounded-2xl mb-7 transition-colors duration-300">
         <button
           type="button"
           onClick={() => setMode('quick')}
           className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200 ${
             mode === 'quick'
-              ? 'bg-white text-stone-900 shadow-sm'
-              : 'text-stone-500 hover:text-stone-700'
+              ? 'bg-white text-stone-900 shadow-sm dark:bg-stone-950 dark:text-stone-50'
+              : 'text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200'
           }`}
         >
           <Zap className="w-4 h-4" />
@@ -170,8 +170,8 @@ export default function ContactFormSection() {
           onClick={() => setMode('builder')}
           className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200 ${
             mode === 'builder'
-              ? 'bg-white text-amber-700 shadow-sm'
-              : 'text-stone-500 hover:text-stone-700'
+              ? 'bg-white text-amber-700 shadow-sm dark:bg-stone-950 dark:text-amber-400'
+              : 'text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200'
           }`}
         >
           <Compass className="w-4 h-4" />

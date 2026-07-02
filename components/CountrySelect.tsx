@@ -234,7 +234,8 @@ const BASE_INPUT =
   'w-full border border-stone-200 rounded-xl px-4 py-3 pr-16 text-sm ' +
   'focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 ' +
   'transition-colors bg-white placeholder:text-stone-400 ' +
-  'disabled:bg-stone-50 disabled:cursor-not-allowed'
+  'disabled:bg-stone-50 disabled:cursor-not-allowed ' +
+  'dark:bg-stone-800 dark:border-stone-700 dark:text-stone-100 dark:placeholder:text-stone-500 dark:disabled:bg-stone-900'
 
 export default function CountrySelect({
   value = '',
@@ -395,7 +396,7 @@ export default function CountrySelect({
           ref={listRef}
           role="listbox"
           aria-label="Countries"
-          className="absolute z-50 mt-1.5 w-full bg-white border border-stone-200 rounded-xl shadow-lg max-h-60 overflow-y-auto py-1 focus:outline-none"
+          className="absolute z-50 mt-1.5 w-full bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl shadow-lg max-h-60 overflow-y-auto py-1 focus:outline-none"
         >
           {filtered.length === 0 ? (
             <li className="px-4 py-3 text-sm text-stone-400 text-center select-none">
@@ -414,8 +415,8 @@ export default function CountrySelect({
                   onMouseEnter={() => setHighlighted(i)}
                   className={`flex items-center justify-between px-4 py-2.5 text-sm cursor-pointer select-none transition-colors
                     ${isActive || isSelected
-                      ? 'bg-amber-50 text-amber-900'
-                      : 'text-stone-700 hover:bg-stone-50'
+                      ? 'bg-amber-50 text-amber-900 dark:bg-amber-500/15 dark:text-amber-300'
+                      : 'text-stone-700 hover:bg-stone-50 dark:text-stone-300 dark:hover:bg-stone-700/60'
                     }`}
                 >
                   <span className={isSelected ? 'font-semibold' : ''}>{country.name}</span>

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { AlertCircle, Check, Mail } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
 
-const inputCls = 'w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors bg-white placeholder:text-stone-400'
+const inputCls = 'w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors bg-white placeholder:text-stone-400 dark:bg-stone-900 dark:border-stone-700 dark:text-stone-100 dark:placeholder:text-stone-500'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail]     = useState('')
@@ -36,12 +36,12 @@ export default function ForgotPasswordPage() {
     return (
       <div className="space-y-7">
         <div className="text-center py-4">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5">
-            <Check className="w-8 h-8 text-green-600" />
+          <div className="w-16 h-16 bg-green-100 dark:bg-green-500/15 rounded-full flex items-center justify-center mx-auto mb-5">
+            <Check className="w-8 h-8 text-green-600 dark:text-green-400" />
           </div>
-          <h1 className="text-2xl font-serif font-bold text-stone-900 mb-2">Check your email</h1>
-          <p className="text-stone-500 text-sm leading-relaxed max-w-xs mx-auto">
-            We&apos;ve sent a password reset link to <strong className="text-stone-700">{email}</strong>. Check your inbox and click the link to set a new password.
+          <h1 className="text-2xl font-serif font-bold text-stone-900 dark:text-stone-50 mb-2">Check your email</h1>
+          <p className="text-stone-500 dark:text-stone-400 text-sm leading-relaxed max-w-xs mx-auto">
+            We&apos;ve sent a password reset link to <strong className="text-stone-700 dark:text-stone-200">{email}</strong>. Check your inbox and click the link to set a new password.
           </p>
         </div>
 
@@ -57,7 +57,7 @@ export default function ForgotPasswordPage() {
         </p>
 
         <div className="text-center">
-          <Link href="/login" className="text-xs text-stone-400 hover:text-stone-600 transition-colors">
+          <Link href="/login" className="text-xs text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 transition-colors">
             ← Back to sign in
           </Link>
         </div>
@@ -68,17 +68,17 @@ export default function ForgotPasswordPage() {
   return (
     <div className="space-y-7">
       <div>
-        <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center mb-5">
-          <Mail className="w-6 h-6 text-amber-700" />
+        <div className="w-12 h-12 bg-amber-100 dark:bg-amber-500/15 rounded-2xl flex items-center justify-center mb-5">
+          <Mail className="w-6 h-6 text-amber-700 dark:text-amber-400" />
         </div>
-        <h1 className="text-2xl font-serif font-bold text-stone-900">Reset your password</h1>
-        <p className="text-stone-500 text-sm mt-1">
+        <h1 className="text-2xl font-serif font-bold text-stone-900 dark:text-stone-50">Reset your password</h1>
+        <p className="text-stone-500 dark:text-stone-400 text-sm mt-1">
           Enter your email and we&apos;ll send you a link to reset your password.
         </p>
       </div>
 
       {error && (
-        <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
+        <div className="flex items-start gap-2.5 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 text-sm px-4 py-3 rounded-xl">
           <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
           {error}
         </div>
@@ -86,7 +86,7 @@ export default function ForgotPasswordPage() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1.5">Email Address</label>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Email Address</label>
           <input
             required
             type="email"
@@ -111,7 +111,7 @@ export default function ForgotPasswordPage() {
       </form>
 
       <div className="text-center">
-        <Link href="/login" className="text-xs text-stone-400 hover:text-stone-600 transition-colors">
+        <Link href="/login" className="text-xs text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 transition-colors">
           ← Back to sign in
         </Link>
       </div>

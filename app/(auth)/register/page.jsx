@@ -21,7 +21,7 @@ function GoogleIcon() {
   )
 }
 
-const inputCls = 'w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors bg-white placeholder:text-stone-400'
+const inputCls = 'w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors bg-white placeholder:text-stone-400 dark:bg-stone-900 dark:border-stone-700 dark:text-stone-100 dark:placeholder:text-stone-500'
 
 // Known disposable / temporary email provider domains
 const BLOCKED_DOMAINS = new Set([
@@ -172,24 +172,24 @@ function RegisterForm() {
     return (
       <div className="text-center py-8 space-y-5">
         <div className="relative mx-auto w-16 h-16">
-          <div className="absolute inset-0 bg-amber-100 rounded-full animate-ping opacity-40" />
-          <div className="relative w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center">
-            <Mail className="w-7 h-7 text-amber-600" />
+          <div className="absolute inset-0 bg-amber-100 dark:bg-amber-500/20 rounded-full animate-ping opacity-40" />
+          <div className="relative w-16 h-16 bg-amber-100 dark:bg-amber-500/15 rounded-full flex items-center justify-center">
+            <Mail className="w-7 h-7 text-amber-600 dark:text-amber-400" />
           </div>
         </div>
 
         <div>
-          <h2 className="text-2xl font-serif font-bold text-stone-900">Check Your Inbox</h2>
-          <p className="text-stone-500 text-sm mt-2 max-w-xs mx-auto leading-relaxed">
+          <h2 className="text-2xl font-serif font-bold text-stone-900 dark:text-stone-50">Check Your Inbox</h2>
+          <p className="text-stone-500 dark:text-stone-400 text-sm mt-2 max-w-xs mx-auto leading-relaxed">
             We sent a confirmation link to{' '}
-            <span className="font-semibold text-stone-700">{form.email}</span>.<br />
+            <span className="font-semibold text-stone-700 dark:text-stone-200">{form.email}</span>.<br />
             Click the link to activate your account, then sign in.
           </p>
         </div>
 
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 text-left space-y-2">
-          <p className="text-xs font-semibold text-amber-800 uppercase tracking-wider">Didn&apos;t receive it?</p>
-          <ul className="text-sm text-stone-600 space-y-1 list-disc list-inside">
+        <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/25 rounded-2xl px-5 py-4 text-left space-y-2">
+          <p className="text-xs font-semibold text-amber-800 dark:text-amber-300 uppercase tracking-wider">Didn&apos;t receive it?</p>
+          <ul className="text-sm text-stone-600 dark:text-stone-300 space-y-1 list-disc list-inside">
             <li>Check your spam / junk folder</li>
             <li>Make sure <span className="font-medium">{form.email}</span> is correct</li>
             <li>Allow a minute or two for delivery</li>
@@ -210,12 +210,12 @@ function RegisterForm() {
   return (
     <div className="space-y-7">
       <div>
-        <h1 className="text-2xl font-serif font-bold text-stone-900">Create your account</h1>
-        <p className="text-stone-500 text-sm mt-1">Build and manage your Bhutan itinerary</p>
+        <h1 className="text-2xl font-serif font-bold text-stone-900 dark:text-stone-50">Create your account</h1>
+        <p className="text-stone-500 dark:text-stone-400 text-sm mt-1">Build and manage your Bhutan itinerary</p>
       </div>
 
       {error && (
-        <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
+        <div className="flex items-start gap-2.5 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 text-sm px-4 py-3 rounded-xl">
           <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
@@ -223,7 +223,7 @@ function RegisterForm() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1.5">Full Name *</label>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Full Name *</label>
           <input
             required
             value={form.name}
@@ -235,7 +235,7 @@ function RegisterForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1.5">Country of Residence *</label>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Country of Residence *</label>
           <CountrySelect
             id="country"
             value={form.country}
@@ -246,7 +246,7 @@ function RegisterForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1.5">Phone / WhatsApp</label>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Phone / WhatsApp</label>
           <PhoneInput
             id="phone"
             value={form.phone}
@@ -256,7 +256,7 @@ function RegisterForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1.5">Email Address *</label>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Email Address *</label>
           <input
             required
             type="email"
@@ -269,7 +269,7 @@ function RegisterForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1.5">Password *</label>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Password *</label>
           <div className="relative">
             <input
               required
@@ -297,7 +297,7 @@ function RegisterForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1.5">Confirm Password *</label>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Confirm Password *</label>
           <input
             required
             type={showPw ? 'text' : 'password'}
@@ -324,11 +324,11 @@ function RegisterForm() {
         </button>
       </form>
 
-      <p className="text-xs text-stone-400 text-center">
+      <p className="text-xs text-stone-400 dark:text-stone-500 text-center">
         By registering you agree to Arise Bhutan&apos;s booking terms and privacy policy.
       </p>
 
-      <div className="text-center text-sm text-stone-500">
+      <div className="text-center text-sm text-stone-500 dark:text-stone-400">
         Already have an account?{' '}
         <Link href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'} className="text-amber-600 font-semibold hover:underline">
           Sign in
@@ -337,9 +337,9 @@ function RegisterForm() {
 
       {/* Divider */}
       <div className="flex items-center gap-3">
-        <div className="flex-1 h-px bg-stone-200" />
-        <span className="text-xs text-stone-400 font-medium">or continue with</span>
-        <div className="flex-1 h-px bg-stone-200" />
+        <div className="flex-1 h-px bg-stone-200 dark:bg-stone-800" />
+        <span className="text-xs text-stone-400 dark:text-stone-500 font-medium">or continue with</span>
+        <div className="flex-1 h-px bg-stone-200 dark:bg-stone-800" />
       </div>
 
       {/* Google Sign Up */}
@@ -347,7 +347,7 @@ function RegisterForm() {
         type="button"
         onClick={handleGoogle}
         disabled={googleLoading}
-        className="w-full flex items-center justify-center gap-3 border border-stone-200 rounded-xl px-4 py-3 text-sm font-medium text-stone-700 bg-white hover:bg-stone-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+        className="w-full flex items-center justify-center gap-3 border border-stone-200 dark:border-stone-700 rounded-xl px-4 py-3 text-sm font-medium text-stone-700 dark:text-stone-200 bg-white dark:bg-stone-900 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
       >
         {googleLoading
           ? <span className="w-4 h-4 border-2 border-stone-300 border-t-stone-600 rounded-full animate-spin" />

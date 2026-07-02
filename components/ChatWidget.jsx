@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { usePathname } from 'next/navigation'
 import { supabase } from '@/utils/supabase/client'
 import { MessageCircle, X, Send, ArrowRight, ExternalLink, Menu } from 'lucide-react'
 
@@ -323,10 +322,8 @@ function findAnswer(text) {
 
 // ── Sub-components ───────────────────────────────────────────────────────────
 
-function MsgText({ text, isAdmin }) {
-  const linkCls = isAdmin
-    ? 'text-amber-400 underline underline-offset-2 hover:text-amber-300'
-    : 'text-amber-600 underline underline-offset-2 hover:text-amber-700'
+function MsgText({ text }) {
+  const linkCls = 'text-amber-600 underline underline-offset-2 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300'
 
   return (
     <div className="leading-relaxed">
@@ -350,17 +347,15 @@ function MsgText({ text, isAdmin }) {
   )
 }
 
-function BotAvatar({ isAdmin }) {
+function BotAvatar() {
   return (
-    <div className={`w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center ${
-      isAdmin ? 'bg-amber-500/20 border border-amber-500/40' : 'bg-amber-100'
-    }`}>
-      <MessageCircle className={`w-3.5 h-3.5 ${isAdmin ? 'text-amber-400' : 'text-amber-600'}`} />
+    <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center bg-amber-100 dark:bg-amber-500/20 dark:border dark:border-amber-500/40">
+      <MessageCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
     </div>
   )
 }
 
-function MessageRow({ msg, isAdmin, t, onConcierge }) {
+function MessageRow({ msg, t, onConcierge }) {
   const isUser      = msg.role === 'user'
   const isStreaming = !!msg.isStreaming
   const time        = msg.created_at
@@ -372,7 +367,7 @@ function MessageRow({ msg, isAdmin, t, onConcierge }) {
       <div className="flex justify-end">
         <div className={`max-w-[80%] rounded-2xl rounded-br-none px-3.5 py-2.5 text-sm ${t.userBubble}`}>
           <p className="leading-relaxed">{msg.text}</p>
-          <p className={`text-[10px] mt-1.5 text-right ${isAdmin ? 'text-amber-200/40' : 'text-white/60'}`}>{time}</p>
+          <p className="text-[10px] mt-1.5 text-right text-white/60">{time}</p>
         </div>
       </div>
     )
@@ -380,11 +375,11 @@ function MessageRow({ msg, isAdmin, t, onConcierge }) {
 
   return (
     <div className="flex items-end gap-2">
-      <BotAvatar isAdmin={isAdmin} />
+      <BotAvatar />
       <div className="max-w-[82%] space-y-1.5">
         <p className={`text-[10px] font-medium ml-0.5 ${t.botLabel}`}>Arise Bhutan Assistant</p>
         <div className={`rounded-2xl rounded-bl-none px-3.5 py-2.5 text-sm ${t.botBubble}`}>
-          <MsgText text={msg.text || ''} isAdmin={isAdmin} />
+          <MsgText text={msg.text || ''} />
           {isStreaming && (
             <span className="inline-block w-0.5 h-3.5 ml-0.5 bg-amber-500 animate-pulse rounded-sm align-middle" />
           )}
@@ -420,9 +415,6 @@ function MessageRow({ msg, isAdmin, t, onConcierge }) {
 // ── Main Widget ──────────────────────────────────────────────────────────────
 
 export default function ChatWidget() {
-  const pathname = usePathname()
-  const isAdmin  = !!pathname?.startsWith('/admin')
-
   const [open,        setOpen]        = useState(false)
   const [messages,    setMessages]    = useState([WELCOME_MSG])
   const [input,       setInput]       = useState('')
@@ -566,64 +558,37 @@ export default function ChatWidget() {
   }
 
   // ── Theme tokens ─────────────────────────────────────────────────────────
-  const t = isAdmin
-    ? {
-        widget:         'bg-stone-900 border border-white/10 shadow-2xl shadow-black/60',
-        header:         'bg-stone-950 border-b border-white/10',
-        headerTitle:    'text-white',
-        headerSub:      'text-amber-400/70',
-        body:           'bg-stone-950/50',
-        inputWrap:      'bg-stone-900 border-t border-white/10',
-        inputField:     'bg-stone-800 border border-white/10 text-stone-100 placeholder-stone-500 focus:border-amber-500/50 focus:ring-0',
-        sendBtn:        'bg-amber-500/20 border border-amber-500/40 text-amber-400 hover:bg-amber-500/30 disabled:opacity-30 disabled:cursor-not-allowed',
-        userBubble:     'bg-amber-500/20 border border-amber-500/30 text-amber-100',
-        botBubble:      'bg-stone-800 border border-white/5 text-stone-200',
-        typingDot:      'bg-amber-500/70',
-        chip:           'bg-stone-800 border border-white/10 text-stone-300 hover:border-amber-500/40 hover:text-amber-400',
-        conciergeBtn:   'bg-amber-500/20 border border-amber-500/40 text-amber-400 hover:bg-amber-500/30',
-        fab:            'bg-stone-800 border border-amber-500/40 text-amber-400 hover:bg-stone-700 shadow-lg shadow-black/50',
-        closeBtn:       'text-stone-400 hover:text-white hover:bg-white/10',
-        footer:         'text-stone-600',
-        footerLink:     'text-amber-500/70 hover:text-amber-400',
-        time:           'text-stone-600',
-        botLabel:       'text-amber-500/60',
-        menuBtn:        'border-white/10 text-stone-400 hover:text-amber-400 hover:bg-stone-700/60 hover:border-amber-500/40',
-        menuBtnActive:  'border-amber-500/40 text-amber-400 bg-stone-700/60',
-        menuDrop:       'bg-stone-800 border border-white/10 shadow-xl shadow-black/40',
-        menuItem:       'text-stone-300 hover:bg-stone-700 hover:text-amber-300',
-        menuDivider:    'border-white/10',
-        suggestionDrop: 'bg-stone-800 border border-white/10 shadow-xl shadow-black/40',
-        suggestionItem: 'text-stone-300 hover:bg-stone-700 hover:text-amber-300 border-b border-white/5 last:border-0',
-        suggestionHint: 'text-stone-500',
-      }
-    : {
-        widget:         'bg-[#f8f6f2] border border-stone-200/80 shadow-2xl shadow-stone-900/12',
+  // A single theme-aware token set: light by default, dark via `dark:`
+  // variants, so the widget follows the global site theme everywhere
+  // (public pages, client portal, and admin panel alike).
+  const t = {
+        widget:         'bg-[#f8f6f2] border border-stone-200/80 shadow-2xl shadow-stone-900/12 dark:bg-stone-900 dark:border-white/10 dark:shadow-black/60',
         header:         'bg-gradient-to-r from-amber-700 to-amber-600',
         headerTitle:    'text-white',
         headerSub:      'text-amber-100/80',
-        body:           'bg-[#f8f6f2]',
-        inputWrap:      'bg-white border-t border-stone-100',
-        inputField:     'bg-white border border-stone-200 text-[#1c1917] placeholder-stone-400 focus:border-amber-500 focus:ring-0',
+        body:           'bg-[#f8f6f2] dark:bg-stone-950/50',
+        inputWrap:      'bg-white border-t border-stone-100 dark:bg-stone-900 dark:border-white/10',
+        inputField:     'bg-white border border-stone-200 text-[#1c1917] placeholder-stone-400 focus:border-amber-500 focus:ring-0 dark:bg-stone-800 dark:border-white/10 dark:text-stone-100 dark:placeholder-stone-500',
         sendBtn:        'bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-40 disabled:cursor-not-allowed',
         userBubble:     'bg-amber-600 text-white',
-        botBubble:      'bg-white border border-stone-100 text-[#1c1917]',
+        botBubble:      'bg-white border border-stone-100 text-[#1c1917] dark:bg-stone-800 dark:border-white/5 dark:text-stone-200',
         typingDot:      'bg-amber-500',
-        chip:           'bg-white border border-amber-200 text-amber-700 hover:border-amber-400 hover:bg-amber-50',
+        chip:           'bg-white border border-amber-200 text-amber-700 hover:border-amber-400 hover:bg-amber-50 dark:bg-stone-800 dark:border-white/10 dark:text-stone-300 dark:hover:border-amber-500/40 dark:hover:text-amber-400 dark:hover:bg-stone-800',
         conciergeBtn:   'bg-amber-600 text-white hover:bg-amber-700 border-transparent',
         fab:            'bg-amber-600 text-white hover:bg-amber-700 shadow-lg shadow-amber-900/25',
         closeBtn:       'text-white/70 hover:text-white hover:bg-white/15',
-        footer:         'text-stone-400',
-        footerLink:     'text-amber-600 hover:text-amber-700',
-        time:           'text-stone-400',
-        botLabel:       'text-amber-700/50',
-        menuBtn:        'border-stone-200 text-stone-400 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-300',
-        menuBtnActive:  'border-amber-400 text-amber-600 bg-amber-50',
-        menuDrop:       'bg-white border border-stone-200 shadow-lg shadow-stone-900/8',
-        menuItem:       'text-stone-700 hover:bg-amber-50 hover:text-amber-700',
-        menuDivider:    'border-stone-100',
-        suggestionDrop: 'bg-white border border-stone-200 shadow-lg shadow-stone-900/8',
-        suggestionItem: 'text-stone-700 hover:bg-amber-50 hover:text-amber-700 border-b border-stone-100 last:border-0',
-        suggestionHint: 'text-stone-400',
+        footer:         'text-stone-400 dark:text-stone-600',
+        footerLink:     'text-amber-600 hover:text-amber-700 dark:text-amber-500/70 dark:hover:text-amber-400',
+        time:           'text-stone-400 dark:text-stone-600',
+        botLabel:       'text-amber-700/50 dark:text-amber-500/60',
+        menuBtn:        'border-stone-200 text-stone-400 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-300 dark:border-white/10 dark:hover:text-amber-400 dark:hover:bg-stone-700/60 dark:hover:border-amber-500/40',
+        menuBtnActive:  'border-amber-400 text-amber-600 bg-amber-50 dark:border-amber-500/40 dark:text-amber-400 dark:bg-stone-700/60',
+        menuDrop:       'bg-white border border-stone-200 shadow-lg shadow-stone-900/8 dark:bg-stone-800 dark:border-white/10 dark:shadow-black/40',
+        menuItem:       'text-stone-700 hover:bg-amber-50 hover:text-amber-700 dark:text-stone-300 dark:hover:bg-stone-700 dark:hover:text-amber-300',
+        menuDivider:    'border-stone-100 dark:border-white/10',
+        suggestionDrop: 'bg-white border border-stone-200 shadow-lg shadow-stone-900/8 dark:bg-stone-800 dark:border-white/10 dark:shadow-black/40',
+        suggestionItem: 'text-stone-700 hover:bg-amber-50 hover:text-amber-700 border-b border-stone-100 last:border-0 dark:text-stone-300 dark:hover:bg-stone-700 dark:hover:text-amber-300 dark:border-white/5',
+        suggestionHint: 'text-stone-400 dark:text-stone-500',
       }
 
   const canSend = input.trim().length > 0 && !typing && !stream
@@ -640,7 +605,7 @@ export default function ChatWidget() {
           {open ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
         </div>
         {!open && messages.length > 1 && (
-          <span className={`absolute -top-1 -right-1 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center ${isAdmin ? 'bg-amber-500 text-stone-900' : 'bg-white text-amber-700 border border-amber-200'}`}>
+          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center bg-white text-amber-700 border border-amber-200">
             {Math.min(messages.length - 1, 9)}
           </span>
         )}
@@ -656,8 +621,8 @@ export default function ChatWidget() {
         {/* Header */}
         <div className={`flex items-center justify-between px-4 py-3 flex-shrink-0 ${t.header}`}>
           <div className="flex items-center gap-3">
-            <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${isAdmin ? 'bg-amber-500/20 border border-amber-500/40' : 'bg-white/20'}`}>
-              <MessageCircle className={`w-4.5 h-4.5 ${isAdmin ? 'text-amber-400' : 'text-white'}`} />
+            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 bg-white/20">
+              <MessageCircle className="w-4.5 h-4.5 text-white" />
             </div>
             <div>
               <p className={`text-sm font-semibold leading-tight ${t.headerTitle}`}>Arise Bhutan Assistant</p>
@@ -676,7 +641,7 @@ export default function ChatWidget() {
         <div
           ref={scrollRef}
           className={`flex-1 overflow-y-auto px-4 py-4 space-y-3 ${t.body}`}
-          style={{ scrollbarWidth: 'thin', scrollbarColor: isAdmin ? '#44403c transparent' : '#d6d3d1 transparent' }}
+          style={{ scrollbarWidth: 'thin', scrollbarColor: '#a8a29e transparent' }}
         >
           {!chipsGone && messages.length === 1 && (
             <div className="flex flex-wrap gap-2 pb-2">
@@ -690,14 +655,14 @@ export default function ChatWidget() {
           )}
 
           {messages.map(msg => (
-            <MessageRow key={msg.id} msg={msg} isAdmin={isAdmin} t={t}
+            <MessageRow key={msg.id} msg={msg} t={t}
               onConcierge={() => window.open('https://wa.me/97577319405?text=Hello%2C%20I%20have%20an%20enquiry%20about%20a%20Bhutan%20tour.', '_blank')} />
           ))}
 
           {/* Typing dots */}
           {typing && !stream && (
             <div className="flex items-end gap-2">
-              <BotAvatar isAdmin={isAdmin} />
+              <BotAvatar />
               <div className={`rounded-2xl rounded-bl-none px-4 py-3 ${t.botBubble}`}>
                 <div className="flex items-center gap-1.5 h-4">
                   {[0, 1, 2].map(i => (
@@ -713,7 +678,7 @@ export default function ChatWidget() {
           {stream && (
             <MessageRow
               msg={{ ...stream, role: 'bot', isStreaming: true, created_at: new Date().toISOString() }}
-              isAdmin={isAdmin} t={t}
+              t={t}
               onConcierge={() => window.open('https://wa.me/97577319405?text=Hello%2C%20I%20have%20an%20enquiry%20about%20a%20Bhutan%20tour.', '_blank')} />
           )}
         </div>

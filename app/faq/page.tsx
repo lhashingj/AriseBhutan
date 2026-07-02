@@ -28,11 +28,11 @@ export default function FaqPage() {
       </section>
 
       {/* Breadcrumb */}
-      <div className="bg-white border-b border-stone-100">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 text-xs text-stone-500 flex items-center gap-2">
-          <Link href="/" className="hover:text-amber-600 transition-colors">Home</Link>
+      <div className="bg-white dark:bg-stone-950 border-b border-stone-100 dark:border-stone-800 transition-colors duration-300">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 text-xs text-stone-500 dark:text-stone-400 flex items-center gap-2">
+          <Link href="/" className="hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Home</Link>
           <span>/</span>
-          <span className="text-stone-800 font-medium">Travel FAQ</span>
+          <span className="text-stone-800 dark:text-stone-200 font-medium">Travel FAQ</span>
         </div>
       </div>
 
@@ -40,12 +40,12 @@ export default function FaqPage() {
       <FaqSection />
 
       {/* Tours CTA strip */}
-      <section className="py-14 sm:py-16 bg-amber-50 border-t border-amber-100">
+      <section className="py-14 sm:py-16 bg-amber-50 dark:bg-stone-900 border-t border-amber-100 dark:border-stone-800 transition-colors duration-300">
         <div className="max-w-3xl mx-auto px-4 text-center">
-          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mb-3">
+          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-stone-50 mb-3">
             Ready to Plan Your Bhutan Journey?
           </h2>
-          <p className="text-stone-600 mb-7 text-sm sm:text-base">
+          <p className="text-stone-600 dark:text-stone-400 mb-7 text-sm sm:text-base">
             Browse our hand-crafted tours or tell us your dream trip — we&apos;ll build the perfect itinerary.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">

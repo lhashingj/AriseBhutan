@@ -11,12 +11,12 @@ import { supabase } from '@/utils/supabase/client'
 import CountrySelect from '@/components/CountrySelect'
 import PhoneInput from '@/components/PhoneInput'
 
-const inputCls = 'w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors bg-white placeholder:text-stone-400'
+const inputCls = 'w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors bg-white placeholder:text-stone-400 dark:bg-stone-800 dark:border-stone-700 dark:text-stone-100 dark:placeholder:text-stone-500'
 
 function SuccessBanner({ msg }) {
   if (!msg) return null
   return (
-    <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded-xl px-3 py-2 flex items-center gap-1.5">
+    <p className="text-xs text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 rounded-xl px-3 py-2 flex items-center gap-1.5">
       <Check className="w-3.5 h-3.5 shrink-0" /> {msg}
     </p>
   )
@@ -25,7 +25,7 @@ function SuccessBanner({ msg }) {
 function ErrorBanner({ msg }) {
   if (!msg) return null
   return (
-    <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">{msg}</p>
+    <p className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-xl px-3 py-2">{msg}</p>
   )
 }
 
@@ -153,17 +153,17 @@ export default function ClientProfilePage() {
   return (
     <div className="max-w-2xl mx-auto space-y-8">
       {/* Page header */}
-      <div className="bg-gradient-to-br from-amber-50 via-stone-50 to-white border border-amber-100 rounded-2xl px-6 py-5">
-        <p className="text-[11px] font-semibold text-amber-600 uppercase tracking-widest mb-1.5">Arise Bhutan · Client Portal</p>
-        <h1 className="text-2xl font-serif font-bold text-stone-900">My Profile</h1>
-        <p className="text-stone-500 text-sm mt-1">Manage your account details and travel documents.</p>
+      <div className="bg-gradient-to-br from-amber-50 via-stone-50 to-white dark:from-stone-900 dark:via-stone-900 dark:to-stone-950 border border-amber-100 dark:border-stone-800 rounded-2xl px-6 py-5 transition-colors duration-300">
+        <p className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-1.5">Arise Bhutan · Client Portal</p>
+        <h1 className="text-2xl font-serif font-bold text-stone-900 dark:text-stone-50">My Profile</h1>
+        <p className="text-stone-500 dark:text-stone-400 text-sm mt-1">Manage your account details and travel documents.</p>
       </div>
 
       {/* ── Avatar ── */}
-      <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-6">
+      <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-100 dark:border-stone-800 shadow-sm p-6 transition-colors duration-300">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-1 h-6 rounded-full bg-amber-500" />
-          <h2 className="font-semibold text-stone-900">Profile Picture</h2>
+          <h2 className="font-semibold text-stone-900 dark:text-stone-50">Profile Picture</h2>
         </div>
         <div className="flex items-center gap-5">
           <div className="relative w-20 h-20 flex-shrink-0">
@@ -186,8 +186,8 @@ export default function ClientProfilePage() {
             </button>
           </div>
           <div>
-            <p className="font-semibold text-stone-800">{profile?.name || 'Your Name'}</p>
-            <p className="text-stone-500 text-xs">{profile?.email}</p>
+            <p className="font-semibold text-stone-800 dark:text-stone-100">{profile?.name || 'Your Name'}</p>
+            <p className="text-stone-500 dark:text-stone-400 text-xs">{profile?.email}</p>
             <button
               onClick={() => fileRef.current?.click()}
               className="text-xs text-amber-600 hover:text-amber-700 font-medium mt-1.5"
@@ -202,15 +202,15 @@ export default function ClientProfilePage() {
       </div>
 
       {/* ── Personal Information ── */}
-      <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-6">
+      <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-100 dark:border-stone-800 shadow-sm p-6 transition-colors duration-300">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-1 h-6 rounded-full bg-amber-500" />
-          <h2 className="font-semibold text-stone-900">Personal Information</h2>
+          <h2 className="font-semibold text-stone-900 dark:text-stone-50">Personal Information</h2>
         </div>
         <div className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="flex items-center gap-1.5 text-sm font-medium text-stone-700 mb-1.5">
+              <label className="flex items-center gap-1.5 text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
                 <User className="w-3.5 h-3.5 text-stone-400" /> Full Name
               </label>
               <input
@@ -221,7 +221,7 @@ export default function ClientProfilePage() {
               />
             </div>
             <div>
-              <label className="flex items-center gap-1.5 text-sm font-medium text-stone-700 mb-1.5">
+              <label className="flex items-center gap-1.5 text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
                 <Phone className="w-3.5 h-3.5 text-stone-400" /> Phone Number
               </label>
               <PhoneInput
@@ -235,7 +235,7 @@ export default function ClientProfilePage() {
 
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="flex items-center gap-1.5 text-sm font-medium text-stone-700 mb-1.5">
+              <label className="flex items-center gap-1.5 text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
                 <Globe className="w-3.5 h-3.5 text-stone-400" /> Nationality
               </label>
               <CountrySelect
@@ -246,7 +246,7 @@ export default function ClientProfilePage() {
               />
             </div>
             <div>
-              <label className="flex items-center gap-1.5 text-sm font-medium text-stone-700 mb-1.5">
+              <label className="flex items-center gap-1.5 text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
                 <CreditCard className="w-3.5 h-3.5 text-stone-400" /> Passport Number
               </label>
               <input
@@ -261,7 +261,7 @@ export default function ClientProfilePage() {
 
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="flex items-center gap-1.5 text-sm font-medium text-stone-700 mb-1.5">
+              <label className="flex items-center gap-1.5 text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
                 <Calendar className="w-3.5 h-3.5 text-stone-400" /> Passport Expiry
               </label>
               <input
@@ -272,7 +272,7 @@ export default function ClientProfilePage() {
               />
             </div>
             <div>
-              <label className="flex items-center gap-1.5 text-sm font-medium text-stone-700 mb-1.5">
+              <label className="flex items-center gap-1.5 text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
                 <Heart className="w-3.5 h-3.5 text-stone-400" /> Emergency Contact
               </label>
               <input
@@ -301,20 +301,20 @@ export default function ClientProfilePage() {
       </div>
 
       {/* ── Security ── */}
-      <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-6 space-y-7">
+      <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-100 dark:border-stone-800 shadow-sm p-6 space-y-7 transition-colors duration-300">
         <div className="flex items-center gap-3">
           <div className="w-1 h-6 rounded-full bg-amber-500" />
-          <h2 className="font-semibold text-stone-900">Security</h2>
+          <h2 className="font-semibold text-stone-900 dark:text-stone-50">Security</h2>
         </div>
 
         {/* Change Email */}
-        <div className="pb-7 border-b border-stone-100">
+        <div className="pb-7 border-b border-stone-100 dark:border-stone-800">
           <div className="flex items-center gap-2 mb-1">
-            <Mail className="w-4 h-4 text-amber-600" />
-            <p className="font-medium text-stone-800 text-sm">Change Email Address</p>
+            <Mail className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            <p className="font-medium text-stone-800 dark:text-stone-100 text-sm">Change Email Address</p>
           </div>
-          <p className="text-xs text-stone-500 mb-3">
-            Current: <strong className="text-stone-700">{profile?.email}</strong>
+          <p className="text-xs text-stone-500 dark:text-stone-400 mb-3">
+            Current: <strong className="text-stone-700 dark:text-stone-200">{profile?.email}</strong>
           </p>
           <div className="flex gap-3">
             <input
@@ -341,8 +341,8 @@ export default function ClientProfilePage() {
         {/* Change Password */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <Lock className="w-4 h-4 text-amber-600" />
-            <p className="font-medium text-stone-800 text-sm">Change Password</p>
+            <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            <p className="font-medium text-stone-800 dark:text-stone-100 text-sm">Change Password</p>
           </div>
           <div className="space-y-3">
             <input

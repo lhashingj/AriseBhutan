@@ -51,16 +51,16 @@ export default function AuthLayout({ children }) {
       </div>
 
       {/* ── Right panel — form ── */}
-      <div className="flex items-center justify-center p-6 sm:p-12 bg-white">
+      <div className="flex items-center justify-center p-6 sm:p-12 bg-white dark:bg-stone-950 transition-colors duration-300">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="flex lg:hidden items-center gap-3 mb-8">
-            <div className="w-9 h-9 rounded-full bg-stone-100 overflow-hidden">
+            <div className="w-9 h-9 rounded-full bg-stone-100 dark:bg-white overflow-hidden">
               <Image src="/images/logo.jpeg" alt="Arise Bhutan" width={36} height={36} className="object-contain" />
             </div>
             <div>
-              <p className="font-serif font-bold text-stone-900 leading-tight">Arise Bhutan</p>
-              <p className="text-[9px] tracking-widest uppercase text-stone-400">Tours &amp; Travels</p>
+              <p className="font-serif font-bold text-stone-900 dark:text-stone-50 leading-tight">Arise Bhutan</p>
+              <p className="text-[9px] tracking-widest uppercase text-stone-400 dark:text-stone-500">Tours &amp; Travels</p>
             </div>
           </div>
 

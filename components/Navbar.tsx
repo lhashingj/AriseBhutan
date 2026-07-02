@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Menu, X, Phone, ChevronDown, LayoutDashboard, LogOut, User } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
+import ThemeToggle from '@/components/ThemeToggle'
 
 const navLinks = [
   { label: 'Home',     href: '/' },
@@ -79,7 +80,7 @@ export default function Navbar() {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         solid
-          ? 'bg-white shadow-sm'
+          ? 'bg-white shadow-sm dark:bg-stone-950 dark:shadow-black/40 dark:border-b dark:border-white/5'
           : 'bg-gradient-to-b from-black/55 via-black/20 to-transparent'
       }`}
     >
@@ -98,7 +99,7 @@ export default function Navbar() {
                 priority
               />
             </div>
-            <div className={`hidden sm:block transition-colors duration-300 ${solid ? 'text-stone-900' : 'text-white'}`}>
+            <div className={`hidden sm:block transition-colors duration-300 ${solid ? 'text-stone-900 dark:text-white' : 'text-white'}`}>
               <p className="font-serif font-bold text-[1.05rem] leading-tight">Arise Bhutan</p>
               <p className="text-[9px] tracking-[0.22em] uppercase opacity-55 font-semibold">Tours &amp; Travels</p>
             </div>
@@ -112,7 +113,7 @@ export default function Navbar() {
                 href={link.href}
                 className={`text-sm font-medium px-3.5 py-2 rounded-lg transition-all duration-200 ${
                   solid
-                    ? 'text-stone-700 hover:text-amber-600 hover:bg-amber-50/80'
+                    ? 'text-stone-700 hover:text-amber-600 hover:bg-amber-50/80 dark:text-stone-300 dark:hover:text-amber-400 dark:hover:bg-white/5'
                     : 'text-white/90 hover:text-white hover:bg-white/10'
                 }`}
               >
@@ -126,12 +127,20 @@ export default function Navbar() {
             <a
               href="tel:+97577319405"
               className={`flex items-center gap-1.5 text-sm font-medium transition-colors duration-200 ${
-                solid ? 'text-stone-500 hover:text-amber-600' : 'text-white/75 hover:text-white'
+                solid ? 'text-stone-500 hover:text-amber-600 dark:text-stone-400 dark:hover:text-amber-400' : 'text-white/75 hover:text-white'
               }`}
             >
               <Phone className="w-3.5 h-3.5" />
               +975 77 319 405
             </a>
+
+            <ThemeToggle
+              className={
+                solid
+                  ? 'text-stone-500 hover:text-amber-600 hover:bg-stone-100 dark:text-stone-400 dark:hover:text-amber-400 dark:hover:bg-white/10'
+                  : 'text-white/80 hover:text-white hover:bg-white/10'
+              }
+            />
 
             {user ? (
               /* ── Logged-in user menu ── */
@@ -140,7 +149,7 @@ export default function Navbar() {
                   onClick={() => setUserMenu(!userMenuOpen)}
                   className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full border transition-all duration-200 ${
                     solid
-                      ? 'border-stone-300 text-stone-700 hover:border-amber-500 hover:text-amber-600 bg-white'
+                      ? 'border-stone-300 text-stone-700 hover:border-amber-500 hover:text-amber-600 bg-white dark:bg-stone-900 dark:border-stone-700 dark:text-stone-200 dark:hover:border-amber-500 dark:hover:text-amber-400'
                       : 'border-white/40 text-white hover:bg-white/10'
                   }`}
                 >
@@ -150,22 +159,22 @@ export default function Navbar() {
                 </button>
 
                 {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-stone-100 py-2 z-50 overflow-hidden">
-                    <div className="px-4 py-2 border-b border-stone-50 mb-1">
-                      <p className="text-xs text-stone-400 font-medium">Signed in as</p>
-                      <p className="text-sm font-semibold text-stone-800 truncate">{user.name}</p>
+                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-stone-900 rounded-2xl shadow-xl border border-stone-100 dark:border-stone-800 py-2 z-50 overflow-hidden transition-colors duration-300">
+                    <div className="px-4 py-2 border-b border-stone-50 dark:border-stone-800 mb-1">
+                      <p className="text-xs text-stone-400 dark:text-stone-500 font-medium">Signed in as</p>
+                      <p className="text-sm font-semibold text-stone-800 dark:text-stone-100 truncate">{user.name}</p>
                     </div>
                     <Link
                       href={user.role === 'ADMIN' ? '/admin/dashboard' : '/client/dashboard'}
                       onClick={() => setUserMenu(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-700 transition-colors"
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-stone-700 dark:text-stone-300 hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-500/10 dark:hover:text-amber-400 transition-colors"
                     >
                       <LayoutDashboard className="w-4 h-4" />
                       Dashboard
                     </Link>
                     <button
                       onClick={() => { setUserMenu(false); setLogoutConfirm(true) }}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                     >
                       <LogOut className="w-4 h-4" />
                       Logout
@@ -180,7 +189,7 @@ export default function Navbar() {
                   href="/login"
                   className={`text-sm font-semibold px-4 py-2 rounded-full border transition-all duration-200 ${
                     solid
-                      ? 'border-stone-300 text-stone-700 hover:border-amber-500 hover:text-amber-600'
+                      ? 'border-stone-300 text-stone-700 hover:border-amber-500 hover:text-amber-600 dark:border-stone-700 dark:text-stone-200 dark:hover:border-amber-500 dark:hover:text-amber-400'
                       : 'border-white/40 text-white hover:bg-white/10'
                   }`}
                 >
@@ -196,17 +205,26 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* ── Mobile hamburger ── */}
-          <button
-            className={`lg:hidden p-2 rounded-xl transition-all duration-200 ${
-              solid ? 'text-stone-800 hover:bg-stone-100' : 'text-white hover:bg-white/10'
-            }`}
-            onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={mobileOpen}
-          >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
+          {/* ── Mobile: theme toggle + hamburger ── */}
+          <div className="lg:hidden flex items-center gap-1">
+            <ThemeToggle
+              className={
+                solid
+                  ? 'text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-white/10'
+                  : 'text-white/85 hover:bg-white/10'
+              }
+            />
+            <button
+              className={`p-2 rounded-xl transition-all duration-200 ${
+                solid ? 'text-stone-800 hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-white/10' : 'text-white hover:bg-white/10'
+              }`}
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileOpen}
+            >
+              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -215,12 +233,12 @@ export default function Navbar() {
         className="lg:hidden overflow-hidden transition-[max-height] duration-300 ease-in-out"
         style={{ maxHeight: mobileOpen ? '560px' : '0px' }}
       >
-        <div className="bg-white border-t border-stone-100 px-4 pb-7 pt-2">
+        <div className="bg-white dark:bg-stone-950 border-t border-stone-100 dark:border-stone-800 px-4 pb-7 pt-2 transition-colors duration-300">
           {navLinks.map((link) => (
             <Link
               key={link.label}
               href={link.href}
-              className="flex py-3.5 text-stone-800 font-medium text-sm border-b border-stone-50 hover:text-amber-600 transition-colors"
+              className="flex py-3.5 text-stone-800 dark:text-stone-200 font-medium text-sm border-b border-stone-50 dark:border-stone-800/60 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
               onClick={() => setMobileOpen(false)}
             >
               {link.label}
@@ -230,7 +248,7 @@ export default function Navbar() {
           <div className="mt-5 flex flex-col gap-2.5">
             <a
               href="tel:+97577319405"
-              className="flex items-center justify-center gap-2 py-3 text-sm font-medium text-stone-700 bg-stone-50 rounded-2xl hover:bg-stone-100 transition-colors"
+              className="flex items-center justify-center gap-2 py-3 text-sm font-medium text-stone-700 dark:text-stone-300 bg-stone-50 dark:bg-stone-900 rounded-2xl hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
             >
               <Phone className="w-4 h-4 text-amber-600" />
               +975 77 319 405
@@ -238,21 +256,21 @@ export default function Navbar() {
 
             {user ? (
               <>
-                <div className="bg-amber-50 border border-amber-100 rounded-2xl px-4 py-2.5 text-center">
-                  <p className="text-xs text-stone-400">Signed in as</p>
-                  <p className="text-sm font-semibold text-stone-800">{user.name}</p>
+                <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 rounded-2xl px-4 py-2.5 text-center">
+                  <p className="text-xs text-stone-400 dark:text-stone-500">Signed in as</p>
+                  <p className="text-sm font-semibold text-stone-800 dark:text-stone-100">{user.name}</p>
                 </div>
                 <Link
                   href={user.role === 'ADMIN' ? '/admin/dashboard' : '/client/dashboard'}
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center justify-center gap-2 py-3 text-sm font-semibold text-stone-700 bg-stone-100 rounded-2xl hover:bg-stone-200 transition-colors"
+                  className="flex items-center justify-center gap-2 py-3 text-sm font-semibold text-stone-700 dark:text-stone-200 bg-stone-100 dark:bg-stone-800 rounded-2xl hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
                 >
                   <LayoutDashboard className="w-4 h-4" />
                   Dashboard
                 </Link>
                 <button
                   onClick={() => { setMobileOpen(false); setLogoutConfirm(true) }}
-                  className="flex items-center justify-center gap-2 py-3 text-sm font-semibold text-red-600 bg-red-50 rounded-2xl hover:bg-red-100 transition-colors"
+                  className="flex items-center justify-center gap-2 py-3 text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 rounded-2xl hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
                   Logout
@@ -262,7 +280,7 @@ export default function Navbar() {
               <>
                 <Link
                   href="/login"
-                  className="flex items-center justify-center py-3 text-sm font-semibold text-stone-700 bg-stone-100 rounded-2xl hover:bg-stone-200 transition-colors"
+                  className="flex items-center justify-center py-3 text-sm font-semibold text-stone-700 dark:text-stone-200 bg-stone-100 dark:bg-stone-800 rounded-2xl hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
                   onClick={() => setMobileOpen(false)}
                 >
                   Login
@@ -283,17 +301,17 @@ export default function Navbar() {
 
       {/* Logout confirmation modal */}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
-            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <LogOut className="w-5 h-5 text-red-600" />
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/70 px-4">
+          <div className="bg-white dark:bg-stone-900 dark:border dark:border-stone-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm transition-colors duration-300">
+            <div className="w-12 h-12 bg-red-100 dark:bg-red-500/15 rounded-full flex items-center justify-center mx-auto mb-4">
+              <LogOut className="w-5 h-5 text-red-600 dark:text-red-400" />
             </div>
-            <h3 className="text-lg font-serif font-bold text-stone-900 text-center">Sign out?</h3>
-            <p className="text-stone-500 text-sm text-center mt-1 mb-6">You'll need to sign in again to access your account.</p>
+            <h3 className="text-lg font-serif font-bold text-stone-900 dark:text-stone-50 text-center">Sign out?</h3>
+            <p className="text-stone-500 dark:text-stone-400 text-sm text-center mt-1 mb-6">You'll need to sign in again to access your account.</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setLogoutConfirm(false)}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 text-stone-700 text-sm font-semibold hover:bg-stone-50 transition-colors"
+                className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 text-sm font-semibold hover:bg-stone-50 dark:hover:bg-white/5 transition-colors"
               >
                 Cancel
               </button>

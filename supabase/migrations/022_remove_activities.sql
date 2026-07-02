@@ -6,12 +6,8 @@
 
 DELETE FROM public.activities
 WHERE name IN (
-  'River Rafting In Punakha',
-  'Camping At Bumdra Camp Site',
-  'Bumthang Valley Temple Circuit',
-  'Bumdrak Camping Trek',
-  'Druk Path Trek (6 Days)',
-  'Jomolhari Base Camp Trek'
+  'Mo Chhu White-Water Rafting',
+  'Traditional Archery Session'
 );
 
 -- ── END OF MIGRATION 022 ─────────────────────────────────────

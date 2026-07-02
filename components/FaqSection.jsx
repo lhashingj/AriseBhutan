@@ -17,7 +17,7 @@ export default function FaqSection() {
   const categories = Object.keys(grouped)
 
   return (
-    <section className="py-16 sm:py-20 bg-white">
+    <section className="py-16 sm:py-20 bg-white dark:bg-stone-950 transition-colors duration-300">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Section header */}
@@ -37,7 +37,7 @@ export default function FaqSection() {
         </div>
 
         {/* Bottom CTA */}
-        <div className="mt-14 bg-stone-900 rounded-2xl p-8 sm:p-10 text-center text-white">
+        <div className="mt-14 bg-stone-900 dark:bg-stone-900 dark:border dark:border-stone-800 rounded-2xl p-8 sm:p-10 text-center text-white">
           <HelpCircle className="w-8 h-8 text-amber-400 mx-auto mb-4" />
           <h3 className="font-serif text-xl sm:text-2xl font-bold mb-2">Still have questions?</h3>
           <p className="text-stone-400 text-sm mb-6 max-w-md mx-auto">
@@ -74,11 +74,11 @@ function FaqGroup({ category, items }) {
     <div>
       {/* Category divider label */}
       <div className="flex items-center gap-4 mb-5">
-        <span className="h-px flex-1 bg-stone-200" />
-        <span className="text-amber-600 font-semibold text-[10px] tracking-widest uppercase whitespace-nowrap">
+        <span className="h-px flex-1 bg-stone-200 dark:bg-stone-800" />
+        <span className="text-amber-600 dark:text-amber-400 font-semibold text-[10px] tracking-widest uppercase whitespace-nowrap">
           {category}
         </span>
-        <span className="h-px flex-1 bg-stone-200" />
+        <span className="h-px flex-1 bg-stone-200 dark:bg-stone-800" />
       </div>
 
       <div className="space-y-2">
@@ -96,7 +96,9 @@ function FaqItem({ faq }) {
   return (
     <div
       className={`border rounded-2xl overflow-hidden transition-colors duration-200 ${
-        open ? 'border-amber-300 bg-amber-50/30' : 'border-stone-200 bg-white hover:border-amber-200'
+        open
+          ? 'border-amber-300 bg-amber-50/30 dark:border-amber-500/40 dark:bg-amber-500/5'
+          : 'border-stone-200 bg-white hover:border-amber-200 dark:border-stone-800 dark:bg-stone-900 dark:hover:border-stone-700'
       }`}
     >
       <button
@@ -104,7 +106,7 @@ function FaqItem({ faq }) {
         aria-expanded={open}
         className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left"
       >
-        <span className="font-semibold text-stone-900 text-sm sm:text-base leading-snug">
+        <span className="font-semibold text-stone-900 dark:text-stone-100 text-sm sm:text-base leading-snug">
           {faq.question}
         </span>
         <ChevronDown
@@ -121,8 +123,8 @@ function FaqItem({ faq }) {
         style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
       >
         <div className="overflow-hidden">
-          <div className="px-5 pb-5 pt-1 border-t border-stone-100">
-            <p className="text-stone-600 text-sm leading-relaxed">{faq.answer}</p>
+          <div className="px-5 pb-5 pt-1 border-t border-stone-100 dark:border-stone-800">
+            <p className="text-stone-600 dark:text-stone-400 text-sm leading-relaxed">{faq.answer}</p>
           </div>
         </div>
       </div>

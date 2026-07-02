@@ -26,14 +26,14 @@ export default function HomePage() {
       <BrandPhilosophy />
 
       {/* Featured Tours */}
-      <section className="py-16 sm:py-20 bg-white">
+      <section className="py-16 sm:py-20 bg-white dark:bg-stone-950 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between mb-10 sm:mb-12 flex-wrap gap-4">
             <div>
               <span className="section-badge">Handpicked Experiences</span>
               <h2 className="section-title mb-0">Featured Tours</h2>
             </div>
-            <Link href="/tours" className="flex items-center gap-2 text-amber-600 font-semibold hover:gap-3 transition-all text-sm sm:text-base">
+            <Link href="/tours" className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-semibold hover:gap-3 transition-all text-sm sm:text-base">
               View All Tours <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

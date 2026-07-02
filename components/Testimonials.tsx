@@ -104,7 +104,7 @@ export default async function Testimonials() {
   const avgStr   = place?.rating ? place.rating.toFixed(1) : '5.0'
 
   return (
-    <section className="py-16 sm:py-20 bg-white overflow-hidden">
+    <section className="py-16 sm:py-20 bg-white dark:bg-stone-950 overflow-hidden transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10 sm:mb-14">
           <span className="section-badge">Traveler Reviews</span>
@@ -113,14 +113,14 @@ export default async function Testimonials() {
             {[...Array(5)].map((_, i) => (
               <Star key={i} className="w-4 h-4 sm:w-5 sm:h-5 fill-amber-400 text-amber-400" />
             ))}
-            <span className="text-stone-600 ml-2 font-semibold text-sm sm:text-base">
+            <span className="text-stone-600 dark:text-stone-300 ml-2 font-semibold text-sm sm:text-base">
               {avgStr} / 5 — Based on {totalStr} reviews
             </span>
             <a
               href={mapsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="ml-2 flex items-center gap-1 text-xs text-stone-400 hover:text-stone-600 transition-colors"
+              className="ml-2 flex items-center gap-1 text-xs text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 transition-colors"
             >
               <GoogleBadge /> Google
             </a>
@@ -132,7 +132,7 @@ export default async function Testimonials() {
           {STATIC_REVIEWS.map(({ author_name, countryFlag, rating, text, relative_time_description, reviewPhoto }) => (
                 <div
                   key={author_name}
-                  className="flex-none w-[82vw] sm:w-[60vw] md:w-auto snap-start bg-stone-50 rounded-2xl border border-stone-100 hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col"
+                  className="flex-none w-[82vw] sm:w-[60vw] md:w-auto snap-start bg-stone-50 dark:bg-stone-900 rounded-2xl border border-stone-100 dark:border-stone-800 hover:shadow-lg dark:hover:shadow-black/40 transition-all duration-300 overflow-hidden flex flex-col"
                 >
                   {/* Tour photo */}
                   {reviewPhoto && (
@@ -148,21 +148,21 @@ export default async function Testimonials() {
                     </div>
                   )}
                   <div className="p-6 sm:p-7 flex flex-col flex-1 relative">
-                    <Quote className="w-7 h-7 text-amber-200 absolute top-4 right-4" />
+                    <Quote className="w-7 h-7 text-amber-200 dark:text-amber-500/30 absolute top-4 right-4" />
                     <div className="flex gap-1 mb-3">
                       {[...Array(rating)].map((_, i) => (
                         <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                       ))}
                     </div>
-                    <p className="text-stone-700 text-sm leading-relaxed mb-5 italic flex-1">&ldquo;{text}&rdquo;</p>
-                    <div className="border-t border-stone-200 pt-4 flex items-center justify-between gap-2">
+                    <p className="text-stone-700 dark:text-stone-300 text-sm leading-relaxed mb-5 italic flex-1">&ldquo;{text}&rdquo;</p>
+                    <div className="border-t border-stone-200 dark:border-stone-800 pt-4 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-sm flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-500/15 flex items-center justify-center text-amber-700 dark:text-amber-400 font-bold text-sm flex-shrink-0">
                           {author_name.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-semibold text-stone-900 text-sm leading-tight">{author_name}</p>
-                          <p className="text-stone-400 text-xs mt-0.5">
+                          <p className="font-semibold text-stone-900 dark:text-stone-100 text-sm leading-tight">{author_name}</p>
+                          <p className="text-stone-400 dark:text-stone-500 text-xs mt-0.5">
                             {countryFlag}{countryFlag && relative_time_description ? ' · ' : ''}{relative_time_description}
                           </p>
                         </div>
@@ -190,7 +190,7 @@ export default async function Testimonials() {
             href={mapsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm text-stone-500 hover:text-stone-700 border border-stone-200 rounded-full px-5 py-2.5 hover:border-stone-300 transition-all"
+            className="inline-flex items-center gap-2 text-sm text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200 border border-stone-200 dark:border-stone-700 rounded-full px-5 py-2.5 hover:border-stone-300 dark:hover:border-stone-600 transition-all"
           >
             <GoogleBadge />
             See all reviews on Google

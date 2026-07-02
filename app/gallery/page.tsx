@@ -90,7 +90,7 @@ function PhotoCard({ photo, index, onOpen }: { photo: Photo; index: number; onOp
   return (
     <div
       ref={ref}
-      className="relative overflow-hidden rounded-2xl group cursor-pointer aspect-[4/3] bg-stone-100"
+      className="relative overflow-hidden rounded-2xl group cursor-pointer aspect-[4/3] bg-stone-100 dark:bg-stone-800"
       style={{
         opacity: visible ? 1 : 0,
         transform: visible ? 'translateY(0) scale(1)' : 'translateY(32px) scale(0.96)',
@@ -178,7 +178,7 @@ export default function GalleryPage() {
         </div>
       </section>
 
-      <section className="py-12 sm:py-16 bg-white">
+      <section className="py-12 sm:py-16 bg-white dark:bg-stone-950 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Category tabs */}
           <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 mb-8 sm:mb-10 -mx-4 sm:mx-0 px-4 sm:px-0 sm:flex-wrap">
@@ -189,7 +189,7 @@ export default function GalleryPage() {
                 className={`flex-shrink-0 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                   activeCategory === cat
                     ? 'bg-amber-600 text-white shadow-md shadow-amber-500/20'
-                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700'
                 }`}
               >
                 {cat}
@@ -197,7 +197,7 @@ export default function GalleryPage() {
             ))}
           </div>
 
-          <p className="text-stone-400 text-sm mb-6">
+          <p className="text-stone-400 dark:text-stone-500 text-sm mb-6">
             {filtered.length} photo{filtered.length !== 1 ? 's' : ''}
             {activeCategory !== 'All' ? ` in ${activeCategory}` : ''}
           </p>
@@ -214,7 +214,7 @@ export default function GalleryPage() {
           </div>
 
           <div className="text-center mt-12 sm:mt-16">
-            <p className="text-stone-500 text-sm mb-6">Ready to experience Bhutan yourself?</p>
+            <p className="text-stone-500 dark:text-stone-400 text-sm mb-6">Ready to experience Bhutan yourself?</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/tours" className="btn-primary">Explore Our Tours</Link>
               <Link href="/contact" className="btn-outline">Plan My Trip</Link>

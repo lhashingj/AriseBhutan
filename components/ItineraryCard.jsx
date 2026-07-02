@@ -34,34 +34,34 @@ function DayAccordion({ d, index, defaultOpen = false, staticDay = null }) {
     : null
 
   return (
-    <div className="border border-stone-200 rounded-xl overflow-hidden">
+    <div className="border border-stone-200 dark:border-stone-700 rounded-xl overflow-hidden">
       <button
         onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center gap-3 px-4 py-3.5 bg-white hover:bg-stone-50 transition-colors text-left"
+        className="w-full flex items-center gap-3 px-4 py-3.5 bg-white dark:bg-stone-900 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors text-left"
       >
         {/* D1 badge */}
-        <span className="w-10 h-10 rounded-lg bg-amber-100 text-amber-700 font-bold text-sm flex items-center justify-center shrink-0">
+        <span className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 font-bold text-sm flex items-center justify-center shrink-0">
           D{dayNum}
         </span>
 
         <div className="flex-1 min-w-0">
           {/* Title + date on same row */}
           <div className="flex items-baseline gap-2 flex-wrap">
-            <p className="text-sm sm:text-base font-semibold text-stone-800 leading-snug">{title}</p>
+            <p className="text-sm sm:text-base font-semibold text-stone-800 dark:text-stone-100 leading-snug">{title}</p>
             {dateStr && (
-              <span className="text-xs text-stone-400 font-normal shrink-0">{dateStr}</span>
+              <span className="text-xs text-stone-400 dark:text-stone-500 font-normal shrink-0">{dateStr}</span>
             )}
           </div>
-          {mealStr && <p className="text-xs text-stone-400 mt-0.5">{mealStr}</p>}
+          {mealStr && <p className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">{mealStr}</p>}
         </div>
 
         <ChevronDown className={`w-4 h-4 text-stone-400 shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
-        <div className="px-4 sm:px-5 pb-5 pt-3 bg-stone-50 border-t border-stone-100 space-y-4">
+        <div className="px-4 sm:px-5 pb-5 pt-3 bg-stone-50 dark:bg-stone-950/60 border-t border-stone-100 dark:border-stone-800 space-y-4">
           {description && (
-            <p className="text-sm sm:text-[15px] text-stone-600 leading-relaxed text-justify">{description}</p>
+            <p className="text-sm sm:text-[15px] text-stone-600 dark:text-stone-400 leading-relaxed text-justify">{description}</p>
           )}
 
           {activities.length > 0 && (
@@ -69,7 +69,7 @@ function DayAccordion({ d, index, defaultOpen = false, staticDay = null }) {
               <p className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-2">Activities</p>
               <ul className="space-y-1.5">
                 {activities.map((a, j) => (
-                  <li key={j} className="flex items-start gap-2 text-sm text-stone-600">
+                  <li key={j} className="flex items-start gap-2 text-sm text-stone-600 dark:text-stone-400">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0 mt-2" />
                     {a}
                   </li>
@@ -82,7 +82,7 @@ function DayAccordion({ d, index, defaultOpen = false, staticDay = null }) {
             {accom && (
               <div>
                 <p className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1">Accommodation</p>
-                <p className="flex items-center gap-1.5 text-sm text-stone-600">
+                <p className="flex items-center gap-1.5 text-sm text-stone-600 dark:text-stone-400">
                   <BedDouble className="w-4 h-4 text-stone-400 shrink-0" />
                   {accom}
                 </p>
@@ -91,7 +91,7 @@ function DayAccordion({ d, index, defaultOpen = false, staticDay = null }) {
             {mealStr && (
               <div>
                 <p className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider mb-1">Meals</p>
-                <p className="flex items-center gap-1.5 text-sm text-stone-600">
+                <p className="flex items-center gap-1.5 text-sm text-stone-600 dark:text-stone-400">
                   <Utensils className="w-4 h-4 text-stone-400 shrink-0" />
                   {mealStr}
                 </p>
@@ -129,7 +129,7 @@ export default function ItineraryCard({ itin, showDayPlan = true }) {
   const fmtDate = d => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 
   return (
-    <div className={`bg-white rounded-2xl shadow-sm border border-stone-100 border-l-4 ${s.borderL} overflow-hidden`}>
+    <div className={`bg-white dark:bg-stone-900 rounded-2xl shadow-sm border border-stone-100 dark:border-stone-800 border-l-4 ${s.borderL} overflow-hidden transition-colors duration-300`}>
 
       {/* ── Main card body ── */}
       <div className="p-5 sm:p-6">
@@ -137,8 +137,8 @@ export default function ItineraryCard({ itin, showDayPlan = true }) {
         {/* Header: ref + name + badge */}
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="min-w-0 flex-1">
-            {ref && <p className="text-[10px] font-mono text-stone-400 tracking-widest mb-1">{ref}</p>}
-            <h3 className="font-serif font-bold text-stone-900 text-base sm:text-xl leading-snug line-clamp-2 sm:truncate sm:line-clamp-none" title={name}>{name}</h3>
+            {ref && <p className="text-[10px] font-mono text-stone-400 dark:text-stone-500 tracking-widest mb-1">{ref}</p>}
+            <h3 className="font-serif font-bold text-stone-900 dark:text-stone-50 text-base sm:text-xl leading-snug line-clamp-2 sm:truncate sm:line-clamp-none" title={name}>{name}</h3>
           </div>
           <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide flex-shrink-0 ${s.badge}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
@@ -155,17 +155,17 @@ export default function ItineraryCard({ itin, showDayPlan = true }) {
                 { label: 'Guests', value: guests ?? '—' },
                 { label: 'Tier',   value: tier   || '—' },
               ].map(({ label, value }) => (
-                <div key={label} className="bg-stone-50 border border-stone-100 rounded-xl px-3 py-2.5 text-center min-w-[64px]">
-                  <p className="text-[9px] text-stone-400 uppercase tracking-wider font-semibold">{label}</p>
-                  <p className="text-stone-800 font-bold text-sm sm:text-base mt-0.5">{value}</p>
+                <div key={label} className="bg-stone-50 dark:bg-stone-800 border border-stone-100 dark:border-stone-700 rounded-xl px-3 py-2.5 text-center min-w-[64px]">
+                  <p className="text-[9px] text-stone-400 dark:text-stone-500 uppercase tracking-wider font-semibold">{label}</p>
+                  <p className="text-stone-800 dark:text-stone-100 font-bold text-sm sm:text-base mt-0.5">{value}</p>
                 </div>
               ))}
             </div>
           )}
 
           {itin.tour_summary?.departure_date && (
-            <div className="flex items-center gap-1 text-xs text-stone-500">
-              <Calendar className="w-3.5 h-3.5 text-stone-300 shrink-0" />
+            <div className="flex items-center gap-1 text-xs text-stone-500 dark:text-stone-400">
+              <Calendar className="w-3.5 h-3.5 text-stone-300 dark:text-stone-600 shrink-0" />
               <span>
                 {fmtDate(itin.tour_summary.departure_date)}
                 {itin.tour_summary.return_date && <> → {fmtDate(itin.tour_summary.return_date)}</>}
@@ -175,12 +175,12 @@ export default function ItineraryCard({ itin, showDayPlan = true }) {
         </div>
 
         {/* Price + actions */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-stone-100">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-stone-100 dark:border-stone-800">
           <div>
-            <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">Grand Total</p>
+            <p className="text-[10px] text-stone-400 dark:text-stone-500 uppercase tracking-wider mb-0.5">Grand Total</p>
             {hasPrice
-              ? <p className="font-bold text-stone-900 text-xl sm:text-2xl leading-tight">{currSym}{total.toLocaleString('en-US', { maximumFractionDigits: 0 })}</p>
-              : <p className="text-sm text-stone-400 italic">Pricing pending</p>
+              ? <p className="font-bold text-stone-900 dark:text-stone-50 text-xl sm:text-2xl leading-tight">{currSym}{total.toLocaleString('en-US', { maximumFractionDigits: 0 })}</p>
+              : <p className="text-sm text-stone-400 dark:text-stone-500 italic">Pricing pending</p>
             }
           </div>
 
@@ -193,12 +193,12 @@ export default function ItineraryCard({ itin, showDayPlan = true }) {
                 View Itinerary <ChevronRight className="w-4 h-4" />
               </button>
               <a href={`/itinerary/${ref}`} target="_blank" rel="noopener noreferrer"
-                className="p-2 rounded-xl bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-400 hover:text-stone-600 transition-colors">
+                className="p-2 rounded-xl bg-stone-50 dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700 border border-stone-200 dark:border-stone-700 text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 transition-colors">
                 <ExternalLink className="w-4 h-4" />
               </a>
             </div>
           ) : (
-            <span className="flex items-center gap-1.5 text-sm text-stone-400 italic">
+            <span className="flex items-center gap-1.5 text-sm text-stone-400 dark:text-stone-500 italic">
               <Clock className="w-4 h-4" /> Being prepared
             </span>
           )}
@@ -209,9 +209,9 @@ export default function ItineraryCard({ itin, showDayPlan = true }) {
       {showDayPlan && days.length > 0 && (
         <button
           onClick={() => setOpen(v => !v)}
-          className="w-full flex items-center justify-between px-4 sm:px-6 py-3 bg-stone-50 hover:bg-stone-100 border-t border-stone-100 transition-colors text-left"
+          className="w-full flex items-center justify-between px-4 sm:px-6 py-3 bg-stone-50 dark:bg-stone-950/60 hover:bg-stone-100 dark:hover:bg-stone-800 border-t border-stone-100 dark:border-stone-800 transition-colors text-left"
         >
-          <span className="text-xs font-semibold text-stone-600 flex items-center gap-2">
+          <span className="text-xs font-semibold text-stone-600 dark:text-stone-300 flex items-center gap-2">
             <Clock className="w-3.5 h-3.5 text-amber-500" />
             Day Plan · {days.length} day{days.length !== 1 ? 's' : ''}
           </span>
@@ -221,7 +221,7 @@ export default function ItineraryCard({ itin, showDayPlan = true }) {
 
       {/* ── Day Plan content ── */}
       {showDayPlan && open && days.length > 0 && (
-        <div className="border-t border-stone-100 p-4 sm:p-6 space-y-2">
+        <div className="border-t border-stone-100 dark:border-stone-800 p-4 sm:p-6 space-y-2">
           {days.map((d, i) => {
             const dayNum    = d.day ?? i + 1
             const staticDay = matchedTour?.itinerary?.find(s => s.day === dayNum) || null
@@ -235,8 +235,8 @@ export default function ItineraryCard({ itin, showDayPlan = true }) {
         const interests = itin.tour_summary?.travel_interests || []
         if (!interests.length) return null
         return (
-          <div className="border-t border-stone-100 px-4 sm:px-6 py-4">
-            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+          <div className="border-t border-stone-100 dark:border-stone-800 px-4 sm:px-6 py-4">
+            <p className="text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
               <span className="w-1 h-4 rounded-full bg-amber-400 inline-block" />
               Requested Experiences · {interests.length}
             </p>
@@ -246,8 +246,8 @@ export default function ItineraryCard({ itin, showDayPlan = true }) {
                   key={ti.id}
                   className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-medium border ${
                     (ti.price_label || ti.priceLabel || '') !== 'No Additional Cost' && ti.free !== true
-                      ? 'bg-amber-50 text-amber-700 border-amber-200'
-                      : 'bg-green-50 text-green-700 border-green-200'
+                      ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/25'
+                      : 'bg-green-50 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/25'
                   }`}
                 >
                   {ti.emoji ? `${ti.emoji} ` : ''}{ti.name}
@@ -255,7 +255,7 @@ export default function ItineraryCard({ itin, showDayPlan = true }) {
                 </span>
               ))}
             </div>
-            <p className="text-[10px] text-stone-400 mt-2.5 italic">
+            <p className="text-[10px] text-stone-400 dark:text-stone-500 mt-2.5 italic">
               Your specialist will incorporate these into your day-by-day itinerary.
             </p>
           </div>

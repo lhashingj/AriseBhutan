@@ -21,7 +21,7 @@ export default function TourCard({ tour }: { tour: Tour }) {
   return (
     <Link
       href={`/tours/${tour.slug}`}
-      className="group bg-white rounded-2xl overflow-hidden shadow-sm border border-stone-100 hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col"
+      className="group bg-white dark:bg-stone-900 rounded-2xl overflow-hidden shadow-sm border border-stone-100 dark:border-stone-800 hover:shadow-xl dark:hover:shadow-black/40 dark:hover:border-stone-700 hover:-translate-y-1.5 transition-all duration-300 flex flex-col"
     >
       {/* Image */}
       <div className="relative h-48 sm:h-52 overflow-hidden flex-shrink-0">
@@ -53,18 +53,18 @@ export default function TourCard({ tour }: { tour: Tour }) {
       {/* Content */}
       <div className="p-5 flex flex-col flex-1">
         {/* Location */}
-        <div className="flex items-center gap-1 text-xs text-stone-500 mb-2">
+        <div className="flex items-center gap-1 text-xs text-stone-500 dark:text-stone-400 mb-2">
           <MapPin className="w-3 h-3 text-amber-500 flex-shrink-0" />
           <span className="truncate">{tour.locations.slice(0, 3).join(' · ')}{tour.locations.length > 3 ? ` +${tour.locations.length - 3}` : ''}</span>
         </div>
 
-        <h3 className="font-serif font-bold text-stone-900 text-lg mb-1 group-hover:text-amber-700 transition-colors leading-snug">
+        <h3 className="font-serif font-bold text-stone-900 dark:text-stone-50 text-lg mb-1 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors leading-snug">
           {tour.title}
         </h3>
-        <p className="text-stone-500 text-sm mb-4 line-clamp-2">{tour.subtitle}</p>
+        <p className="text-stone-500 dark:text-stone-400 text-sm mb-4 line-clamp-2">{tour.subtitle}</p>
 
         {/* Meta */}
-        <div className="flex items-center gap-4 text-sm text-stone-500 mb-3">
+        <div className="flex items-center gap-4 text-sm text-stone-500 dark:text-stone-400 mb-3">
           <span className="flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5 text-amber-500" />
             {tour.duration}
@@ -81,8 +81,8 @@ export default function TourCard({ tour }: { tour: Tour }) {
         </span>
 
         {/* Footer */}
-        <div className="mt-auto pt-4 border-t border-stone-100 flex items-center justify-end">
-          <div className="flex items-center gap-1 text-amber-600 font-semibold text-sm group-hover:gap-2 transition-all">
+        <div className="mt-auto pt-4 border-t border-stone-100 dark:border-stone-800 flex items-center justify-end">
+          <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-semibold text-sm group-hover:gap-2 transition-all">
             View Tour
             <ChevronRight className="w-4 h-4" />
           </div>

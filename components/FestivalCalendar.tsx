@@ -128,7 +128,7 @@ export default function FestivalCalendar() {
   const nextMonth = () => { setMonth(m => m === 11 ? 0 : m + 1); setSelectedDate(null) }
 
   return (
-    <div className="min-h-screen bg-stone-100 font-sans">
+    <div className="min-h-screen bg-stone-100 dark:bg-stone-950 font-sans transition-colors duration-300">
 
       {/* ── Header ── */}
       <header className="bg-amber-700 text-white shadow-md">
@@ -157,14 +157,14 @@ export default function FestivalCalendar() {
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-5 flex flex-col lg:flex-row gap-4">
 
         {/* ── Calendar grid ── */}
-        <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="flex-1 bg-white dark:bg-stone-900 rounded-2xl shadow-sm border border-gray-200 dark:border-stone-800 overflow-hidden transition-colors duration-300">
 
           {/* Weekday strip */}
-          <div className="grid grid-cols-7 border-b border-gray-200 bg-stone-50">
+          <div className="grid grid-cols-7 border-b border-gray-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-950/60">
             {WEEKDAYS.map((w, i) => (
               <div key={w}
                 className={`py-2.5 text-center text-xs font-bold uppercase tracking-wider ${
-                  i === 0 || i === 6 ? 'text-red-400' : 'text-gray-400'
+                  i === 0 || i === 6 ? 'text-red-400' : 'text-gray-400 dark:text-stone-500'
                 }`}>
                 {w}
               </div>
@@ -172,7 +172,7 @@ export default function FestivalCalendar() {
           </div>
 
           {/* Day grid */}
-          <div className="grid grid-cols-7 divide-x divide-y divide-gray-100">
+          <div className="grid grid-cols-7 divide-x divide-y divide-gray-100 dark:divide-stone-800">
             {gridDays.map((cell, idx) => {
               const dayEvents   = cell.isCurrentMonth ? (DATE_MAP.get(cell.dateStr) ?? []) : []
               const isToday     = cell.dateStr === TODAY
@@ -190,20 +190,20 @@ export default function FestivalCalendar() {
                       setSelectedDate(prev => prev === cell.dateStr ? null : cell.dateStr)
                   }}
                   className={`relative min-h-[78px] sm:min-h-[108px] flex flex-col transition-colors ${
-                    !cell.isCurrentMonth ? 'bg-stone-50/70 cursor-default'
-                    : isSelected         ? 'bg-amber-50 cursor-pointer'
-                    : isToday            ? 'bg-amber-50/60 cursor-pointer'
-                    :                      'hover:bg-stone-50 cursor-pointer'
+                    !cell.isCurrentMonth ? 'bg-stone-50/70 dark:bg-stone-950/50 cursor-default'
+                    : isSelected         ? 'bg-amber-50 dark:bg-amber-500/10 cursor-pointer'
+                    : isToday            ? 'bg-amber-50/60 dark:bg-amber-500/5 cursor-pointer'
+                    :                      'hover:bg-stone-50 dark:hover:bg-stone-800/60 cursor-pointer'
                   }`}
                 >
                   {/* Day number */}
                   <div className="flex items-start justify-between px-1.5 pt-1.5 pb-0.5">
                     <span className={`text-xs sm:text-sm font-semibold w-6 h-6 flex items-center justify-center rounded-full leading-none ${
-                      !cell.isCurrentMonth  ? 'text-gray-300'
+                      !cell.isCurrentMonth  ? 'text-gray-300 dark:text-stone-700'
                       : isToday             ? 'bg-amber-600 text-white'
-                      : isSelected          ? 'bg-amber-100 text-amber-700'
+                      : isSelected          ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
                       : (isSunday || isSaturday) ? 'text-red-400'
-                      : 'text-gray-700'
+                      : 'text-gray-700 dark:text-stone-300'
                     }`}>
                       {cell.day}
                     </span>
@@ -254,13 +254,13 @@ export default function FestivalCalendar() {
         <div className="lg:w-64 xl:w-72 flex flex-col gap-3">
 
           {/* Legend */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
-            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Legend</h3>
+          <div className="bg-white dark:bg-stone-900 rounded-2xl shadow-sm border border-gray-200 dark:border-stone-800 p-4 transition-colors duration-300">
+            <h3 className="text-[10px] font-bold text-gray-400 dark:text-stone-500 uppercase tracking-wider mb-3">Legend</h3>
             <div className="grid grid-cols-2 gap-x-3 gap-y-2">
               {LEGEND.map(({ label, color }) => (
                 <div key={label} className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: color }} />
-                  <span className="text-[10px] text-gray-600 leading-tight">{label}</span>
+                  <span className="text-[10px] text-gray-600 dark:text-stone-400 leading-tight">{label}</span>
                 </div>
               ))}
             </div>
@@ -268,8 +268,8 @@ export default function FestivalCalendar() {
 
           {/* Selected date detail */}
           {selectedDate && selectedEvents.length > 0 && (
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
-              <h3 className="text-[10px] font-bold text-amber-700 uppercase tracking-wider mb-3">
+            <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/25 rounded-2xl p-4 transition-colors duration-300">
+              <h3 className="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-3">
                 {fmtFullDate(selectedDate)}
               </h3>
               <div className="flex flex-col gap-3">
@@ -278,9 +278,9 @@ export default function FestivalCalendar() {
                     <span className="w-1 rounded-full flex-shrink-0 self-stretch"
                       style={{ backgroundColor: event.color }} />
                     <div>
-                      <p className="text-xs font-bold text-gray-800 leading-snug">{event.title}</p>
+                      <p className="text-xs font-bold text-gray-800 dark:text-stone-200 leading-snug">{event.title}</p>
                       {event.location && (
-                        <p className="text-[10px] text-gray-500 mt-0.5 flex items-center gap-1">
+                        <p className="text-[10px] text-gray-500 dark:text-stone-400 mt-0.5 flex items-center gap-1">
                           <MapPin className="w-2.5 h-2.5 flex-shrink-0" />{event.location}
                         </p>
                       )}
@@ -296,21 +296,21 @@ export default function FestivalCalendar() {
           )}
 
           {/* Month event list */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 flex-1">
-            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">
+          <div className="bg-white dark:bg-stone-900 rounded-2xl shadow-sm border border-gray-200 dark:border-stone-800 p-4 flex-1 transition-colors duration-300">
+            <h3 className="text-[10px] font-bold text-gray-400 dark:text-stone-500 uppercase tracking-wider mb-3">
               {MONTHS[month]} Events
             </h3>
 
             {monthEvents.length === 0 ? (
-              <p className="text-xs text-gray-400 italic">No events this month.</p>
+              <p className="text-xs text-gray-400 dark:text-stone-500 italic">No events this month.</p>
             ) : (
               <div className="flex flex-col">
                 {monthEvents.map((ev, i) => (
                   <div key={ev.id}
-                    className={`flex gap-2.5 py-2.5 ${i < monthEvents.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                    className={`flex gap-2.5 py-2.5 ${i < monthEvents.length - 1 ? 'border-b border-gray-100 dark:border-stone-800' : ''}`}>
                     <span className="w-0.5 rounded-full flex-shrink-0 self-stretch" style={{ backgroundColor: ev.color }} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-gray-800 leading-snug">{ev.title}</p>
+                      <p className="text-xs font-semibold text-gray-800 dark:text-stone-200 leading-snug">{ev.title}</p>
                       <p className="text-[10px] font-semibold mt-0.5" style={{ color: ev.color }}>
                         {fmtRange(ev)}
                       </p>

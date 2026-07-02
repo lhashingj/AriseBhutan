@@ -98,14 +98,14 @@ export default function ClientDashboard() {
     <div className="max-w-6xl mx-auto space-y-8">
 
       {/* Header */}
-      <div className="bg-gradient-to-br from-amber-50 via-stone-50 to-white border border-amber-100 rounded-2xl px-5 py-5 sm:px-6">
+      <div className="bg-gradient-to-br from-amber-50 via-stone-50 to-white dark:from-stone-900 dark:via-stone-900 dark:to-stone-950 border border-amber-100 dark:border-stone-800 rounded-2xl px-5 py-5 sm:px-6 transition-colors duration-300">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-[11px] font-semibold text-amber-600 uppercase tracking-widest mb-1.5">Arise Bhutan · Client Portal</p>
-            <h1 className="text-xl sm:text-2xl font-serif font-bold text-stone-900">
+            <p className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-1.5">Arise Bhutan · Client Portal</p>
+            <h1 className="text-xl sm:text-2xl font-serif font-bold text-stone-900 dark:text-stone-50">
               Welcome back, {profile?.name?.split(' ')[0] || 'Traveller'} 👋
             </h1>
-            <p className="text-stone-500 text-sm mt-1 hidden sm:block">
+            <p className="text-stone-500 dark:text-stone-400 text-sm mt-1 hidden sm:block">
               Manage your Bhutan journey and build custom itinerary packages.
             </p>
           </div>
@@ -118,13 +118,13 @@ export default function ClientDashboard() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-2 sm:gap-4">
         {[
-          { label: 'Packages',  value: stats.total,     color: 'text-stone-900',  bg: 'bg-white',     Icon: Package,      iconBg: 'bg-stone-100',  iconColor: 'text-stone-500' },
-          { label: 'Pending',   value: stats.pending,   color: 'text-amber-600',  bg: 'bg-amber-50',  Icon: Clock,        iconBg: 'bg-amber-100',  iconColor: 'text-amber-500' },
-          { label: 'Confirmed', value: stats.confirmed, color: 'text-green-600',  bg: 'bg-green-50',  Icon: CheckCircle2, iconBg: 'bg-green-100',  iconColor: 'text-green-600' },
+          { label: 'Packages',  value: stats.total,     color: 'text-stone-900 dark:text-stone-50',   bg: 'bg-white dark:bg-stone-900',        Icon: Package,      iconBg: 'bg-stone-100 dark:bg-stone-800',      iconColor: 'text-stone-500 dark:text-stone-400' },
+          { label: 'Pending',   value: stats.pending,   color: 'text-amber-600 dark:text-amber-400',  bg: 'bg-amber-50 dark:bg-amber-500/10',  Icon: Clock,        iconBg: 'bg-amber-100 dark:bg-amber-500/15',   iconColor: 'text-amber-500 dark:text-amber-400' },
+          { label: 'Confirmed', value: stats.confirmed, color: 'text-green-600 dark:text-green-400',  bg: 'bg-green-50 dark:bg-green-500/10',  Icon: CheckCircle2, iconBg: 'bg-green-100 dark:bg-green-500/15',   iconColor: 'text-green-600 dark:text-green-400' },
         ].map(({ label, value, color, bg, Icon, iconBg, iconColor }) => (
-          <div key={label} className={`${bg} rounded-2xl border border-stone-100 p-3 sm:p-5 shadow-sm`}>
+          <div key={label} className={`${bg} rounded-2xl border border-stone-100 dark:border-stone-800 p-3 sm:p-5 shadow-sm transition-colors duration-300`}>
             <div className="flex items-start justify-between gap-1">
-              <p className="text-[10px] sm:text-xs text-stone-500 font-semibold uppercase tracking-wider leading-tight">{label}</p>
+              <p className="text-[10px] sm:text-xs text-stone-500 dark:text-stone-400 font-semibold uppercase tracking-wider leading-tight">{label}</p>
               <div className={`${iconBg} rounded-lg p-1.5 flex-shrink-0 hidden sm:flex`}>
                 <Icon className={`w-4 h-4 ${iconColor}`} />
               </div>
@@ -139,17 +139,17 @@ export default function ClientDashboard() {
         <div className="flex items-center justify-between gap-2 mb-1">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-1 h-7 rounded-full bg-amber-500 flex-shrink-0" />
-            <h2 className="text-base sm:text-lg font-serif font-bold text-stone-900 leading-tight">My Packages / Itineraries</h2>
+            <h2 className="text-base sm:text-lg font-serif font-bold text-stone-900 dark:text-stone-50 leading-tight">My Packages / Itineraries</h2>
           </div>
-          <span className="text-xs font-semibold text-stone-400 bg-stone-100 px-3 py-1 rounded-full flex-shrink-0">{bookings.length + adminItins.length} total</span>
+          <span className="text-xs font-semibold text-stone-400 bg-stone-100 dark:bg-stone-800 dark:text-stone-400 px-3 py-1 rounded-full flex-shrink-0">{bookings.length + adminItins.length} total</span>
         </div>
-        <p className="text-xs text-stone-400 mb-5 pl-4">Your bookings and itineraries prepared by the Arise Bhutan team</p>
+        <p className="text-xs text-stone-400 dark:text-stone-500 mb-5 pl-4">Your bookings and itineraries prepared by the Arise Bhutan team</p>
 
         {bookings.length === 0 && adminItins.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-dashed border-stone-200 p-12 text-center">
-            <Package className="w-10 h-10 text-stone-300 mx-auto mb-3" />
-            <p className="text-stone-500 font-medium">No packages or itineraries yet</p>
-            <p className="text-stone-400 text-sm mt-1 mb-5">Build your first custom Bhutan itinerary to get started.</p>
+          <div className="bg-white dark:bg-stone-900 rounded-2xl border border-dashed border-stone-200 dark:border-stone-700 p-12 text-center transition-colors duration-300">
+            <Package className="w-10 h-10 text-stone-300 dark:text-stone-600 mx-auto mb-3" />
+            <p className="text-stone-500 dark:text-stone-300 font-medium">No packages or itineraries yet</p>
+            <p className="text-stone-400 dark:text-stone-500 text-sm mt-1 mb-5">Build your first custom Bhutan itinerary to get started.</p>
             <button onClick={() => { setSelectedTour(null); setBuilder(true) }} className="btn-primary text-sm">
               <PlusCircle className="w-4 h-4" /> Build Your First Package
             </button>
@@ -184,14 +184,14 @@ export default function ClientDashboard() {
               const statusLabel = booking.status === 'CONFIRMED' ? 'Confirmed' : booking.status === 'CANCELLED' ? 'Cancelled' : 'Pending'
 
               return (
-                <div key={booking.id} className={`bg-white rounded-2xl shadow-sm border border-stone-100 border-l-4 ${borderL} overflow-hidden`}>
+                <div key={booking.id} className={`bg-white dark:bg-stone-900 rounded-2xl shadow-sm border border-stone-100 dark:border-stone-800 border-l-4 ${borderL} overflow-hidden transition-colors duration-300`}>
                   <div className="p-5 sm:p-6">
 
                     {/* Header: ref + title + badge */}
                     <div className="flex items-start justify-between gap-3 mb-4">
                       <div className="min-w-0 flex-1">
-                        <p className="text-[10px] font-mono text-stone-400 tracking-widest mb-1">{ref}</p>
-                        <h3 className="font-serif font-bold text-stone-900 text-base sm:text-xl leading-snug line-clamp-2 sm:truncate sm:line-clamp-none">
+                        <p className="text-[10px] font-mono text-stone-400 dark:text-stone-500 tracking-widest mb-1">{ref}</p>
+                        <h3 className="font-serif font-bold text-stone-900 dark:text-stone-50 text-base sm:text-xl leading-snug line-clamp-2 sm:truncate sm:line-clamp-none">
                           {booking.tour_title || 'Custom Package'}
                         </h3>
                       </div>
@@ -209,15 +209,15 @@ export default function ClientDashboard() {
                           { label: 'Guests', value: guests  ?? '—' },
                           { label: 'Tier',   value: tier    || '—' },
                         ].map(({ label, value }) => (
-                          <div key={label} className="bg-stone-50 border border-stone-100 rounded-xl px-3 py-2.5 text-center min-w-[64px]">
-                            <p className="text-[9px] text-stone-400 uppercase tracking-wider font-semibold">{label}</p>
-                            <p className="text-stone-800 font-bold text-sm sm:text-base mt-0.5">{value}</p>
+                          <div key={label} className="bg-stone-50 dark:bg-stone-800 border border-stone-100 dark:border-stone-700 rounded-xl px-3 py-2.5 text-center min-w-[64px]">
+                            <p className="text-[9px] text-stone-400 dark:text-stone-500 uppercase tracking-wider font-semibold">{label}</p>
+                            <p className="text-stone-800 dark:text-stone-100 font-bold text-sm sm:text-base mt-0.5">{value}</p>
                           </div>
                         ))}
                       </div>
                       {depDate && (
-                        <div className="flex items-center gap-1 text-xs text-stone-500">
-                          <Calendar className="w-3.5 h-3.5 text-stone-300 shrink-0" />
+                        <div className="flex items-center gap-1 text-xs text-stone-500 dark:text-stone-400">
+                          <Calendar className="w-3.5 h-3.5 text-stone-300 dark:text-stone-600 shrink-0" />
                           <span>
                             {fmtDate(depDate)}
                             {retDate && <> → {fmtDate(retDate)}</>}
@@ -227,18 +227,18 @@ export default function ClientDashboard() {
                     </div>
 
                     {/* Price + actions */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-stone-100">
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-stone-100 dark:border-stone-800">
                       <div>
-                        <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-0.5">Grand Total</p>
+                        <p className="text-[10px] text-stone-400 dark:text-stone-500 uppercase tracking-wider mb-0.5">Grand Total</p>
                         {hasPrice
-                          ? <p className="font-bold text-stone-900 text-xl sm:text-2xl leading-tight">{currSym}{Number(total).toLocaleString()}</p>
-                          : <p className="text-sm text-stone-400 italic">Pricing pending</p>
+                          ? <p className="font-bold text-stone-900 dark:text-stone-50 text-xl sm:text-2xl leading-tight">{currSym}{Number(total).toLocaleString()}</p>
+                          : <p className="text-sm text-stone-400 dark:text-stone-500 italic">Pricing pending</p>
                         }
                       </div>
                       <div className="flex items-center gap-2">
                         {booking.status === 'PENDING' && (
                           <button onClick={() => setEditing(booking)} title="Edit booking"
-                            className="p-2 rounded-xl bg-stone-50 text-stone-500 hover:bg-stone-100 border border-stone-200 transition-colors">
+                            className="p-2 rounded-xl bg-stone-50 dark:bg-stone-800 text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-700 border border-stone-200 dark:border-stone-700 transition-colors">
                             <Pencil className="w-4 h-4" />
                           </button>
                         )}
@@ -247,7 +247,7 @@ export default function ClientDashboard() {
                           View Itinerary <ChevronRight className="w-4 h-4" />
                         </button>
                         <a href={`/itinerary/${ref}`} target="_blank" rel="noopener noreferrer"
-                          className="p-2 rounded-xl bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-400 hover:text-stone-600 transition-colors">
+                          className="p-2 rounded-xl bg-stone-50 dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700 border border-stone-200 dark:border-stone-700 text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 transition-colors">
                           <ExternalLink className="w-4 h-4" />
                         </a>
                       </div>
@@ -257,16 +257,18 @@ export default function ClientDashboard() {
                   {/* Payment notice for pending bookings */}
                   {booking.status === 'PENDING' && (
                     <div className={`mx-5 sm:mx-6 mb-5 rounded-xl p-3 text-xs border ${
-                      booking.payment_status === 'PAID' ? 'bg-blue-50 border-blue-200' : 'bg-amber-50 border-amber-200'
+                      booking.payment_status === 'PAID'
+                        ? 'bg-blue-50 border-blue-200 dark:bg-blue-500/10 dark:border-blue-500/30'
+                        : 'bg-amber-50 border-amber-200 dark:bg-amber-500/10 dark:border-amber-500/25'
                     }`}>
                       {booking.payment_status === 'PAID' ? (
-                        <p className="font-semibold text-blue-700">✅ Payment received — awaiting confirmation from our team.</p>
+                        <p className="font-semibold text-blue-700 dark:text-blue-400">✅ Payment received — awaiting confirmation from our team.</p>
                       ) : (
                         <>
-                          <p className="font-semibold text-amber-800 mb-1">💳 Payment Required to Confirm Your Trip</p>
-                          <p className="text-amber-700">Amount: <strong>{currSym}{Number(total).toLocaleString()} {currLabel}</strong></p>
-                          <p className="text-stone-600 mt-1.5">Transfer to our account with reference: <span className="font-mono font-bold">{ref}</span></p>
-                          <p className="text-stone-500 mt-1">📞 +975 77 319 405 &nbsp;·&nbsp; 💬 +61 435 341 033 &nbsp;·&nbsp; ✉ arisebhutan@gmail.com</p>
+                          <p className="font-semibold text-amber-800 dark:text-amber-300 mb-1">💳 Payment Required to Confirm Your Trip</p>
+                          <p className="text-amber-700 dark:text-amber-400">Amount: <strong>{currSym}{Number(total).toLocaleString()} {currLabel}</strong></p>
+                          <p className="text-stone-600 dark:text-stone-300 mt-1.5">Transfer to our account with reference: <span className="font-mono font-bold">{ref}</span></p>
+                          <p className="text-stone-500 dark:text-stone-400 mt-1">📞 +975 77 319 405 &nbsp;·&nbsp; 💬 +61 435 341 033 &nbsp;·&nbsp; ✉ arisebhutan@gmail.com</p>
                         </>
                       )}
                     </div>
@@ -289,13 +291,13 @@ export default function ClientDashboard() {
         <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
           <div className="flex items-center gap-3">
             <div className="w-1 h-7 rounded-full bg-amber-500 flex-shrink-0" />
-            <h2 className="text-base sm:text-lg font-serif font-bold text-stone-900 leading-tight">Explore Our Tours</h2>
+            <h2 className="text-base sm:text-lg font-serif font-bold text-stone-900 dark:text-stone-50 leading-tight">Explore Our Tours</h2>
           </div>
-          <Link href="/tours" className="text-xs font-semibold text-amber-600 hover:text-amber-700 border border-amber-200 hover:bg-amber-50 px-3 py-1.5 rounded-full transition-colors">
+          <Link href="/tours" className="text-xs font-semibold text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 border border-amber-200 dark:border-amber-500/30 hover:bg-amber-50 dark:hover:bg-amber-500/10 px-3 py-1.5 rounded-full transition-colors">
             View all tours →
           </Link>
         </div>
-        <p className="text-xs text-stone-400 mb-5 pl-4">Browse our curated Bhutan tours and book directly from here</p>
+        <p className="text-xs text-stone-400 dark:text-stone-500 mb-5 pl-4">Browse our curated Bhutan tours and book directly from here</p>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {tours.map((tour) => {
@@ -307,7 +309,7 @@ export default function ClientDashboard() {
             }
             const catCls = CATEGORY_COLORS[tour.category] || 'bg-stone-50 text-stone-600 border-stone-200'
             return (
-              <div key={tour.id} className="bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+              <div key={tour.id} className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-100 dark:border-stone-800 shadow-sm overflow-hidden flex flex-col hover:shadow-md dark:hover:shadow-black/40 transition-all duration-300">
                 {/* Image */}
                 <div className="relative h-44 overflow-hidden flex-shrink-0">
                   <img src={tour.image} alt={tour.title} className="w-full h-full object-cover" />
@@ -326,31 +328,31 @@ export default function ClientDashboard() {
                 <div className="p-4 flex flex-col flex-1">
                   <div className="flex items-center gap-1 mb-1.5">
                     <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                    <span className="text-xs font-bold text-stone-700">{tour.rating}</span>
-                    <span className="text-xs text-stone-400">({tour.reviews} reviews)</span>
+                    <span className="text-xs font-bold text-stone-700 dark:text-stone-200">{tour.rating}</span>
+                    <span className="text-xs text-stone-400 dark:text-stone-500">({tour.reviews} reviews)</span>
                   </div>
 
-                  <h3 className="font-serif font-bold text-stone-900 text-sm sm:text-base leading-snug mb-1">{tour.title}</h3>
-                  <p className="text-xs text-stone-400 mb-3 flex items-center gap-1">
+                  <h3 className="font-serif font-bold text-stone-900 dark:text-stone-50 text-sm sm:text-base leading-snug mb-1">{tour.title}</h3>
+                  <p className="text-xs text-stone-400 dark:text-stone-500 mb-3 flex items-center gap-1">
                     <MapPin className="w-3 h-3 shrink-0" />{tour.subtitle}
                   </p>
 
                   <div className="flex flex-wrap gap-2 mb-4 mt-auto">
-                    <span className="text-[11px] text-stone-500 bg-stone-50 border border-stone-100 px-2 py-1 rounded-lg">{tour.duration}</span>
-                    <span className="text-[11px] text-stone-500 bg-stone-50 border border-stone-100 px-2 py-1 rounded-lg flex items-center gap-1">
+                    <span className="text-[11px] text-stone-500 dark:text-stone-400 bg-stone-50 dark:bg-stone-800 border border-stone-100 dark:border-stone-700 px-2 py-1 rounded-lg">{tour.duration}</span>
+                    <span className="text-[11px] text-stone-500 dark:text-stone-400 bg-stone-50 dark:bg-stone-800 border border-stone-100 dark:border-stone-700 px-2 py-1 rounded-lg flex items-center gap-1">
                       <Users className="w-3 h-3" />{tour.groupSize}
                     </span>
-                    <span className="text-[11px] text-stone-500 bg-stone-50 border border-stone-100 px-2 py-1 rounded-lg">{tour.difficulty}</span>
+                    <span className="text-[11px] text-stone-500 dark:text-stone-400 bg-stone-50 dark:bg-stone-800 border border-stone-100 dark:border-stone-700 px-2 py-1 rounded-lg">{tour.difficulty}</span>
                   </div>
 
-                  <div className="flex items-center justify-between gap-2 pt-3 border-t border-stone-100">
+                  <div className="flex items-center justify-between gap-2 pt-3 border-t border-stone-100 dark:border-stone-800">
                     <div>
-                      <p className="text-[10px] text-stone-400 uppercase tracking-wider">From</p>
-                      <p className="font-bold text-stone-900 text-base">${tour.startingFrom.toLocaleString()}<span className="text-xs font-normal text-stone-400">/pax</span></p>
+                      <p className="text-[10px] text-stone-400 dark:text-stone-500 uppercase tracking-wider">From</p>
+                      <p className="font-bold text-stone-900 dark:text-stone-50 text-base">${tour.startingFrom.toLocaleString()}<span className="text-xs font-normal text-stone-400 dark:text-stone-500">/pax</span></p>
                     </div>
                     <div className="flex items-center gap-2">
                       <Link href={`/tours/${tour.slug}`} target="_blank"
-                        className="p-2 rounded-xl bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-400 hover:text-stone-600 transition-colors">
+                        className="p-2 rounded-xl bg-stone-50 dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700 border border-stone-200 dark:border-stone-700 text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 transition-colors">
                         <ExternalLink className="w-4 h-4" />
                       </Link>
                       <button

@@ -45,7 +45,7 @@ export default function ContactPage() {
         </div>
       </section>
 
-      <section className="py-14 sm:py-20">
+      <section className="py-14 sm:py-20 bg-white dark:bg-stone-950 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-3 gap-10 sm:gap-12">
             {/* Form */}
@@ -56,21 +56,21 @@ export default function ContactPage() {
             {/* Sidebar */}
             <div className="space-y-8 order-2 lg:order-1">
               <div>
-                <h2 className="font-serif text-2xl font-bold text-stone-900 mb-5">Get in Touch</h2>
+                <h2 className="font-serif text-2xl font-bold text-stone-900 dark:text-stone-50 mb-5">Get in Touch</h2>
                 <div className="space-y-4">
                   {contactInfo.map(({ icon: Icon, label, value, href }) => (
                     <div key={label} className="flex items-center gap-4">
-                      <div className="w-11 h-11 bg-amber-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <Icon className="w-5 h-5 text-amber-600" />
+                      <div className="w-11 h-11 bg-amber-50 dark:bg-amber-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <Icon className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                       </div>
                       <div>
-                        <p className="text-xs text-stone-400 font-medium">{label}</p>
+                        <p className="text-xs text-stone-400 dark:text-stone-500 font-medium">{label}</p>
                         {href ? (
-                          <a href={href} className="text-stone-800 font-semibold hover:text-amber-600 transition-colors text-sm">
+                          <a href={href} className="text-stone-800 dark:text-stone-200 font-semibold hover:text-amber-600 dark:hover:text-amber-400 transition-colors text-sm">
                             {value}
                           </a>
                         ) : (
-                          <p className="text-stone-800 font-semibold text-sm">{value}</p>
+                          <p className="text-stone-800 dark:text-stone-200 font-semibold text-sm">{value}</p>
                         )}
                       </div>
                     </div>
@@ -79,7 +79,7 @@ export default function ContactPage() {
               </div>
 
               {/* Sidebar map */}
-              <div className="rounded-2xl overflow-hidden border border-stone-100 shadow-sm">
+              <div className="rounded-2xl overflow-hidden border border-stone-100 dark:border-stone-800 shadow-sm">
                 <iframe
                   src={MAPS_EMBED_SRC}
                   className="w-full h-52 border-0 block"
@@ -91,16 +91,16 @@ export default function ContactPage() {
               </div>
 
               <div>
-                <h3 className="font-serif font-bold text-lg text-stone-900 mb-4">Quick Answers</h3>
+                <h3 className="font-serif font-bold text-lg text-stone-900 dark:text-stone-50 mb-4">Quick Answers</h3>
                 <div className="space-y-4">
                   {[
                     { q: 'How early should I book?', a: 'For festival tours, book 3–6 months ahead. For other tours, 4–8 weeks is usually sufficient.' },
                     { q: 'Can I customize a tour?', a: 'Absolutely. Every Arise Bhutan tour can be fully tailored to your interests, dates, and group size.' },
                     { q: 'What currency is used?', a: 'Bhutanese Ngultrum (BTN), pegged 1:1 with Indian Rupee. USD is widely accepted.' },
                   ].map(({ q, a }) => (
-                    <div key={q} className="border-l-2 border-amber-300 pl-4">
-                      <p className="font-semibold text-stone-800 text-sm">{q}</p>
-                      <p className="text-stone-500 text-xs mt-1 leading-relaxed">{a}</p>
+                    <div key={q} className="border-l-2 border-amber-300 dark:border-amber-500/50 pl-4">
+                      <p className="font-semibold text-stone-800 dark:text-stone-200 text-sm">{q}</p>
+                      <p className="text-stone-500 dark:text-stone-400 text-xs mt-1 leading-relaxed">{a}</p>
                     </div>
                   ))}
                 </div>
@@ -111,13 +111,13 @@ export default function ContactPage() {
       </section>
 
       {/* Full-width Google Map */}
-      <section className="border-t border-stone-100">
+      <section className="border-t border-stone-100 dark:border-stone-800 bg-white dark:bg-stone-950 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
           <div className="mb-6">
-            <span className="text-amber-600 font-semibold text-xs tracking-widest uppercase block mb-1">Find Us</span>
-            <h2 className="font-serif text-2xl font-bold text-stone-900">Our Office in Paro, Bhutan</h2>
+            <span className="text-amber-600 dark:text-amber-400 font-semibold text-xs tracking-widest uppercase block mb-1">Find Us</span>
+            <h2 className="font-serif text-2xl font-bold text-stone-900 dark:text-stone-50">Our Office in Paro, Bhutan</h2>
           </div>
-          <div className="rounded-3xl overflow-hidden shadow-md border border-stone-100" style={{ height: '420px' }}>
+          <div className="rounded-3xl overflow-hidden shadow-md border border-stone-100 dark:border-stone-800" style={{ height: '420px' }}>
             <iframe
               src={MAPS_EMBED_SRC}
               className="w-full h-full border-0 block"

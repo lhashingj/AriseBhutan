@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { LayoutDashboard, UserCircle, LogOut, Menu, MailWarning, RefreshCw, MapPin } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
 import { useEmailVerified } from '@/utils/useEmailVerified'
+import ThemeToggle from '@/components/ThemeToggle'
 
 const navItems = [
   { label: 'Dashboard',      href: '/client/dashboard',   icon: LayoutDashboard },
@@ -59,7 +60,7 @@ export default function ClientLayout({ children }) {
 
   if (checking) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50">
+      <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950 transition-colors duration-300">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
           <p className="text-stone-400 text-sm">Loading your portal…</p>
@@ -69,7 +70,7 @@ export default function ClientLayout({ children }) {
   }
 
   return (
-    <div className="min-h-screen flex bg-stone-50">
+    <div className="min-h-screen flex bg-stone-50 dark:bg-stone-950 transition-colors duration-300">
       {/* ── Sidebar ── */}
       <aside className={`
         fixed inset-y-0 left-0 z-40 w-64 bg-stone-900 flex flex-col transition-transform duration-300
@@ -109,6 +110,10 @@ export default function ClientLayout({ children }) {
 
         {/* Profile + Sign Out */}
         <div className="px-3 py-4 border-t border-white/10 space-y-2">
+          <div className="flex items-center justify-between px-3 py-1.5">
+            <span className="text-stone-500 text-xs font-medium uppercase tracking-wider">Theme</span>
+            <ThemeToggle className="text-stone-400 hover:text-amber-400 hover:bg-white/10" />
+          </div>
           <Link href="/client/profile" onClick={() => setSidebar(false)}
             className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-colors">
             <div className="w-8 h-8 rounded-full overflow-hidden bg-amber-500/20 flex items-center justify-center flex-shrink-0">
@@ -141,21 +146,21 @@ export default function ClientLayout({ children }) {
       {/* ── Main ── */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Topbar */}
-        <div className="lg:hidden sticky top-0 z-20 flex items-center justify-between px-4 py-3 bg-white border-b border-stone-100">
-          <button onClick={() => setSidebar(true)} className="p-2 rounded-xl text-stone-600 hover:bg-stone-100">
+        <div className="lg:hidden sticky top-0 z-20 flex items-center justify-between px-4 py-3 bg-white dark:bg-stone-900 border-b border-stone-100 dark:border-stone-800 transition-colors duration-300">
+          <button onClick={() => setSidebar(true)} className="p-2 rounded-xl text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-white/10">
             <Menu className="w-5 h-5" />
           </button>
-          <p className="font-serif font-bold text-stone-900">Client Portal</p>
-          <div className="w-9" />
+          <p className="font-serif font-bold text-stone-900 dark:text-stone-50">Client Portal</p>
+          <ThemeToggle className="text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-white/10" />
         </div>
 
         {/* ── Email verification banner ── */}
         {!verifyLoading && verified === false && (
-          <div className="bg-amber-50 border-b border-amber-200 px-4 sm:px-6 py-3 flex flex-col gap-1.5">
+          <div className="bg-amber-50 dark:bg-amber-500/10 border-b border-amber-200 dark:border-amber-500/20 px-4 sm:px-6 py-3 flex flex-col gap-1.5 transition-colors duration-300">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
               <div className="flex items-start gap-2.5 flex-1 min-w-0">
-                <MailWarning className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-amber-900 leading-snug">
+                <MailWarning className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-amber-900 dark:text-amber-200 leading-snug">
                   <span className="font-semibold">Verify your email address.</span>{' '}
                   Check your inbox for the confirmation link we sent you. You won&apos;t be able to submit bookings until your email is verified.
                 </p>
@@ -163,7 +168,7 @@ export default function ClientLayout({ children }) {
               <button
                 onClick={handleResend}
                 disabled={resendSent}
-                className="flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap text-amber-700 hover:text-amber-900 disabled:opacity-50 disabled:cursor-default transition-colors self-start sm:self-auto"
+                className="flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap text-amber-700 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300 disabled:opacity-50 disabled:cursor-default transition-colors self-start sm:self-auto"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${resendSent ? '' : 'hover:rotate-180 transition-transform'}`} />
                 {resendSent ? 'Email sent!' : 'Resend email'}
@@ -182,17 +187,17 @@ export default function ClientLayout({ children }) {
 
       {/* Logout confirmation modal */}
       {showConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
-            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <LogOut className="w-5 h-5 text-red-600" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 px-4">
+          <div className="bg-white dark:bg-stone-900 dark:border dark:border-stone-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm transition-colors duration-300">
+            <div className="w-12 h-12 bg-red-100 dark:bg-red-500/15 rounded-full flex items-center justify-center mx-auto mb-4">
+              <LogOut className="w-5 h-5 text-red-600 dark:text-red-400" />
             </div>
-            <h3 className="text-lg font-serif font-bold text-stone-900 text-center">Sign out?</h3>
-            <p className="text-stone-500 text-sm text-center mt-1 mb-6">You'll need to sign in again to access your portal.</p>
+            <h3 className="text-lg font-serif font-bold text-stone-900 dark:text-stone-50 text-center">Sign out?</h3>
+            <p className="text-stone-500 dark:text-stone-400 text-sm text-center mt-1 mb-6">You'll need to sign in again to access your portal.</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowConfirm(false)}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 text-stone-700 text-sm font-semibold hover:bg-stone-50 transition-colors"
+                className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 text-sm font-semibold hover:bg-stone-50 dark:hover:bg-white/5 transition-colors"
               >
                 Cancel
               </button>

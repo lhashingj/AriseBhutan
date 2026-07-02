@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter, Playfair_Display } from 'next/font/google'
 import './globals.css'
 import ConditionalShell from '@/components/ConditionalShell'
+import ThemeProvider from '@/components/ThemeProvider'
 import ChatWidget from '@/components/ChatWidget'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
@@ -120,14 +121,16 @@ const jsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
-      <body className="font-sans antialiased bg-white text-stone-800">
+    <html lang="en" className={`${inter.variable} ${playfair.variable}`} suppressHydrationWarning>
+      <body className="font-sans antialiased bg-white text-stone-800 dark:bg-stone-950 dark:text-stone-200 transition-colors duration-300">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <ConditionalShell>{children}</ConditionalShell>
-        <ChatWidget />
+        <ThemeProvider>
+          <ConditionalShell>{children}</ConditionalShell>
+          <ChatWidget />
+        </ThemeProvider>
         <Analytics />
         <SpeedInsights />
       </body>

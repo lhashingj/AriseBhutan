@@ -8,7 +8,7 @@ import Link from 'next/link'
 import { Eye, EyeOff, LogIn, AlertCircle } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
 
-const inputCls = 'w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors bg-white placeholder:text-stone-400'
+const inputCls = 'w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors bg-white placeholder:text-stone-400 dark:bg-stone-900 dark:border-stone-700 dark:text-stone-100 dark:placeholder:text-stone-500'
 
 function GoogleIcon() {
   return (
@@ -81,12 +81,12 @@ function LoginForm() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-serif font-bold text-stone-900">Welcome back</h1>
-        <p className="text-stone-500 text-sm mt-1">Sign in to your Arise Bhutan portal</p>
+        <h1 className="text-2xl font-serif font-bold text-stone-900 dark:text-stone-50">Welcome back</h1>
+        <p className="text-stone-500 dark:text-stone-400 text-sm mt-1">Sign in to your Arise Bhutan portal</p>
       </div>
 
       {error && (
-        <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
+        <div className="flex items-start gap-2.5 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 text-sm px-4 py-3 rounded-xl">
           <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
           {error}
         </div>
@@ -94,7 +94,7 @@ function LoginForm() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1.5">Email Address</label>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Email Address</label>
           <input
             required
             type="email"
@@ -108,7 +108,7 @@ function LoginForm() {
 
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className="block text-sm font-medium text-stone-700">Password</label>
+            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300">Password</label>
             <Link
               href="/forgot-password"
               className="text-xs text-amber-600 hover:text-amber-700 hover:underline transition-colors font-medium"
@@ -150,7 +150,7 @@ function LoginForm() {
         </button>
       </form>
 
-      <div className="text-center text-sm text-stone-500">
+      <div className="text-center text-sm text-stone-500 dark:text-stone-400">
         Don&apos;t have an account?{' '}
         <Link href="/register" className="text-amber-600 font-semibold hover:text-amber-700 hover:underline transition-colors">
           Create one
@@ -159,9 +159,9 @@ function LoginForm() {
 
       {/* Divider */}
       <div className="flex items-center gap-3">
-        <div className="flex-1 h-px bg-stone-200" />
-        <span className="text-xs text-stone-400 font-medium">or continue with</span>
-        <div className="flex-1 h-px bg-stone-200" />
+        <div className="flex-1 h-px bg-stone-200 dark:bg-stone-800" />
+        <span className="text-xs text-stone-400 dark:text-stone-500 font-medium">or continue with</span>
+        <div className="flex-1 h-px bg-stone-200 dark:bg-stone-800" />
       </div>
 
       {/* Google Sign In */}
@@ -169,7 +169,7 @@ function LoginForm() {
         type="button"
         onClick={handleGoogle}
         disabled={googleLoading}
-        className="w-full flex items-center justify-center gap-3 border border-stone-200 rounded-xl px-4 py-3 text-sm font-medium text-stone-700 bg-white hover:bg-stone-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+        className="w-full flex items-center justify-center gap-3 border border-stone-200 dark:border-stone-700 rounded-xl px-4 py-3 text-sm font-medium text-stone-700 dark:text-stone-200 bg-white dark:bg-stone-900 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
       >
         {googleLoading
           ? <span className="w-4 h-4 border-2 border-stone-300 border-t-stone-600 rounded-full animate-spin" />
@@ -179,7 +179,7 @@ function LoginForm() {
       </button>
 
       <div className="text-center">
-        <Link href="/" className="text-xs text-stone-400 hover:text-stone-600 transition-colors">
+        <Link href="/" className="text-xs text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 transition-colors">
           ← Back to website
         </Link>
       </div>

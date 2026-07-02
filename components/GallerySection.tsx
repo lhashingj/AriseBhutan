@@ -112,7 +112,7 @@ export default function GallerySection() {
   const currentPhoto = lightboxIdx !== null ? mosaicPhotos[lightboxIdx] : null
 
   return (
-    <section className="py-16 sm:py-20 bg-stone-50">
+    <section className="py-16 sm:py-20 bg-stone-50 dark:bg-stone-900 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <div

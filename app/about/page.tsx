@@ -44,15 +44,15 @@ export default function AboutPage() {
       </section>
 
       {/* Story */}
-      <section className="py-16 sm:py-20">
+      <section className="py-16 sm:py-20 bg-white dark:bg-stone-950 transition-colors duration-300">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-10 sm:gap-16 items-center">
             <div>
               <span className="section-badge">Our Story</span>
-              <h2 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 mb-6 leading-tight">
+              <h2 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 dark:text-stone-50 mb-6 leading-tight">
                 Born from a Love of Bhutan
               </h2>
-              <div className="space-y-4 text-stone-600 leading-relaxed text-sm sm:text-base">
+              <div className="space-y-4 text-stone-600 dark:text-stone-400 leading-relaxed text-sm sm:text-base">
                 <p>
                   Arise Bhutan was founded with a single conviction: that Bhutan deserves to be experienced deeply, not just seen briefly. Too many travelers arrive, tick the Tiger&apos;s Nest off their list, and leave — missing the ancient soul of this remarkable kingdom.
                 </p>
@@ -77,20 +77,20 @@ export default function AboutPage() {
       </section>
 
       {/* Philosophy */}
-      <section className="py-16 sm:py-20 bg-gradient-to-b from-amber-50 to-white">
+      <section className="py-16 sm:py-20 bg-gradient-to-b from-amber-50 to-white dark:from-stone-900 dark:to-stone-950 transition-colors duration-300">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
           <span className="section-badge">Our Philosophy</span>
-          <h2 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 mb-4 leading-tight">What Does It Mean to &ldquo;Arise&rdquo;?</h2>
+          <h2 className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 dark:text-stone-50 mb-4 leading-tight">What Does It Mean to &ldquo;Arise&rdquo;?</h2>
           <div className="grid sm:grid-cols-3 gap-5 sm:gap-6 text-left mt-10">
             {[
               { num: '01', title: 'To Awaken', body: "Bhutan doesn't just change your itinerary — it changes your perspective. Leave with a clearer sense of what makes a life well-lived." },
               { num: '02', title: 'To Explore', body: 'Go beyond the famous sights. We take you to hidden valleys, family homes, and sacred places most visitors never find.' },
               { num: '03', title: 'To Grow', body: 'The best travel is transformative. We design every journey to stretch your horizons, deepen your understanding, and nourish your spirit.' },
             ].map(({ num, title, body }) => (
-              <div key={num} className="bg-white rounded-2xl p-6 sm:p-7 shadow-sm border border-amber-100 hover:shadow-md transition-shadow">
-                <span className="font-serif text-3xl sm:text-4xl font-bold text-amber-200 block mb-3">{num}</span>
-                <h3 className="font-serif font-bold text-xl text-stone-900 mb-2">{title}</h3>
-                <p className="text-stone-600 text-sm leading-relaxed">{body}</p>
+              <div key={num} className="bg-white dark:bg-stone-900 rounded-2xl p-6 sm:p-7 shadow-sm border border-amber-100 dark:border-stone-800 hover:shadow-md dark:hover:shadow-black/40 transition-all duration-300">
+                <span className="font-serif text-3xl sm:text-4xl font-bold text-amber-200 dark:text-amber-500/40 block mb-3">{num}</span>
+                <h3 className="font-serif font-bold text-xl text-stone-900 dark:text-stone-50 mb-2">{title}</h3>
+                <p className="text-stone-600 dark:text-stone-400 text-sm leading-relaxed">{body}</p>
               </div>
             ))}
           </div>
@@ -98,7 +98,7 @@ export default function AboutPage() {
       </section>
 
       {/* Values */}
-      <section className="py-16 sm:py-20 bg-white">
+      <section className="py-16 sm:py-20 bg-white dark:bg-stone-950 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 sm:mb-14">
             <span className="section-badge">What We Stand For</span>
@@ -106,13 +106,13 @@ export default function AboutPage() {
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-7">
             {values.map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="flex gap-4 p-5 sm:p-6 rounded-2xl border border-stone-100 hover:shadow-md hover:border-amber-200 transition-all">
-                <div className="w-11 h-11 bg-amber-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Icon className="w-5 h-5 text-amber-600" />
+              <div key={title} className="flex gap-4 p-5 sm:p-6 rounded-2xl border border-stone-100 dark:border-stone-800 dark:bg-stone-900 hover:shadow-md dark:hover:shadow-black/40 hover:border-amber-200 dark:hover:border-stone-700 transition-all">
+                <div className="w-11 h-11 bg-amber-50 dark:bg-amber-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Icon className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-stone-900 mb-1 text-sm sm:text-base">{title}</h3>
-                  <p className="text-stone-500 text-xs sm:text-sm leading-relaxed">{desc}</p>
+                  <h3 className="font-semibold text-stone-900 dark:text-stone-100 mb-1 text-sm sm:text-base">{title}</h3>
+                  <p className="text-stone-500 dark:text-stone-400 text-xs sm:text-sm leading-relaxed">{desc}</p>
                 </div>
               </div>
             ))}
@@ -121,14 +121,14 @@ export default function AboutPage() {
       </section>
 
       {/* License & Credentials */}
-      <section className="py-16 sm:py-20 bg-amber-50">
+      <section className="py-16 sm:py-20 bg-amber-50 dark:bg-stone-900 transition-colors duration-300">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10">
             <span className="section-badge">Official Credentials</span>
             <h2 className="section-title">Officially Licensed by the Royal Government of Bhutan</h2>
-            <p className="text-stone-500 text-sm sm:text-base mt-2">Arise Bhutan Tours &amp; Travel holds a valid business license issued by the Department of Industry, Ministry of Industry, Commerce and Employment.</p>
+            <p className="text-stone-500 dark:text-stone-400 text-sm sm:text-base mt-2">Arise Bhutan Tours &amp; Travel holds a valid business license issued by the Department of Industry, Ministry of Industry, Commerce and Employment.</p>
           </div>
-          <div className="bg-white rounded-3xl border border-amber-100 shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-stone-950 rounded-3xl border border-amber-100 dark:border-stone-800 shadow-sm overflow-hidden transition-colors duration-300">
             {/* Header bar */}
             <div className="bg-stone-900 px-6 sm:px-8 py-5 flex items-center gap-3">
               <FileCheck className="w-6 h-6 text-amber-400 flex-shrink-0" />
@@ -148,13 +148,13 @@ export default function AboutPage() {
                 { label: 'Owner',             value: 'Kuenzang Wangchuk' },
               ].map(({ label, value }) => (
                 <div key={label}>
-                  <p className="text-stone-400 text-xs uppercase tracking-wider font-medium mb-1">{label}</p>
-                  <p className="text-stone-900 font-semibold text-sm sm:text-base leading-snug">{value}</p>
+                  <p className="text-stone-400 dark:text-stone-500 text-xs uppercase tracking-wider font-medium mb-1">{label}</p>
+                  <p className="text-stone-900 dark:text-stone-100 font-semibold text-sm sm:text-base leading-snug">{value}</p>
                 </div>
               ))}
             </div>
             {/* Download button */}
-            <div className="px-6 sm:px-8 pb-6 pt-2 border-t border-stone-100">
+            <div className="px-6 sm:px-8 pb-6 pt-2 border-t border-stone-100 dark:border-stone-800">
               <a
                 href="/arise-bhutan-license.pdf"
                 download="Arise-Bhutan-Business-License.pdf"
@@ -169,7 +169,7 @@ export default function AboutPage() {
       </section>
 
       {/* Travel Info */}
-      <section id="travel-info" className="py-16 sm:py-20 bg-white">
+      <section id="travel-info" className="py-16 sm:py-20 bg-white dark:bg-stone-950 transition-colors duration-300">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10 sm:mb-12">
             <span className="section-badge">Essential Information</span>
@@ -182,9 +182,9 @@ export default function AboutPage() {
               { q: 'When is the best time to visit?', a: 'March–May (spring, rhododendrons in bloom) and September–November (autumn, clear mountain views) are peak seasons. Winter (Dec–Feb) is cold but offers uncrowded festivals like Punakha Drubchen.' },
               { q: 'How do I get to Bhutan?', a: 'Bhutan is served by Druk Air and Bhutan Airlines, with connections from Bangkok, Singapore, Delhi, Kathmandu, Mumbai, and Kolkata. The approach to Paro Airport is one of the world\'s most dramatic.' },
             ].map(({ q, a }) => (
-              <div key={q} className="bg-stone-50 rounded-2xl p-5 sm:p-6 border border-stone-100 hover:border-amber-200 transition-colors">
-                <h3 className="font-semibold text-stone-900 mb-2 text-sm sm:text-base">{q}</h3>
-                <p className="text-stone-600 text-xs sm:text-sm leading-relaxed">{a}</p>
+              <div key={q} className="bg-stone-50 dark:bg-stone-900 rounded-2xl p-5 sm:p-6 border border-stone-100 dark:border-stone-800 hover:border-amber-200 dark:hover:border-stone-700 transition-colors">
+                <h3 className="font-semibold text-stone-900 dark:text-stone-100 mb-2 text-sm sm:text-base">{q}</h3>
+                <p className="text-stone-600 dark:text-stone-400 text-xs sm:text-sm leading-relaxed">{a}</p>
               </div>
             ))}
           </div>
