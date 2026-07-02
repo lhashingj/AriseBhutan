@@ -31,23 +31,23 @@ const CATEGORY_EMOJI: Record<string, string> = {
 
 const STEPS = ['Contact', 'Adventure Builder', 'Preferences']
 
-const inputCls = 'w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors bg-white placeholder:text-stone-400'
+const inputCls = 'w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors bg-white placeholder:text-stone-400 dark:bg-stone-800 dark:border-stone-700 dark:text-stone-100 dark:placeholder:text-stone-500'
 
 function Stepper({ label, sublabel, value, min, max, onChange }: {
   label: string; sublabel?: string; value: number; min: number; max: number; onChange: (n: number) => void
 }) {
   return (
-    <div className="bg-stone-50 rounded-2xl p-4">
-      <p className="text-sm font-semibold text-stone-700">{label}</p>
-      {sublabel && <p className="text-xs text-stone-400 mt-0.5">{sublabel}</p>}
+    <div className="bg-stone-50 dark:bg-stone-800 rounded-2xl p-4 transition-colors duration-300">
+      <p className="text-sm font-semibold text-stone-700 dark:text-stone-300">{label}</p>
+      {sublabel && <p className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">{sublabel}</p>}
       <div className="flex items-center gap-4 mt-3">
         <button type="button" onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min}
-          className="w-10 h-10 rounded-xl border border-stone-200 bg-white flex items-center justify-center text-stone-600 hover:border-amber-400 hover:text-amber-600 disabled:opacity-30 transition-all">
+          className="w-10 h-10 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 flex items-center justify-center text-stone-600 dark:text-stone-300 hover:border-amber-400 hover:text-amber-600 dark:hover:border-amber-500/50 dark:hover:text-amber-400 disabled:opacity-30 transition-all">
           <Minus className="w-4 h-4" />
         </button>
-        <span className="text-3xl font-bold text-stone-900 w-10 text-center tabular-nums">{value}</span>
+        <span className="text-3xl font-bold text-stone-900 dark:text-stone-50 w-10 text-center tabular-nums">{value}</span>
         <button type="button" onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max}
-          className="w-10 h-10 rounded-xl border border-stone-200 bg-white flex items-center justify-center text-stone-600 hover:border-amber-400 hover:text-amber-600 disabled:opacity-30 transition-all">
+          className="w-10 h-10 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 flex items-center justify-center text-stone-600 dark:text-stone-300 hover:border-amber-400 hover:text-amber-600 dark:hover:border-amber-500/50 dark:hover:text-amber-400 disabled:opacity-30 transition-all">
           <Plus className="w-4 h-4" />
         </button>
       </div>
@@ -106,24 +106,24 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
   if (submitted) {
     return (
       <div className="text-center py-10 sm:py-12">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Check className="w-8 h-8 text-green-600" />
+        <div className="w-16 h-16 bg-green-100 dark:bg-green-500/15 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Check className="w-8 h-8 text-green-600 dark:text-green-400" />
         </div>
-        <h3 className="font-serif text-2xl font-bold text-stone-900 mb-2">Enquiry Received!</h3>
-        <p className="text-stone-600 max-w-md mx-auto text-sm sm:text-base">
+        <h3 className="font-serif text-2xl font-bold text-stone-900 dark:text-stone-50 mb-2">Enquiry Received!</h3>
+        <p className="text-stone-600 dark:text-stone-400 max-w-md mx-auto text-sm sm:text-base">
           Thank you, <strong>{data.name}</strong>! Our Bhutan travel specialist will contact you within 24 hours with a personalised quote.
         </p>
         {bookingRef && (
-          <div className="mt-6 bg-amber-50 border border-amber-200 rounded-2xl p-5 max-w-sm mx-auto text-left">
-            <p className="text-xs text-stone-400 font-semibold uppercase tracking-wider mb-1.5">Your Booking Reference</p>
-            <p className="font-mono font-bold text-amber-800 text-xl tracking-widest mb-3">{bookingRef}</p>
+          <div className="mt-6 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/25 rounded-2xl p-5 max-w-sm mx-auto text-left">
+            <p className="text-xs text-stone-400 dark:text-stone-500 font-semibold uppercase tracking-wider mb-1.5">Your Booking Reference</p>
+            <p className="font-mono font-bold text-amber-800 dark:text-amber-300 text-xl tracking-widest mb-3">{bookingRef}</p>
             <a
               href={`/itinerary/${bookingRef}`}
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-700 hover:text-amber-800 underline underline-offset-2"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 underline underline-offset-2"
             >
               Track your enquiry status →
             </a>
-            <p className="text-xs text-stone-400 mt-2">A confirmation has been sent to {data.email}</p>
+            <p className="text-xs text-stone-400 dark:text-stone-500 mt-2">A confirmation has been sent to {data.email}</p>
           </div>
         )}
       </div>
@@ -136,14 +136,14 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
       <div className="flex items-center mb-7 sm:mb-8">
         {STEPS.map((s, i) => (
           <div key={s} className={`flex items-center ${i < STEPS.length - 1 ? 'flex-1' : ''}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-colors ${i <= step ? 'bg-amber-600 text-white' : 'bg-stone-100 text-stone-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-colors ${i <= step ? 'bg-amber-600 text-white' : 'bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500'}`}>
               {i < step ? <Check className="w-3.5 h-3.5" /> : i + 1}
             </div>
-            <span className={`hidden sm:block ml-1.5 text-xs font-medium whitespace-nowrap ${i === step ? 'text-stone-900' : 'text-stone-400'}`}>
+            <span className={`hidden sm:block ml-1.5 text-xs font-medium whitespace-nowrap ${i === step ? 'text-stone-900 dark:text-stone-100' : 'text-stone-400 dark:text-stone-500'}`}>
               {s}
             </span>
             {i < STEPS.length - 1 && (
-              <div className={`flex-1 h-px mx-2 sm:mx-3 ${i < step ? 'bg-amber-500' : 'bg-stone-200'}`} />
+              <div className={`flex-1 h-px mx-2 sm:mx-3 ${i < step ? 'bg-amber-500' : 'bg-stone-200 dark:bg-stone-700'}`} />
             )}
           </div>
         ))}
@@ -187,19 +187,19 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
           <div className="space-y-4">
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1.5">Full Name *</label>
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Full Name *</label>
                 <input required value={data.name} onChange={e => set('name', e.target.value)}
                   className={inputCls} placeholder="Your full name" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1.5">Email Address *</label>
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Email Address *</label>
                 <input required type="email" value={data.email} onChange={e => set('email', e.target.value)}
                   className={inputCls} placeholder="your@email.com" />
               </div>
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1.5">Phone / WhatsApp</label>
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Phone / WhatsApp</label>
                 <PhoneInput
                   id="phone"
                   value={data.phone}
@@ -208,7 +208,7 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1.5">Country of Residence *</label>
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Country of Residence *</label>
                 <CountrySelect
                   id="country"
                   value={data.country}
@@ -229,8 +229,8 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
         {step === 1 && (
           <div className="space-y-6">
             <div>
-              <h3 className="font-serif text-lg font-bold text-stone-900">Build Your Trip</h3>
-              <p className="text-stone-500 text-xs mt-1">Set your trip duration, group size, and accommodation tier.</p>
+              <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-50">Build Your Trip</h3>
+              <p className="text-stone-500 dark:text-stone-400 text-xs mt-1">Set your trip duration, group size, and accommodation tier.</p>
             </div>
 
             {/* Nights + Guests */}
@@ -257,14 +257,14 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
                   <button key={t.id} type="button" onClick={() => set('hotelTier', t.id)}
                     className={`w-full text-left rounded-2xl border-2 px-4 py-3.5 transition-all duration-150 ${
                       data.hotelTier === t.id
-                        ? 'border-amber-500 bg-amber-50'
-                        : 'border-stone-100 hover:border-amber-200 bg-white'
+                        ? 'border-amber-500 bg-amber-50 dark:bg-amber-500/10'
+                        : 'border-stone-100 dark:border-stone-700 hover:border-amber-200 dark:hover:border-amber-500/40 bg-white dark:bg-stone-800'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <p className="font-semibold text-stone-900 text-sm">{t.label}</p>
-                        <p className="text-stone-400 text-xs mt-0.5">{t.desc}</p>
+                        <p className="font-semibold text-stone-900 dark:text-stone-100 text-sm">{t.label}</p>
+                        <p className="text-stone-400 dark:text-stone-500 text-xs mt-0.5">{t.desc}</p>
                         <div className="flex items-center gap-0.5 mt-1.5">
                           {Array.from({ length: t.stars }).map((_, i) => (
                             <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
@@ -272,7 +272,7 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
                         </div>
                       </div>
                       <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
-                        data.hotelTier === t.id ? 'border-amber-500 bg-amber-500' : 'border-stone-300'
+                        data.hotelTier === t.id ? 'border-amber-500 bg-amber-500' : 'border-stone-300 dark:border-stone-600'
                       }`}>
                         {data.hotelTier === t.id && <Check className="w-3 h-3 text-white" />}
                       </div>
@@ -297,7 +297,7 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
             {/* Tour + Travel Date */}
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1.5">Tour of Interest</label>
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Tour of Interest</label>
                 <select value={data.tourInterest} onChange={e => set('tourInterest', e.target.value)} className={inputCls}>
                   <option value="">Select a tour (or describe below)</option>
                   <option>Classic Bhutan Cultural Tour — 5D/4N</option>
@@ -315,7 +315,7 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1.5">Preferred Travel Date</label>
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Preferred Travel Date</label>
                 <input type="date" value={data.travelDate} onChange={e => set('travelDate', e.target.value)}
                   min={new Date().toISOString().split('T')[0]}
                   className={inputCls} />
@@ -338,7 +338,7 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
                   <Loader2 className="w-5 h-5 text-amber-500 animate-spin" />
                 </div>
               ) : activities.length === 0 ? (
-                <p className="text-stone-400 text-xs text-center py-4">No activities available yet.</p>
+                <p className="text-stone-400 dark:text-stone-500 text-xs text-center py-4">No activities available yet.</p>
               ) : (
                 <>
                   {/* Category filter */}
@@ -350,7 +350,7 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
                         className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-all ${
                           activeCategory === cat
                             ? 'bg-amber-600 text-white border-amber-600'
-                            : 'border-stone-200 text-stone-600 hover:border-amber-300 hover:text-amber-700'
+                            : 'border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 hover:border-amber-300 dark:hover:border-amber-500/40 hover:text-amber-700 dark:hover:text-amber-400'
                         }`}
                       >
                         {CATEGORY_EMOJI[cat] || ''} {cat}
@@ -368,19 +368,19 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
                           onClick={() => toggleActivity(a)}
                           className={`text-left rounded-2xl border-2 px-3.5 py-3 transition-all duration-150 ${
                             isSelected
-                              ? 'border-amber-500 bg-amber-50'
-                              : 'border-stone-100 hover:border-amber-200 bg-white'
+                              ? 'border-amber-500 bg-amber-50 dark:bg-amber-500/10'
+                              : 'border-stone-100 dark:border-stone-700 hover:border-amber-200 dark:hover:border-amber-500/40 bg-white dark:bg-stone-800'
                           }`}
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-stone-900 text-xs leading-snug">{a.name}</p>
-                              <p className="text-stone-400 text-[10px] mt-0.5">
+                              <p className="font-semibold text-stone-900 dark:text-stone-100 text-xs leading-snug">{a.name}</p>
+                              <p className="text-stone-400 dark:text-stone-500 text-[10px] mt-0.5">
                                 {a.location} · {a.duration_hours}h · {CATEGORY_EMOJI[a.category]} {a.category}
                               </p>
                             </div>
                             <div className={`w-4 h-4 rounded border-2 flex-shrink-0 mt-0.5 flex items-center justify-center ${
-                              isSelected ? 'border-amber-500 bg-amber-500' : 'border-stone-300'
+                              isSelected ? 'border-amber-500 bg-amber-500' : 'border-stone-300 dark:border-stone-600'
                             }`}>
                               {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
                             </div>
@@ -394,13 +394,13 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1.5">Additional Notes or Questions</label>
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Additional Notes or Questions</label>
               <textarea value={data.message} onChange={e => set('message', e.target.value)} rows={4}
                 className={`${inputCls} resize-none`}
                 placeholder="Any dietary requirements, accessibility needs, or specific interests you'd like us to know..." />
             </div>
             {submitError && (
-              <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
+              <div className="flex items-start gap-2.5 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 text-sm px-4 py-3 rounded-xl">
                 <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                 <span>{submitError}</span>
               </div>
@@ -414,7 +414,7 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
                 }
               </button>
             </div>
-            <p className="text-xs text-stone-400 text-center">We respond within 24 hours. No payment required at this stage.</p>
+            <p className="text-xs text-stone-400 dark:text-stone-500 text-center">We respond within 24 hours. No payment required at this stage.</p>
           </div>
         )}
       </form>

@@ -53,16 +53,16 @@ function StepIndicator({ current }) {
         <div key={label} className={`flex items-center ${i < STEPS.length - 1 ? 'flex-1' : ''}`}>
           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all duration-300 ${
             i < current   ? 'bg-amber-600 text-white' :
-            i === current ? 'bg-amber-600 text-white ring-4 ring-amber-100' :
-                            'bg-stone-100 text-stone-400'
+            i === current ? 'bg-amber-600 text-white ring-4 ring-amber-100 dark:ring-amber-500/20' :
+                            'bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500'
           }`}>
             {i < current ? <Check className="w-3.5 h-3.5" /> : i + 1}
           </div>
           <span className={`hidden sm:block ml-2 text-xs font-medium whitespace-nowrap transition-colors ${
-            i === current ? 'text-stone-900' : 'text-stone-400'
+            i === current ? 'text-stone-900 dark:text-stone-100' : 'text-stone-400 dark:text-stone-500'
           }`}>{label}</span>
           {i < STEPS.length - 1 && (
-            <div className={`flex-1 h-px mx-3 transition-colors duration-300 ${i < current ? 'bg-amber-400' : 'bg-stone-200'}`} />
+            <div className={`flex-1 h-px mx-3 transition-colors duration-300 ${i < current ? 'bg-amber-400' : 'bg-stone-200 dark:bg-stone-700'}`} />
           )}
         </div>
       ))}
@@ -72,24 +72,24 @@ function StepIndicator({ current }) {
 
 function CountStepper({ label, sublabel, value, min, max, onChange }) {
   return (
-    <div className="bg-stone-50 rounded-2xl p-5">
-      <p className="text-sm font-semibold text-stone-700">{label}</p>
-      {sublabel && <p className="text-xs text-stone-400 mt-0.5">{sublabel}</p>}
+    <div className="bg-stone-50 dark:bg-stone-800 rounded-2xl p-5 transition-colors duration-300">
+      <p className="text-sm font-semibold text-stone-700 dark:text-stone-300">{label}</p>
+      {sublabel && <p className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">{sublabel}</p>}
       <div className="flex items-center gap-4 mt-3">
         <button
           type="button"
           onClick={() => onChange(Math.max(min, value - 1))}
           disabled={value <= min}
-          className="w-10 h-10 rounded-xl border border-stone-200 bg-white flex items-center justify-center text-stone-600 hover:border-amber-400 hover:text-amber-600 disabled:opacity-30 transition-all"
+          className="w-10 h-10 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 flex items-center justify-center text-stone-600 dark:text-stone-300 hover:border-amber-400 hover:text-amber-600 dark:hover:border-amber-500/50 dark:hover:text-amber-400 disabled:opacity-30 transition-all"
         >
           <Minus className="w-4 h-4" />
         </button>
-        <span className="text-3xl font-bold text-stone-900 w-10 text-center tabular-nums">{value}</span>
+        <span className="text-3xl font-bold text-stone-900 dark:text-stone-50 w-10 text-center tabular-nums">{value}</span>
         <button
           type="button"
           onClick={() => onChange(Math.min(max, value + 1))}
           disabled={value >= max}
-          className="w-10 h-10 rounded-xl border border-stone-200 bg-white flex items-center justify-center text-stone-600 hover:border-amber-400 hover:text-amber-600 disabled:opacity-30 transition-all"
+          className="w-10 h-10 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 flex items-center justify-center text-stone-600 dark:text-stone-300 hover:border-amber-400 hover:text-amber-600 dark:hover:border-amber-500/50 dark:hover:text-amber-400 disabled:opacity-30 transition-all"
         >
           <Plus className="w-4 h-4" />
         </button>
@@ -101,9 +101,9 @@ function CountStepper({ label, sublabel, value, min, max, onChange }) {
 function LoadingSkeleton() {
   return (
     <div className="grid lg:grid-cols-3 gap-8">
-      <div className="lg:col-span-2 bg-white rounded-3xl shadow-lg border border-stone-100 p-8 flex flex-col items-center justify-center min-h-[420px] gap-4">
+      <div className="lg:col-span-2 bg-white dark:bg-stone-900 rounded-3xl shadow-lg dark:shadow-black/40 border border-stone-100 dark:border-stone-800 p-8 flex flex-col items-center justify-center min-h-[420px] gap-4 transition-colors duration-300">
         <div className="w-10 h-10 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-stone-400 text-sm">Loading your adventure builder…</p>
+        <p className="text-stone-400 dark:text-stone-500 text-sm">Loading your adventure builder…</p>
       </div>
       <div className="bg-stone-900 rounded-3xl p-6 animate-pulse space-y-4">
         <div className="h-4 bg-white/10 rounded-full w-28" />
@@ -222,33 +222,33 @@ function SuccessScreen({ nights, guests, tier, selectedActivities }) {
   return (
     <div className="text-center py-8 space-y-5">
       <div className="relative mx-auto w-16 h-16">
-        <div className="absolute inset-0 bg-green-100 rounded-full animate-ping opacity-40" />
-        <div className="relative w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-          <CheckCircle2 className="w-7 h-7 text-green-600" />
+        <div className="absolute inset-0 bg-green-100 dark:bg-green-500/15 rounded-full animate-ping opacity-40" />
+        <div className="relative w-16 h-16 bg-green-100 dark:bg-green-500/15 rounded-full flex items-center justify-center">
+          <CheckCircle2 className="w-7 h-7 text-green-600 dark:text-green-400" />
         </div>
       </div>
 
       <div>
-        <h2 className="text-2xl font-serif font-bold text-stone-900">Itinerary Submitted!</h2>
-        <p className="text-stone-500 text-sm mt-2 max-w-xs mx-auto leading-relaxed">
+        <h2 className="text-2xl font-serif font-bold text-stone-900 dark:text-stone-50">Itinerary Submitted!</h2>
+        <p className="text-stone-500 dark:text-stone-400 text-sm mt-2 max-w-xs mx-auto leading-relaxed">
           Our Bhutan travel specialist will personally review your selections and reach out within{' '}
-          <span className="font-semibold text-stone-700">24 hours</span> with a tailored proposal.
+          <span className="font-semibold text-stone-700 dark:text-stone-200">24 hours</span> with a tailored proposal.
         </p>
       </div>
 
-      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-left space-y-3 max-w-sm mx-auto">
-        <p className="text-xs font-bold text-amber-800 uppercase tracking-wider">Your Selections</p>
+      <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/25 rounded-2xl p-5 text-left space-y-3 max-w-sm mx-auto">
+        <p className="text-xs font-bold text-amber-800 dark:text-amber-300 uppercase tracking-wider">Your Selections</p>
         <div className="grid grid-cols-2 gap-2 text-sm">
-          <div className="bg-white rounded-xl px-3 py-2 text-center border border-amber-100">
-            <p className="font-bold text-stone-900 text-lg">{nights}</p>
-            <p className="text-stone-400 text-xs">nights</p>
+          <div className="bg-white dark:bg-stone-900 rounded-xl px-3 py-2 text-center border border-amber-100 dark:border-amber-500/20">
+            <p className="font-bold text-stone-900 dark:text-stone-50 text-lg">{nights}</p>
+            <p className="text-stone-400 dark:text-stone-500 text-xs">nights</p>
           </div>
-          <div className="bg-white rounded-xl px-3 py-2 text-center border border-amber-100">
-            <p className="font-bold text-stone-900 text-lg">{guests}</p>
-            <p className="text-stone-400 text-xs">guests</p>
+          <div className="bg-white dark:bg-stone-900 rounded-xl px-3 py-2 text-center border border-amber-100 dark:border-amber-500/20">
+            <p className="font-bold text-stone-900 dark:text-stone-50 text-lg">{guests}</p>
+            <p className="text-stone-400 dark:text-stone-500 text-xs">guests</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-sm text-stone-700">
+        <div className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
           <div className="flex gap-0.5">
             {Array.from({ length: meta?.stars ?? 3 }).map((_, i) => (
               <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
@@ -257,16 +257,16 @@ function SuccessScreen({ nights, guests, tier, selectedActivities }) {
           <span className="font-medium">{meta?.label}</span>
         </div>
         {selectedActivities.length > 0 && (
-          <p className="text-sm text-stone-600">
-            <span className="font-semibold text-stone-800">{selectedActivities.length}</span>{' '}
+          <p className="text-sm text-stone-600 dark:text-stone-400">
+            <span className="font-semibold text-stone-800 dark:text-stone-200">{selectedActivities.length}</span>{' '}
             {selectedActivities.length === 1 ? 'experience' : 'experiences'} selected
           </p>
         )}
       </div>
 
-      <p className="text-xs text-stone-400">
+      <p className="text-xs text-stone-400 dark:text-stone-500">
         You can also reach us directly at{' '}
-        <a href="mailto:arisebhutan@gmail.com" className="text-amber-600 font-semibold hover:underline">
+        <a href="mailto:arisebhutan@gmail.com" className="text-amber-600 dark:text-amber-400 font-semibold hover:underline">
           arisebhutan@gmail.com
         </a>
       </p>
@@ -370,14 +370,14 @@ export default function AdventureBuilder() {
   if (loading) return <LoadingSkeleton />
 
   if (error) return (
-    <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-2xl p-5 max-w-lg mx-auto my-8">
+    <div className="flex items-start gap-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-2xl p-5 max-w-lg mx-auto my-8">
       <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
       <div>
-        <p className="font-semibold text-red-800 text-sm">Unable to load activity data</p>
-        <p className="text-red-600 text-sm mt-0.5">{error}</p>
+        <p className="font-semibold text-red-800 dark:text-red-300 text-sm">Unable to load activity data</p>
+        <p className="text-red-600 dark:text-red-400 text-sm mt-0.5">{error}</p>
         <button
           onClick={() => window.location.reload()}
-          className="mt-3 text-xs font-semibold text-red-700 underline underline-offset-2"
+          className="mt-3 text-xs font-semibold text-red-700 dark:text-red-400 underline underline-offset-2"
         >
           Refresh page
         </button>
@@ -389,7 +389,7 @@ export default function AdventureBuilder() {
     <div className="grid lg:grid-cols-3 gap-8 items-start">
 
       {/* ── Wizard panel ────────────────────────────────────── */}
-      <div className="lg:col-span-2 bg-white rounded-3xl shadow-lg border border-stone-100 p-6 sm:p-8">
+      <div className="lg:col-span-2 bg-white dark:bg-stone-900 rounded-3xl shadow-lg dark:shadow-black/40 border border-stone-100 dark:border-stone-800 p-6 sm:p-8 transition-colors duration-300">
 
         {submitted ? (
           <SuccessScreen
@@ -404,8 +404,8 @@ export default function AdventureBuilder() {
             {step === 0 && (
               <div className="space-y-7">
                 <div>
-                  <h2 className="font-serif text-2xl font-bold text-stone-900">Plan Your Journey</h2>
-                  <p className="text-stone-500 text-sm mt-1">
+                  <h2 className="font-serif text-2xl font-bold text-stone-900 dark:text-stone-50">Plan Your Journey</h2>
+                  <p className="text-stone-500 dark:text-stone-400 text-sm mt-1">
                     Tell us the basics and our team will craft a personalised Bhutan itinerary for you.
                   </p>
                 </div>
@@ -425,7 +425,7 @@ export default function AdventureBuilder() {
                   />
                 </div>
 
-                <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 text-sm text-amber-900 leading-relaxed">
+                <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/25 rounded-2xl px-5 py-4 text-sm text-amber-900 dark:text-amber-200 leading-relaxed">
                   <span className="font-semibold">About travel to Bhutan:</span>{' '}
                   All international visitors are required to pay the Sustainable Development Fee (SDF), a mandatory government
                   levy that funds Bhutan's free healthcare, education, and carbon-neutral environmental policies.
@@ -442,8 +442,8 @@ export default function AdventureBuilder() {
             {step === 1 && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="font-serif text-2xl font-bold text-stone-900">Choose Your Accommodation Tier</h2>
-                  <p className="text-stone-500 text-sm mt-1">
+                  <h2 className="font-serif text-2xl font-bold text-stone-900 dark:text-stone-50">Choose Your Accommodation Tier</h2>
+                  <p className="text-stone-500 dark:text-stone-400 text-sm mt-1">
                     All properties are personally vetted by the Arise Bhutan team.
                   </p>
                 </div>
@@ -457,18 +457,18 @@ export default function AdventureBuilder() {
                         type="button"
                         onClick={() => setTier(key)}
                         className={`w-full text-left rounded-2xl border-2 px-5 py-4 transition-all duration-200 ${
-                          active ? 'border-amber-500 bg-amber-50' : 'border-stone-100 hover:border-amber-200 bg-white'
+                          active ? 'border-amber-500 bg-amber-50 dark:bg-amber-500/10' : 'border-stone-100 dark:border-stone-700 hover:border-amber-200 dark:hover:border-amber-500/40 bg-white dark:bg-stone-800'
                         }`}
                       >
                         <div className="flex items-start gap-4">
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-wrap items-center gap-2 mb-1">
-                              <span className="font-semibold text-stone-900">{meta.label}</span>
+                              <span className="font-semibold text-stone-900 dark:text-stone-100">{meta.label}</span>
                               <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                                active ? 'bg-amber-200 text-amber-800' : 'bg-stone-100 text-stone-500'
+                                active ? 'bg-amber-200 dark:bg-amber-500/25 text-amber-800 dark:text-amber-300' : 'bg-stone-100 dark:bg-stone-700 text-stone-500 dark:text-stone-400'
                               }`}>{meta.badge}</span>
                             </div>
-                            <p className="text-stone-500 text-xs sm:text-sm leading-relaxed">{meta.desc}</p>
+                            <p className="text-stone-500 dark:text-stone-400 text-xs sm:text-sm leading-relaxed">{meta.desc}</p>
                             <div className="flex items-center gap-0.5 mt-2.5">
                               {Array.from({ length: meta.stars }).map((_, i) => (
                                 <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
@@ -476,7 +476,7 @@ export default function AdventureBuilder() {
                             </div>
                           </div>
                           <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 mt-1 flex items-center justify-center ${
-                            active ? 'border-amber-500 bg-amber-500' : 'border-stone-300'
+                            active ? 'border-amber-500 bg-amber-500' : 'border-stone-300 dark:border-stone-600'
                           }`}>
                             {active && <Check className="w-3 h-3 text-white" />}
                           </div>
@@ -501,8 +501,8 @@ export default function AdventureBuilder() {
             {step === 2 && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="font-serif text-2xl font-bold text-stone-900">Curate Your Experiences</h2>
-                  <p className="text-stone-500 text-sm mt-1">
+                  <h2 className="font-serif text-2xl font-bold text-stone-900 dark:text-stone-50">Curate Your Experiences</h2>
+                  <p className="text-stone-500 dark:text-stone-400 text-sm mt-1">
                     Select any activities or experiences to include — our specialist will confirm availability and costs.
                   </p>
                 </div>
@@ -517,7 +517,7 @@ export default function AdventureBuilder() {
                       className={`text-xs font-semibold px-3.5 py-1.5 rounded-full border transition-all ${
                         activeCategory === cat
                           ? 'bg-amber-600 text-white border-amber-600'
-                          : 'border-stone-200 text-stone-600 hover:border-amber-300 hover:text-amber-700'
+                          : 'border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 hover:border-amber-300 dark:hover:border-amber-500/40 hover:text-amber-700 dark:hover:text-amber-400'
                       }`}
                     >
                       {CATEGORY_EMOJI[cat] || ''} {cat}
@@ -538,29 +538,29 @@ export default function AdventureBuilder() {
                         onClick={() => toggleActivity(activity.id)}
                         className={`text-left rounded-2xl border-2 px-4 py-3.5 transition-all duration-150 ${
                           isSelected
-                            ? 'border-amber-500 bg-amber-50'
-                            : 'border-stone-100 hover:border-amber-200 bg-white'
+                            ? 'border-amber-500 bg-amber-50 dark:bg-amber-500/10'
+                            : 'border-stone-100 dark:border-stone-700 hover:border-amber-200 dark:hover:border-amber-500/40 bg-white dark:bg-stone-800'
                         }`}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-stone-900 text-xs sm:text-sm leading-snug">
+                            <p className="font-semibold text-stone-900 dark:text-stone-100 text-xs sm:text-sm leading-snug">
                               {activity.emoji ? `${activity.emoji} ` : ''}{activity.name}
                             </p>
                             <p className="text-[11px] mt-1">
                               {priceLabel ? (
-                                <span className={isFree ? 'text-green-600 font-medium' : 'text-amber-700 font-medium'}>
+                                <span className={isFree ? 'text-green-600 dark:text-green-400 font-medium' : 'text-amber-700 dark:text-amber-400 font-medium'}>
                                   {priceLabel}
                                 </span>
                               ) : (
-                                <span className="text-stone-400">
+                                <span className="text-stone-400 dark:text-stone-500">
                                   {activity.location}{activity.duration_hours ? ` · ${activity.duration_hours}h` : ''} · {CATEGORY_EMOJI[activity.category]} {activity.category}
                                 </span>
                               )}
                             </p>
                           </div>
                           <div className={`w-4 h-4 rounded border-2 flex-shrink-0 mt-0.5 flex items-center justify-center ${
-                            isSelected ? 'border-amber-500 bg-amber-500' : 'border-stone-300'
+                            isSelected ? 'border-amber-500 bg-amber-500' : 'border-stone-300 dark:border-stone-600'
                           }`}>
                             {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
                           </div>
@@ -572,7 +572,7 @@ export default function AdventureBuilder() {
 
                 {/* Error */}
                 {submitError && (
-                  <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
+                  <div className="flex items-start gap-2.5 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 text-sm px-4 py-3 rounded-xl">
                     <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                     <span>{submitError}</span>
                   </div>

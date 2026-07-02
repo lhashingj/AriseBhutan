@@ -35,15 +35,15 @@ export default function AdventureBuilderPage() {
       </section>
 
       {/* Builder */}
-      <section className="py-14 sm:py-20 bg-stone-50">
+      <section className="py-14 sm:py-20 bg-stone-50 dark:bg-stone-950 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
           {/* Section header */}
           <div className="text-center max-w-xl mx-auto mb-10 sm:mb-14">
-            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mb-3">
+            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-stone-50 mb-3">
               Three Simple Steps
             </h2>
-            <p className="text-stone-500 text-sm sm:text-base leading-relaxed">
+            <p className="text-stone-500 dark:text-stone-400 text-sm sm:text-base leading-relaxed">
               No cookie-cutter packages. No payment upfront. Just tell us what excites you
               and we&apos;ll craft an itinerary around it.
             </p>
@@ -54,20 +54,20 @@ export default function AdventureBuilderPage() {
       </section>
 
       {/* Trust strip */}
-      <section className="py-10 border-t border-stone-100 bg-white">
+      <section className="py-10 border-t border-stone-100 dark:border-stone-800 bg-white dark:bg-stone-950 transition-colors duration-300">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid sm:grid-cols-3 gap-6 text-center">
             <div>
-              <p className="text-2xl font-bold text-amber-600 font-serif mb-1">24h</p>
-              <p className="text-sm text-stone-500 leading-snug">Personal response from a Bhutan specialist</p>
+              <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 font-serif mb-1">24h</p>
+              <p className="text-sm text-stone-500 dark:text-stone-400 leading-snug">Personal response from a Bhutan specialist</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-amber-600 font-serif mb-1">$0</p>
-              <p className="text-sm text-stone-500 leading-snug">No payment or commitment required to enquire</p>
+              <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 font-serif mb-1">$0</p>
+              <p className="text-sm text-stone-500 dark:text-stone-400 leading-snug">No payment or commitment required to enquire</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-amber-600 font-serif mb-1">100%</p>
-              <p className="text-sm text-stone-500 leading-snug">Custom itineraries — no two trips are the same</p>
+              <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 font-serif mb-1">100%</p>
+              <p className="text-sm text-stone-500 dark:text-stone-400 leading-snug">Custom itineraries — no two trips are the same</p>
             </div>
           </div>
         </div>

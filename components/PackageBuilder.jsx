@@ -40,11 +40,11 @@ function getTourItinerary(templateId) {
 }
 
 const CAT_COLOR = {
-  Cultural:  'border-blue-300  bg-blue-50  text-blue-700',
-  Adventure: 'border-green-300 bg-green-50 text-green-700',
-  Festival:  'border-purple-300 bg-purple-50 text-purple-700',
-  Luxury:    'border-amber-300  bg-amber-50  text-amber-700',
-  Custom:    'border-stone-300  bg-stone-50  text-stone-600',
+  Cultural:  'border-blue-300 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400',
+  Adventure: 'border-green-300 dark:border-green-500/30 bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400',
+  Festival:  'border-purple-300 dark:border-purple-500/30 bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400',
+  Luxury:    'border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400',
+  Custom:    'border-stone-300 dark:border-stone-600 bg-stone-50 dark:bg-stone-800 text-stone-600 dark:text-stone-400',
 }
 
 const STEP_LABELS = ['Template', 'Travel Details', 'Itinerary', 'Travel Interest', 'Summary', 'Save']
@@ -92,7 +92,7 @@ function findFlight(list, flightNo, sector) {
   return list.find((f) => f.flightNo === flightNo && f.sector === sector) || null
 }
 
-const inputCls = 'w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors bg-white placeholder:text-stone-400'
+const inputCls = 'w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors bg-white placeholder:text-stone-400 dark:bg-stone-800 dark:border-stone-700 dark:text-stone-100 dark:placeholder:text-stone-500'
 
 // ─── Step indicator ───────────────────────────────────────────────────────────
 function StepBar({ current }) {
@@ -102,16 +102,16 @@ function StepBar({ current }) {
         <div key={label} className={`flex items-center ${i < STEP_LABELS.length - 1 ? 'flex-1' : ''}`}>
           <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all ${
             i < current  ? 'bg-amber-600 text-white'
-            : i === current ? 'bg-amber-600 text-white ring-4 ring-amber-100'
-            : 'bg-stone-100 text-stone-400'
+            : i === current ? 'bg-amber-600 text-white ring-4 ring-amber-100 dark:ring-amber-500/20'
+            : 'bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500'
           }`}>
             {i < current ? <Check className="w-3.5 h-3.5" /> : i + 1}
           </div>
-          <span className={`hidden sm:block ml-1.5 text-xs font-medium whitespace-nowrap ${i === current ? 'text-stone-800' : 'text-stone-400'}`}>
+          <span className={`hidden sm:block ml-1.5 text-xs font-medium whitespace-nowrap ${i === current ? 'text-stone-800 dark:text-stone-200' : 'text-stone-400 dark:text-stone-500'}`}>
             {label}
           </span>
           {i < STEP_LABELS.length - 1 && (
-            <div className={`flex-1 h-px mx-2 ${i < current ? 'bg-amber-500' : 'bg-stone-200'}`} />
+            <div className={`flex-1 h-px mx-2 ${i < current ? 'bg-amber-500' : 'bg-stone-200 dark:bg-stone-700'}`} />
           )}
         </div>
       ))}
@@ -357,16 +357,16 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
       {/* Drawer */}
-      <div className="relative ml-auto w-full max-w-2xl bg-white h-full flex flex-col shadow-2xl overflow-hidden">
+      <div className="relative ml-auto w-full max-w-2xl bg-white dark:bg-stone-900 h-full flex flex-col shadow-2xl overflow-hidden transition-colors duration-300">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 bg-white flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 dark:border-stone-800 bg-white dark:bg-stone-900 flex-shrink-0">
           <div>
-            <h2 className="font-serif font-bold text-stone-900 text-lg">
+            <h2 className="font-serif font-bold text-stone-900 dark:text-stone-50 text-lg">
               {isEditing ? `Edit: ${editBooking.tour_title || 'Booking'}` : initialTourData ? `Book: ${initialTourData.title}` : 'Build Custom Package'}
             </h2>
-            <p className="text-stone-400 text-xs">Step {step + 1} of {STEP_LABELS.length}</p>
+            <p className="text-stone-400 dark:text-stone-500 text-xs">Step {step + 1} of {STEP_LABELS.length}</p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-stone-100 text-stone-400 hover:text-stone-600 transition-colors">
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -381,21 +381,21 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
               {initialTourData ? (
                 // Pre-selected tour — show confirmation card
                 <div>
-                  <h3 className="font-semibold text-stone-900 mb-1">Selected Tour</h3>
-                  <p className="text-stone-400 text-sm mb-4">Your itinerary has been pre-filled. You can edit every day in step 3.</p>
-                  <div className="border-2 border-amber-500 bg-amber-50 rounded-2xl p-5 shadow-md shadow-amber-100">
+                  <h3 className="font-semibold text-stone-900 dark:text-stone-50 mb-1">Selected Tour</h3>
+                  <p className="text-stone-400 dark:text-stone-500 text-sm mb-4">Your itinerary has been pre-filled. You can edit every day in step 3.</p>
+                  <div className="border-2 border-amber-500 bg-amber-50 dark:bg-amber-500/10 rounded-2xl p-5 shadow-md shadow-amber-100 dark:shadow-black/30">
                     <div className="flex items-start justify-between gap-2 mb-3">
-                      <p className="font-bold text-stone-900 text-base leading-snug">{initialTourData.title}</p>
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-amber-300 bg-amber-100 text-amber-700 flex-shrink-0">
+                      <p className="font-bold text-stone-900 dark:text-stone-50 text-base leading-snug">{initialTourData.title}</p>
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-amber-300 dark:border-amber-500/30 bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 flex-shrink-0">
                         {initialTourData.categoryLabel || 'Tour'}
                       </span>
                     </div>
-                    <p className="text-sm text-stone-600 mb-3">{initialTourData.subtitle || ''}</p>
-                    <div className="grid grid-cols-2 gap-2 text-xs text-stone-600">
+                    <p className="text-sm text-stone-600 dark:text-stone-400 mb-3">{initialTourData.subtitle || ''}</p>
+                    <div className="grid grid-cols-2 gap-2 text-xs text-stone-600 dark:text-stone-400">
                       <p>📅 {initialTourData.days}D / {initialTourData.nights}N</p>
                       <p>🏔 {initialTourData.categoryLabel || 'Cultural Tour'}</p>
                     </div>
-                    <div className="mt-3 flex items-center gap-1 text-amber-600 text-xs font-medium">
+                    <div className="mt-3 flex items-center gap-1 text-amber-600 dark:text-amber-400 text-xs font-medium">
                       <Check className="w-3 h-3" /> Pre-filled itinerary ready to review
                     </div>
                   </div>
@@ -403,8 +403,8 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
               ) : (
                 // Standard template picker
                 <div>
-                  <h3 className="font-semibold text-stone-900 mb-1">Choose a Journey Template</h3>
-                  <p className="text-stone-400 text-sm">Start from a curated itinerary or build fully custom.</p>
+                  <h3 className="font-semibold text-stone-900 dark:text-stone-50 mb-1">Choose a Journey Template</h3>
+                  <p className="text-stone-400 dark:text-stone-500 text-sm">Start from a curated itinerary or build fully custom.</p>
                 </div>
               )}
               {!initialTourData && (
@@ -420,22 +420,22 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
                       }}
                       className={`text-left p-4 rounded-2xl border-2 transition-all ${
                         template.id === t.id
-                          ? 'border-amber-500 bg-amber-50 shadow-md shadow-amber-100'
-                          : 'border-stone-200 hover:border-stone-300 bg-white'
+                          ? 'border-amber-500 bg-amber-50 dark:bg-amber-500/10 shadow-md shadow-amber-100 dark:shadow-black/30'
+                          : 'border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 bg-white dark:bg-stone-800'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2 mb-2">
-                        <p className="font-semibold text-stone-900 text-sm leading-snug">{t.title}</p>
+                        <p className="font-semibold text-stone-900 dark:text-stone-100 text-sm leading-snug">{t.title}</p>
                         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border flex-shrink-0 ${CAT_COLOR[t.category]}`}>
                           {t.category}
                         </span>
                       </div>
                       {t.days > 0
-                        ? <p className="text-xs text-stone-500">{t.days}D / {t.nights}N</p>
-                        : <p className="text-xs text-stone-500">Fully custom — set your own parameters</p>
+                        ? <p className="text-xs text-stone-500 dark:text-stone-400">{t.days}D / {t.nights}N</p>
+                        : <p className="text-xs text-stone-500 dark:text-stone-400">Fully custom — set your own parameters</p>
                       }
                       {template.id === t.id && (
-                        <div className="mt-2 flex items-center gap-1 text-amber-600 text-xs font-medium">
+                        <div className="mt-2 flex items-center gap-1 text-amber-600 dark:text-amber-400 text-xs font-medium">
                           <Check className="w-3 h-3" /> Selected
                         </div>
                       )}
@@ -450,19 +450,19 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
           {step === 1 && (
             <div className="space-y-5">
               <div>
-                <h3 className="font-semibold text-stone-900 mb-1">Travel Details</h3>
-                <p className="text-stone-400 text-sm">Client info, dates, flights, and hotel preference.</p>
+                <h3 className="font-semibold text-stone-900 dark:text-stone-50 mb-1">Travel Details</h3>
+                <p className="text-stone-400 dark:text-stone-500 text-sm">Client info, dates, flights, and hotel preference.</p>
               </div>
 
               <div className="space-y-4">
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Full Name (as on passport) *</label>
+                    <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Full Name (as on passport) *</label>
                     <input value={clientName} onChange={(e) => setClientName(e.target.value)}
                       className={inputCls} placeholder="Full name on passport" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Group Size *</label>
+                    <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Group Size *</label>
                     <input type="number" min={1} max={50} value={pax}
                       onChange={(e) => setPax(Math.max(1, parseInt(e.target.value) || 1))}
                       className={inputCls} />
@@ -471,12 +471,12 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Passport Number *</label>
+                    <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Passport Number *</label>
                     <input value={passportNum} onChange={(e) => setPassport(e.target.value)}
                       className={inputCls} placeholder="e.g. A1234567" autoComplete="off" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Nationality *</label>
+                    <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Nationality *</label>
                     <CountrySelect
                       id="nationality"
                       value={nationality}
@@ -488,12 +488,12 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Email Address *</label>
+                    <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Email Address *</label>
                     <input type="email" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)}
                       className={inputCls} placeholder="your@email.com" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Phone Number *</label>
+                    <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Phone Number *</label>
                     <PhoneInput
                       id="clientPhone"
                       value={clientPhone}
@@ -505,34 +505,34 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Passport Expiry Date</label>
+                    <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Passport Expiry Date</label>
                     <input type="date" value={passportExpiry} onChange={(e) => setPassportExpiry(e.target.value)}
                       className={inputCls} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Emergency Contact</label>
+                    <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Emergency Contact</label>
                     <input value={emergencyContact} onChange={(e) => setEmergency(e.target.value)}
                       className={inputCls} placeholder="Name & phone number" />
                   </div>
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
-                  <p className="text-xs text-blue-700 font-medium">✈ Travel dates and flight details will be confirmed by our team after reviewing your booking.</p>
+                <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/25 rounded-xl px-4 py-3">
+                  <p className="text-xs text-blue-700 dark:text-blue-400 font-medium">✈ Travel dates and flight details will be confirmed by our team after reviewing your booking.</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-2">Hotel Tier</label>
+                  <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">Hotel Tier</label>
                   <div className="grid grid-cols-3 gap-3">
                     {Object.entries(HOTEL_RATES).map(([tier, info]) => (
                       <button key={tier} type="button" onClick={() => setHotelTier(tier)}
                         className={`p-3 rounded-xl border-2 text-left transition-all ${
                           hotelTier === tier
-                            ? 'border-amber-500 bg-amber-50'
-                            : 'border-stone-200 hover:border-stone-300'
+                            ? 'border-amber-500 bg-amber-50 dark:bg-amber-500/10'
+                            : 'border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600'
                         }`}>
-                        <p className="font-semibold text-stone-900 text-sm">{tier}</p>
-                        <p className="text-[10px] text-stone-400 mt-0.5 line-clamp-1">{info.desc}</p>
-                        {hotelTier === tier && <Check className="w-3 h-3 text-amber-600 mt-1" />}
+                        <p className="font-semibold text-stone-900 dark:text-stone-100 text-sm">{tier}</p>
+                        <p className="text-[10px] text-stone-400 dark:text-stone-500 mt-0.5 line-clamp-1">{info.desc}</p>
+                        {hotelTier === tier && <Check className="w-3 h-3 text-amber-600 dark:text-amber-400 mt-1" />}
                       </button>
                     ))}
                   </div>
@@ -545,25 +545,25 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
           {step === 2 && (
             <div className="space-y-5">
               <div>
-                <h3 className="font-semibold text-stone-900 mb-1">Day-by-Day Itinerary</h3>
-                <p className="text-stone-400 text-sm">{totalDays} days · {nights} nights. Fill in activities for each day.</p>
+                <h3 className="font-semibold text-stone-900 dark:text-stone-50 mb-1">Day-by-Day Itinerary</h3>
+                <p className="text-stone-400 dark:text-stone-500 text-sm">{totalDays} days · {nights} nights. Fill in activities for each day.</p>
               </div>
 
               <div className="space-y-4">
                 {days.map((day, i) => (
-                  <div key={i} className="border border-stone-200 rounded-2xl overflow-hidden">
-                    <div className="flex items-center gap-3 px-4 py-3 bg-stone-50 border-b border-stone-200">
+                  <div key={i} className="border border-stone-200 dark:border-stone-700 rounded-2xl overflow-hidden">
+                    <div className="flex items-center gap-3 px-4 py-3 bg-stone-50 dark:bg-stone-800 border-b border-stone-200 dark:border-stone-700">
                       <div className="w-8 h-8 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
                         {String(i + 1).padStart(2, '0')}
                       </div>
                       <div>
-                        <p className="font-semibold text-stone-900 text-sm">Day {i + 1}</p>
-                        <p className="text-xs text-stone-400">{day.date}</p>
+                        <p className="font-semibold text-stone-900 dark:text-stone-100 text-sm">Day {i + 1}</p>
+                        <p className="text-xs text-stone-400 dark:text-stone-500">{day.date}</p>
                       </div>
                     </div>
                     <div className="p-4 space-y-3">
                       <div>
-                        <label className="block text-xs font-medium text-stone-600 mb-1">
+                        <label className="block text-xs font-medium text-stone-600 dark:text-stone-400 mb-1">
                           Day Title / Destination *
                         </label>
                         <input
@@ -574,7 +574,7 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-stone-600 mb-1">
+                        <label className="block text-xs font-medium text-stone-600 dark:text-stone-400 mb-1">
                           Activities & Highlights
                         </label>
                         <textarea
@@ -587,7 +587,7 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-xs font-medium text-stone-600 mb-1">Hotel / Accommodation</label>
+                          <label className="block text-xs font-medium text-stone-600 dark:text-stone-400 mb-1">Hotel / Accommodation</label>
                           <input
                             value={day.hotel}
                             onChange={(e) => updateDay(i, 'hotel', e.target.value)}
@@ -596,7 +596,7 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-stone-600 mb-2">Meals Included</label>
+                          <label className="block text-xs font-medium text-stone-600 dark:text-stone-400 mb-2">Meals Included</label>
                           <div className="flex gap-3">
                             {[['breakfast', 'B'], ['lunch', 'L'], ['dinner', 'D']].map(([key, abbr]) => (
                               <label key={key} className="flex items-center gap-1.5 cursor-pointer">
@@ -606,7 +606,7 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
                                   onChange={(e) => updateDay(i, key, e.target.checked)}
                                   className="w-3.5 h-3.5 accent-amber-600"
                                 />
-                                <span className="text-xs font-medium text-stone-600">{abbr}</span>
+                                <span className="text-xs font-medium text-stone-600 dark:text-stone-400">{abbr}</span>
                               </label>
                             ))}
                           </div>
@@ -623,8 +623,8 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
           {step === 3 && (
             <div className="space-y-5">
               <div>
-                <h3 className="font-semibold text-stone-900 mb-1">Travel Interests</h3>
-                <p className="text-stone-400 text-sm">Select the experiences you'd love to have. Prices are indicative — your specialist will confirm costs in the quote.</p>
+                <h3 className="font-semibold text-stone-900 dark:text-stone-50 mb-1">Travel Interests</h3>
+                <p className="text-stone-400 dark:text-stone-500 text-sm">Select the experiences you'd love to have. Prices are indicative — your specialist will confirm costs in the quote.</p>
               </div>
 
               {/* Category filter */}
@@ -637,7 +637,7 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
                     className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-all ${
                       activeInterestCat === cat
                         ? 'bg-amber-600 text-white border-amber-600'
-                        : 'border-stone-200 text-stone-600 hover:border-amber-300 hover:text-amber-700'
+                        : 'border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 hover:border-amber-300 dark:hover:border-amber-500/40 hover:text-amber-700 dark:hover:text-amber-400'
                     }`}
                   >
                     {cat}
@@ -656,21 +656,21 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
                       onClick={() => toggleInterest(ti.id)}
                       className={`text-left rounded-xl border-2 px-3.5 py-3 transition-all duration-150 ${
                         isSelected
-                          ? 'border-amber-500 bg-amber-50'
-                          : 'border-stone-200 hover:border-amber-200 bg-white'
+                          ? 'border-amber-500 bg-amber-50 dark:bg-amber-500/10'
+                          : 'border-stone-200 dark:border-stone-700 hover:border-amber-200 dark:hover:border-amber-500/40 bg-white dark:bg-stone-800'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-stone-900 text-xs leading-snug">
+                          <p className="font-semibold text-stone-900 dark:text-stone-100 text-xs leading-snug">
                             {ti.emoji} {ti.name}
                           </p>
-                          <p className={`text-[11px] mt-0.5 font-medium ${ti.cost_per_person === 0 ? 'text-green-600' : 'text-amber-700'}`}>
+                          <p className={`text-[11px] mt-0.5 font-medium ${ti.cost_per_person === 0 ? 'text-green-600 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}`}>
                             {ti.price_label || ''}
                           </p>
                         </div>
                         <div className={`w-4 h-4 rounded border-2 flex-shrink-0 mt-0.5 flex items-center justify-center ${
-                          isSelected ? 'border-amber-500 bg-amber-500' : 'border-stone-300'
+                          isSelected ? 'border-amber-500 bg-amber-500' : 'border-stone-300 dark:border-stone-600'
                         }`}>
                           {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
                         </div>
@@ -681,13 +681,13 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
               </div>
 
               {travelInterests.length > 0 && (
-                <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-                  <p className="text-xs font-semibold text-amber-800 mb-1.5">
+                <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/25 rounded-xl px-4 py-3">
+                  <p className="text-xs font-semibold text-amber-800 dark:text-amber-300 mb-1.5">
                     {travelInterests.length} interest{travelInterests.length !== 1 ? 's' : ''} selected:
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {selectedInterestObjects.map(ti => (
-                      <span key={ti.id} className="text-[11px] bg-white border border-amber-200 text-amber-800 px-2 py-0.5 rounded-full font-medium">
+                      <span key={ti.id} className="text-[11px] bg-white dark:bg-stone-800 border border-amber-200 dark:border-amber-500/25 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-full font-medium">
                         {ti.emoji} {ti.name}
                       </span>
                     ))}
@@ -701,50 +701,50 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
           {step === 4 && (
             <div className="space-y-5">
               <div>
-                <h3 className="font-semibold text-stone-900 mb-1">Booking Summary</h3>
-                <p className="text-stone-400 text-sm">Review your selections — our team will prepare a personalised quote.</p>
+                <h3 className="font-semibold text-stone-900 dark:text-stone-50 mb-1">Booking Summary</h3>
+                <p className="text-stone-400 dark:text-stone-500 text-sm">Review your selections — our team will prepare a personalised quote.</p>
               </div>
 
               {/* Trip overview */}
-              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 space-y-3">
-                <p className="text-xs text-amber-700 font-semibold uppercase tracking-wider">{template.title}</p>
+              <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/25 rounded-2xl p-5 space-y-3">
+                <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold uppercase tracking-wider">{template.title}</p>
                 <div className="grid grid-cols-3 gap-3 text-center">
-                  <div className="bg-white rounded-xl py-3 px-2 border border-amber-100">
-                    <p className="text-2xl font-bold text-stone-900">{pax}</p>
-                    <p className="text-[10px] text-stone-400 uppercase tracking-wide mt-0.5">Guests</p>
+                  <div className="bg-white dark:bg-stone-800 rounded-xl py-3 px-2 border border-amber-100 dark:border-amber-500/20">
+                    <p className="text-2xl font-bold text-stone-900 dark:text-stone-50">{pax}</p>
+                    <p className="text-[10px] text-stone-400 dark:text-stone-500 uppercase tracking-wide mt-0.5">Guests</p>
                   </div>
-                  <div className="bg-white rounded-xl py-3 px-2 border border-amber-100">
-                    <p className="text-2xl font-bold text-stone-900">{nights || template.nights}</p>
-                    <p className="text-[10px] text-stone-400 uppercase tracking-wide mt-0.5">Nights</p>
+                  <div className="bg-white dark:bg-stone-800 rounded-xl py-3 px-2 border border-amber-100 dark:border-amber-500/20">
+                    <p className="text-2xl font-bold text-stone-900 dark:text-stone-50">{nights || template.nights}</p>
+                    <p className="text-[10px] text-stone-400 dark:text-stone-500 uppercase tracking-wide mt-0.5">Nights</p>
                   </div>
-                  <div className="bg-white rounded-xl py-3 px-2 border border-amber-100">
-                    <p className="text-sm font-bold text-stone-900 leading-tight">{hotelTier}</p>
-                    <p className="text-[10px] text-stone-400 uppercase tracking-wide mt-0.5">Hotel</p>
+                  <div className="bg-white dark:bg-stone-800 rounded-xl py-3 px-2 border border-amber-100 dark:border-amber-500/20">
+                    <p className="text-sm font-bold text-stone-900 dark:text-stone-50 leading-tight">{hotelTier}</p>
+                    <p className="text-[10px] text-stone-400 dark:text-stone-500 uppercase tracking-wide mt-0.5">Hotel</p>
                   </div>
                 </div>
                 {arrivalDate && (
-                  <p className="text-xs text-stone-500 text-center">
+                  <p className="text-xs text-stone-500 dark:text-stone-400 text-center">
                     {arrivalDate}{returnDate ? ` → ${returnDate}` : ''}
                   </p>
                 )}
               </div>
 
               {/* SDF info — mandatory government levy */}
-              <div className="rounded-2xl border border-stone-200 overflow-hidden">
-                <div className="bg-stone-800 px-4 py-3">
+              <div className="rounded-2xl border border-stone-200 dark:border-stone-700 overflow-hidden">
+                <div className="bg-stone-800 dark:bg-stone-950 px-4 py-3">
                   <p className="text-white text-xs font-semibold uppercase tracking-wide">Mandatory Government Levy</p>
                 </div>
-                <div className="bg-white px-4 py-4 flex items-center justify-between">
+                <div className="bg-white dark:bg-stone-800 px-4 py-4 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-stone-800">Sustainable Development Fee (SDF)</p>
-                    <p className="text-xs text-stone-400 mt-0.5">$100 USD per person per night — Royal Government of Bhutan</p>
+                    <p className="text-sm font-semibold text-stone-800 dark:text-stone-100">Sustainable Development Fee (SDF)</p>
+                    <p className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">$100 USD per person per night — Royal Government of Bhutan</p>
                   </div>
                   {sdfTotal !== null && (
-                    <p className="text-lg font-bold text-amber-700">${sdfTotal.toLocaleString()}</p>
+                    <p className="text-lg font-bold text-amber-700 dark:text-amber-400">${sdfTotal.toLocaleString()}</p>
                   )}
                 </div>
-                <div className="bg-stone-50 px-4 py-3 border-t border-stone-100">
-                  <p className="text-xs text-stone-400">
+                <div className="bg-stone-50 dark:bg-stone-900 px-4 py-3 border-t border-stone-100 dark:border-stone-700">
+                  <p className="text-xs text-stone-400 dark:text-stone-500">
                     SDF is a non-negotiable government fee and the only fixed cost we can confirm upfront.
                     All other rates (accommodation, guide, vehicle) will be included in your personalised quote.
                   </p>
@@ -753,35 +753,35 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
 
               {/* Travel Interests in summary */}
               {selectedInterestObjects.length > 0 && (
-                <div className="rounded-2xl border border-stone-200 overflow-hidden">
-                  <div className="bg-amber-50 px-4 py-3 border-b border-amber-100">
-                    <p className="text-xs font-semibold text-amber-800 uppercase tracking-wide">
+                <div className="rounded-2xl border border-stone-200 dark:border-stone-700 overflow-hidden">
+                  <div className="bg-amber-50 dark:bg-amber-500/10 px-4 py-3 border-b border-amber-100 dark:border-amber-500/20">
+                    <p className="text-xs font-semibold text-amber-800 dark:text-amber-300 uppercase tracking-wide">
                       Travel Interests · {selectedInterestObjects.length} selected
                     </p>
                   </div>
-                  <div className="bg-white px-4 py-3">
+                  <div className="bg-white dark:bg-stone-800 px-4 py-3">
                     <div className="flex flex-wrap gap-1.5">
                       {selectedInterestObjects.map(ti => (
                         <span key={ti.id} className={`text-[11px] px-2 py-1 rounded-full font-medium border ${
                           ti.cost_per_person === 0
-                            ? 'bg-green-50 text-green-700 border-green-200'
-                            : 'bg-amber-50 text-amber-700 border-amber-200'
+                            ? 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/25'
+                            : 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/25'
                         }`}>
                           {ti.emoji} {ti.name}
                         </span>
                       ))}
                     </div>
-                    <p className="text-[10px] text-stone-400 mt-2">Charges applicable for non-free items — included in your personalised quote</p>
+                    <p className="text-[10px] text-stone-400 dark:text-stone-500 mt-2">Charges applicable for non-free items — included in your personalised quote</p>
                   </div>
                 </div>
               )}
 
               {/* Quote note */}
-              <div className="bg-blue-50 border border-blue-200 rounded-2xl px-4 py-4 flex gap-3 items-start">
-                <span className="text-blue-500 text-lg mt-0.5">ℹ</span>
+              <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/25 rounded-2xl px-4 py-4 flex gap-3 items-start">
+                <span className="text-blue-500 dark:text-blue-400 text-lg mt-0.5">ℹ</span>
                 <div>
-                  <p className="text-sm font-semibold text-blue-900">Personalised Quote to Follow</p>
-                  <p className="text-xs text-blue-600 mt-1 leading-relaxed">
+                  <p className="text-sm font-semibold text-blue-900 dark:text-blue-300">Personalised Quote to Follow</p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 leading-relaxed">
                     After you save this booking, our specialist will review your itinerary and send a
                     complete, itemised quote to your email address within 24 hours.
                   </p>
@@ -794,11 +794,11 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
           {step === 5 && (
             <div className="space-y-5">
               <div>
-                <h3 className="font-semibold text-stone-900 mb-1">Review & Save</h3>
-                <p className="text-stone-400 text-sm">Your package will be saved with PENDING status and reviewed by our team.</p>
+                <h3 className="font-semibold text-stone-900 dark:text-stone-50 mb-1">Review & Save</h3>
+                <p className="text-stone-400 dark:text-stone-500 text-sm">Your package will be saved with PENDING status and reviewed by our team.</p>
               </div>
 
-              <div className="bg-stone-50 rounded-2xl border border-stone-200 divide-y divide-stone-200">
+              <div className="bg-stone-50 dark:bg-stone-800 rounded-2xl border border-stone-200 dark:border-stone-700 divide-y divide-stone-200 dark:divide-stone-700">
                 {[
                   ['Guest',      clientName || '—'],
                   ['Passport',   passportNum || '—'],
@@ -814,14 +814,14 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
                   ['Interests',  travelInterests.length > 0 ? `${travelInterests.length} selected` : 'None'],
                 ].map(([label, val]) => (
                   <div key={label} className="flex items-center justify-between px-4 py-3">
-                    <span className="text-xs text-stone-400 font-medium uppercase tracking-wide">{label}</span>
-                    <span className="text-sm font-semibold text-stone-900">{val}</span>
+                    <span className="text-xs text-stone-400 dark:text-stone-500 font-medium uppercase tracking-wide">{label}</span>
+                    <span className="text-sm font-semibold text-stone-900 dark:text-stone-100">{val}</span>
                   </div>
                 ))}
               </div>
 
               {saveError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
+                <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 text-sm px-4 py-3 rounded-xl">
                   {saveError}
                 </div>
               )}
@@ -841,7 +841,7 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
         </div>
 
         {/* Footer nav */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-stone-100 bg-white flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-stone-100 dark:border-stone-800 bg-white dark:bg-stone-900 flex-shrink-0">
           <button
             onClick={() => setStep((s) => s - 1)}
             disabled={step === 0}
