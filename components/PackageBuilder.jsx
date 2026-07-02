@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { X, ChevronRight, ChevronLeft, Check, Plane, Calendar, Users, Hotel, MapPin, Save, Loader2 } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
 import { tours } from '@/data/tours'
-import { TRAVEL_INTERESTS, INTEREST_CATEGORIES } from '@/data/travelInterests'
 import CountrySelect from '@/components/CountrySelect'
 import PhoneInput from '@/components/PhoneInput'
 
@@ -194,6 +193,7 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
   const [emergencyContact, setEmergency]    = useState(editBooking?.emergency_contact || profile?.emergency_contact || '')
   const [travelInterests, setTravelInterests]   = useState([])
   const [activeInterestCat, setActiveInterestCat] = useState('All')
+  const [activities, setActivities]             = useState([])
   const [days, setDays]                 = useState(() => {
     if (isEditing) return editBooking.itinerary_days || []
     if (initialTourData) return buildInitialDays(initialTourData)
@@ -227,6 +227,16 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
       }
     }))
   }, [totalDays, arrivalDate])
+
+  useEffect(() => {
+    supabase
+      .from('activities')
+      .select('id, name, emoji, price_label, category, cost_per_person')
+      .eq('active', true)
+      .order('category')
+      .order('name')
+      .then(({ data }) => setActivities(data ?? []))
+  }, [])
 
   function updateDay(i, k, v) {
     setDays((prev) => prev.map((d, idx) => idx === i ? { ...d, [k]: v } : d))
@@ -263,11 +273,13 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
   const toggleInterest = (id) =>
     setTravelInterests(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
 
-  const visibleInterests = activeInterestCat === 'All'
-    ? TRAVEL_INTERESTS
-    : TRAVEL_INTERESTS.filter(ti => ti.category === activeInterestCat)
+  const interestCategories = ['All', ...Array.from(new Set(activities.map(a => a.category)))]
 
-  const selectedInterestObjects = TRAVEL_INTERESTS.filter(ti => travelInterests.includes(ti.id))
+  const visibleInterests = activeInterestCat === 'All'
+    ? activities
+    : activities.filter(a => a.category === activeInterestCat)
+
+  const selectedInterestObjects = activities.filter(a => travelInterests.includes(a.id))
 
   async function save() {
     setSaving(true)
@@ -309,7 +321,7 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
       return_date:     returnDate  || null,
       itinerary_days:  days,
       travel_interests: selectedInterestObjects.map(ti => ({
-        id: ti.id, name: ti.name, priceLabel: ti.priceLabel, category: ti.category,
+        id: ti.id, name: ti.name, price_label: ti.price_label, emoji: ti.emoji, category: ti.category,
       })),
       cost_items:      [],
       subtotal:        null,
@@ -617,7 +629,7 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
 
               {/* Category filter */}
               <div className="flex flex-wrap gap-2">
-                {['All', ...INTEREST_CATEGORIES].map(cat => (
+                {interestCategories.map(cat => (
                   <button
                     key={cat}
                     type="button"
@@ -653,8 +665,8 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
                           <p className="font-semibold text-stone-900 text-xs leading-snug">
                             {ti.emoji} {ti.name}
                           </p>
-                          <p className={`text-[11px] mt-0.5 font-medium ${ti.free ? 'text-green-600' : 'text-amber-700'}`}>
-                            {ti.priceLabel}
+                          <p className={`text-[11px] mt-0.5 font-medium ${ti.cost_per_person === 0 ? 'text-green-600' : 'text-amber-700'}`}>
+                            {ti.price_label || ''}
                           </p>
                         </div>
                         <div className={`w-4 h-4 rounded border-2 flex-shrink-0 mt-0.5 flex items-center justify-center ${
@@ -751,7 +763,7 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
                     <div className="flex flex-wrap gap-1.5">
                       {selectedInterestObjects.map(ti => (
                         <span key={ti.id} className={`text-[11px] px-2 py-1 rounded-full font-medium border ${
-                          ti.free
+                          ti.cost_per_person === 0
                             ? 'bg-green-50 text-green-700 border-green-200'
                             : 'bg-amber-50 text-amber-700 border-amber-200'
                         }`}>

@@ -245,13 +245,13 @@ export default function ItineraryCard({ itin, showDayPlan = true }) {
                 <span
                   key={ti.id}
                   className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-medium border ${
-                    ti.free === false
+                    (ti.price_label || ti.priceLabel || '') !== 'No Additional Cost' && ti.free !== true
                       ? 'bg-amber-50 text-amber-700 border-amber-200'
                       : 'bg-green-50 text-green-700 border-green-200'
                   }`}
                 >
-                  {ti.name}
-                  <span className="text-[10px] opacity-70">· {ti.priceLabel}</span>
+                  {ti.emoji ? `${ti.emoji} ` : ''}{ti.name}
+                  <span className="text-[10px] opacity-70">· {ti.price_label || ti.priceLabel}</span>
                 </span>
               ))}
             </div>

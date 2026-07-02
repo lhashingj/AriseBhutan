@@ -7,11 +7,10 @@ import {
   Moon, Users, MapPin, Send,
 } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
-import { TRAVEL_INTERESTS, INTEREST_CATEGORIES } from '@/data/travelInterests'
 
 // ── Constants ─────────────────────────────────────────────────
 
-const STEPS = ['Core Details', 'Accommodation', 'Travel Interests', 'Activities']
+const STEPS = ['Core Details', 'Accommodation', 'Activities']
 
 const TIER_META = {
   '3-Star': {
@@ -41,6 +40,8 @@ const CATEGORY_EMOJI = {
   Adventure:   '⚡',
   Wellness:    '🌿',
   Photography: '📷',
+  Nature:      '🌲',
+  Leisure:     '🎭',
 }
 
 // ── Sub-components ─────────────────────────────────────────────
@@ -121,7 +122,7 @@ function LoadingSkeleton() {
 
 // ── Itinerary Summary Showcase (right panel) ───────────────────
 
-function ItinerarySummary({ nights, guests, tier, selectedActivities, selectedInterests = [] }) {
+function ItinerarySummary({ nights, guests, tier, selectedActivities }) {
   const meta = TIER_META[tier]
   return (
     <div className="bg-stone-900 text-white rounded-3xl p-6">
@@ -191,9 +192,12 @@ function ItinerarySummary({ nights, guests, tier, selectedActivities, selectedIn
                   <Check className="w-2.5 h-2.5 text-white" />
                 </div>
                 <div>
-                  <p className="text-white text-xs font-medium leading-snug">{a.name}</p>
+                  <p className="text-white text-xs font-medium leading-snug">
+                    {a.emoji ? `${a.emoji} ` : ''}{a.name}
+                  </p>
                   <p className="text-stone-500 text-[10px] mt-0.5">
-                    {CATEGORY_EMOJI[a.category]} {a.category} · {a.location}
+                    {CATEGORY_EMOJI[a.category]} {a.category}
+                    {a.location ? ` · ${a.location}` : ''}
                   </p>
                 </div>
               </li>
@@ -201,24 +205,6 @@ function ItinerarySummary({ nights, guests, tier, selectedActivities, selectedIn
           </ul>
         )}
       </div>
-
-      {selectedInterests.length > 0 && (
-        <div className="mb-5">
-          <p className="text-stone-400 text-[10px] uppercase tracking-wider font-semibold mb-2">
-            Travel Interests{' '}
-            <span className="ml-1 bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-              {selectedInterests.length}
-            </span>
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {selectedInterests.map(ti => (
-              <span key={ti.id} className="text-[10px] bg-white/10 text-stone-300 px-2 py-1 rounded-full">
-                {ti.emoji} {ti.name.split(' ').slice(0, 3).join(' ')}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
 
       <div className="border-t border-white/10 pt-4">
         <p className="text-stone-500 text-[11px] leading-relaxed">
@@ -231,7 +217,7 @@ function ItinerarySummary({ nights, guests, tier, selectedActivities, selectedIn
 
 // ── Success screen ─────────────────────────────────────────────
 
-function SuccessScreen({ nights, guests, tier, selectedActivities, selectedInterests = [] }) {
+function SuccessScreen({ nights, guests, tier, selectedActivities }) {
   const meta = TIER_META[tier]
   return (
     <div className="text-center py-8 space-y-5">
@@ -273,13 +259,7 @@ function SuccessScreen({ nights, guests, tier, selectedActivities, selectedInter
         {selectedActivities.length > 0 && (
           <p className="text-sm text-stone-600">
             <span className="font-semibold text-stone-800">{selectedActivities.length}</span>{' '}
-            {selectedActivities.length === 1 ? 'activity' : 'activities'} selected
-          </p>
-        )}
-        {selectedInterests.length > 0 && (
-          <p className="text-sm text-stone-600">
-            <span className="font-semibold text-stone-800">{selectedInterests.length}</span>{' '}
-            travel {selectedInterests.length === 1 ? 'interest' : 'interests'} selected
+            {selectedActivities.length === 1 ? 'experience' : 'experiences'} selected
           </p>
         )}
       </div>
@@ -297,17 +277,15 @@ function SuccessScreen({ nights, guests, tier, selectedActivities, selectedInter
 // ── Main component ─────────────────────────────────────────────
 
 export default function AdventureBuilder() {
-  const [step, setStep]                   = useState(0)
-  const [nights, setNights]               = useState(7)
-  const [guests, setGuests]               = useState(2)
-  const [tier, setTier]                   = useState('4-Star')
-  const [selectedIds, setSelectedIds]     = useState([])
-  const [selectedInterestIds, setSelectedInterestIds] = useState([])
-  const [activeInterestCat, setActiveInterestCat]     = useState('All')
+  const [step, setStep]                 = useState(0)
+  const [nights, setNights]             = useState(7)
+  const [guests, setGuests]             = useState(2)
+  const [tier, setTier]                 = useState('4-Star')
+  const [selectedIds, setSelectedIds]   = useState([])
   const [activeCategory, setActiveCategory] = useState('All')
-  const [submitting, setSubmitting]       = useState(false)
-  const [submitted, setSubmitted]         = useState(false)
-  const [submitError, setSubmitError]     = useState('')
+  const [submitting, setSubmitting]     = useState(false)
+  const [submitted, setSubmitted]       = useState(false)
+  const [submitError, setSubmitError]   = useState('')
 
   const [activities, setActivities] = useState([])
   const [loading, setLoading]       = useState(true)
@@ -319,7 +297,7 @@ export default function AdventureBuilder() {
       try {
         const { data, error: e } = await supabase
           .from('activities')
-          .select('id, name, location, category, duration_hours')
+          .select('id, name, location, category, duration_hours, emoji, price_label')
           .eq('active', true)
           .order('category')
           .order('name')
@@ -354,14 +332,6 @@ export default function AdventureBuilder() {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
 
   // ── Submit to Supabase ───────────────────────────────────────
-  const selectedInterests = TRAVEL_INTERESTS.filter(ti => selectedInterestIds.includes(ti.id))
-  const toggleInterest = (id) =>
-    setSelectedInterestIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
-
-  const visibleInterests = activeInterestCat === 'All'
-    ? TRAVEL_INTERESTS
-    : TRAVEL_INTERESTS.filter(ti => ti.category === activeInterestCat)
-
   async function handleSubmit() {
     setSubmitting(true)
     setSubmitError('')
@@ -378,12 +348,8 @@ export default function AdventureBuilder() {
             location:       a.location,
             category:       a.category,
             duration_hours: a.duration_hours,
-          })),
-          travel_interests: selectedInterests.map(ti => ({
-            id:         ti.id,
-            name:       ti.name,
-            priceLabel: ti.priceLabel,
-            category:   ti.category,
+            emoji:          a.emoji,
+            price_label:    a.price_label,
           })),
           status: 'pending_review',
         })
@@ -429,7 +395,6 @@ export default function AdventureBuilder() {
           <SuccessScreen
             nights={nights} guests={guests}
             tier={tier} selectedActivities={selectedActivities}
-            selectedInterests={selectedInterests}
           />
         ) : (
           <>
@@ -526,99 +491,19 @@ export default function AdventureBuilder() {
                     <ChevronLeft className="w-4 h-4" /> Back
                   </button>
                   <button onClick={() => setStep(2)} className="btn-primary flex-1">
-                    Select Interests <ChevronRight className="w-4 h-4" />
+                    Select Activities <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
             )}
 
-            {/* STEP 2 — Travel Interests */}
+            {/* STEP 2 — Activities */}
             {step === 2 && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="font-serif text-2xl font-bold text-stone-900">Your Travel Interests</h2>
-                  <p className="text-stone-500 text-sm mt-1">
-                    Select the experiences you'd love to include. Prices shown are per booking — our specialist will confirm availability and costs.
-                  </p>
-                </div>
-
-                {/* Category filter */}
-                <div className="flex flex-wrap gap-2">
-                  {['All', ...INTEREST_CATEGORIES].map(cat => (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => setActiveInterestCat(cat)}
-                      className={`text-xs font-semibold px-3.5 py-1.5 rounded-full border transition-all ${
-                        activeInterestCat === cat
-                          ? 'bg-amber-600 text-white border-amber-600'
-                          : 'border-stone-200 text-stone-600 hover:border-amber-300 hover:text-amber-700'
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Interest cards */}
-                <div className="grid sm:grid-cols-2 gap-2.5 max-h-[440px] overflow-y-auto pr-1 -mr-1">
-                  {visibleInterests.map(ti => {
-                    const isSelected = selectedInterestIds.includes(ti.id)
-                    return (
-                      <button
-                        key={ti.id}
-                        type="button"
-                        onClick={() => toggleInterest(ti.id)}
-                        className={`text-left rounded-2xl border-2 px-4 py-3.5 transition-all duration-150 ${
-                          isSelected
-                            ? 'border-amber-500 bg-amber-50'
-                            : 'border-stone-100 hover:border-amber-200 bg-white'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-stone-900 text-xs sm:text-sm leading-snug">
-                              {ti.emoji} {ti.name}
-                            </p>
-                            <p className={`text-[11px] mt-1 font-medium ${ti.free ? 'text-green-600' : 'text-amber-700'}`}>
-                              {ti.priceLabel}
-                            </p>
-                          </div>
-                          <div className={`w-4 h-4 rounded border-2 flex-shrink-0 mt-0.5 flex items-center justify-center ${
-                            isSelected ? 'border-amber-500 bg-amber-500' : 'border-stone-300'
-                          }`}>
-                            {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
-                          </div>
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
-
-                {selectedInterestIds.length > 0 && (
-                  <p className="text-xs text-amber-700 font-medium text-center">
-                    ✓ {selectedInterestIds.length} interest{selectedInterestIds.length !== 1 ? 's' : ''} selected
-                  </p>
-                )}
-
-                <div className="flex gap-3">
-                  <button onClick={() => setStep(1)} className="btn-outline flex-1">
-                    <ChevronLeft className="w-4 h-4" /> Back
-                  </button>
-                  <button onClick={() => setStep(3)} className="btn-primary flex-1">
-                    Add Activities <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* STEP 3 — Activities */}
-            {step === 3 && (
               <div className="space-y-6">
                 <div>
                   <h2 className="font-serif text-2xl font-bold text-stone-900">Curate Your Experiences</h2>
                   <p className="text-stone-500 text-sm mt-1">
-                    Select any activities to include in your itinerary — your specialist will confirm availability.
+                    Select any activities or experiences to include — our specialist will confirm availability and costs.
                   </p>
                 </div>
 
@@ -640,10 +525,12 @@ export default function AdventureBuilder() {
                   ))}
                 </div>
 
-                {/* Activity cards — no prices shown */}
+                {/* Activity cards */}
                 <div className="grid sm:grid-cols-2 gap-2.5 max-h-[400px] overflow-y-auto pr-1 -mr-1">
                   {visibleActivities.map(activity => {
                     const isSelected = selectedIds.includes(activity.id)
+                    const priceLabel = activity.price_label
+                    const isFree     = priceLabel === 'No Additional Cost'
                     return (
                       <button
                         key={activity.id}
@@ -658,11 +545,18 @@ export default function AdventureBuilder() {
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-stone-900 text-xs sm:text-sm leading-snug">
-                              {activity.name}
+                              {activity.emoji ? `${activity.emoji} ` : ''}{activity.name}
                             </p>
-                            <p className="text-stone-400 text-[11px] mt-1">
-                              {activity.location} · {activity.duration_hours}h ·{' '}
-                              {CATEGORY_EMOJI[activity.category]} {activity.category}
+                            <p className="text-[11px] mt-1">
+                              {priceLabel ? (
+                                <span className={isFree ? 'text-green-600 font-medium' : 'text-amber-700 font-medium'}>
+                                  {priceLabel}
+                                </span>
+                              ) : (
+                                <span className="text-stone-400">
+                                  {activity.location}{activity.duration_hours ? ` · ${activity.duration_hours}h` : ''} · {CATEGORY_EMOJI[activity.category]} {activity.category}
+                                </span>
+                              )}
                             </p>
                           </div>
                           <div className={`w-4 h-4 rounded border-2 flex-shrink-0 mt-0.5 flex items-center justify-center ${
@@ -685,7 +579,7 @@ export default function AdventureBuilder() {
                 )}
 
                 <div className="flex gap-3">
-                  <button onClick={() => setStep(2)} className="btn-outline flex-1" disabled={submitting}>
+                  <button onClick={() => setStep(1)} className="btn-outline flex-1" disabled={submitting}>
                     <ChevronLeft className="w-4 h-4" /> Back
                   </button>
                   <button
@@ -719,7 +613,6 @@ export default function AdventureBuilder() {
           guests={guests}
           tier={tier}
           selectedActivities={selectedActivities}
-          selectedInterests={selectedInterests}
         />
       </div>
 

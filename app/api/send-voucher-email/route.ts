@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
     inclusions,
     exclusions,
     cancellationPolicy,
+    travelInterests,
   } = body
 
   if (!enquiryId || !arrivalDate || !returnDate) {
@@ -92,10 +93,11 @@ export async function POST(req: NextRequest) {
       vehicle:   vehicle || 'Private Vehicle & Driver',
     },
 
-    flights:           Array.isArray(flights)            ? flights.filter((f: any) => f.sector || f.flightNo)  : [],
-    itinerary:         Array.isArray(itinerary)          ? itinerary          : [],
-    accommodation:     Array.isArray(accommodation)      ? accommodation.filter((h: any) => h.hotel)           : [],
-    cancellationPolicy: Array.isArray(cancellationPolicy) ? cancellationPolicy : [],
+    flights:            Array.isArray(flights)             ? flights.filter((f: any) => f.sector || f.flightNo) : [],
+    itinerary:          Array.isArray(itinerary)           ? itinerary           : [],
+    accommodation:      Array.isArray(accommodation)       ? accommodation.filter((h: any) => h.hotel)          : [],
+    cancellationPolicy: Array.isArray(cancellationPolicy)  ? cancellationPolicy  : [],
+    travelInterests:    Array.isArray(travelInterests)     ? travelInterests     : (enquiry.travel_interests ?? []),
 
     pricing: {
       pricePerPerson:       pricing?.pricePerPerson       ?? 0,

@@ -224,6 +224,10 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
     (itinerary.tour_summary?.accommodations || []).map(a => ({ ...a }))
   )
 
+  const [travelInterests, setTravelInterests] = useState(
+    (itinerary.tour_summary?.travel_interests || []).map(ti => ({ ...ti }))
+  )
+
   // ── Pricing state (itemized) ───────────────────────────────
   const [adultPax,    setAdultPax]    = useState(itinerary.pricing?.adult_pax    ?? (Number(itinerary.tour_summary?.group_size) || 1))
   const [child611Pax, setChild611Pax] = useState(itinerary.pricing?.child_611_pax ?? 0)
@@ -271,6 +275,51 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
   const [activeTab, setActiveTab] = useState('client')
   const [saving,    setSaving]    = useState(false)
   const [saveErr,   setSaveErr]   = useState('')
+
+  // ── Travel Interest helpers ────────────────────────────────
+  const [allActivities,    setAllActivities]    = useState([])
+  const [activitySearch,   setActivitySearch]   = useState('')
+  const [showActivityPick, setShowActivityPick] = useState(false)
+  const [showCustomForm,   setShowCustomForm]   = useState(false)
+  const [customDraft,      setCustomDraft]      = useState({ name: '', emoji: '', category: '', price_label: '' })
+
+  useEffect(() => {
+    supabase.from('activities').select('id,name,emoji,price_label,category,cost_per_person').eq('active', true).order('category').order('name')
+      .then(({ data }) => setAllActivities(data ?? []))
+  }, [])
+
+  function updateInterest(i, field, val) {
+    setTravelInterests(prev => prev.map((t, idx) => idx === i ? { ...t, [field]: val } : t))
+  }
+  function removeInterest(i) {
+    setTravelInterests(prev => prev.filter((_, idx) => idx !== i))
+  }
+  function addFromActivity(act) {
+    if (travelInterests.some(t => t.id === act.id)) return
+    setTravelInterests(prev => [...prev, {
+      id:          act.id,
+      name:        act.name,
+      emoji:       act.emoji || '',
+      category:    act.category,
+      price_label: act.price_label || (act.cost_per_person === 0 ? 'No Additional Cost' : `USD ${act.cost_per_person}`),
+      admin_note:  '',
+    }])
+    setActivitySearch('')
+    setShowActivityPick(false)
+  }
+  function addCustomInterest() {
+    if (!customDraft.name.trim()) return
+    setTravelInterests(prev => [...prev, {
+      id:          `custom-${Date.now()}`,
+      name:        customDraft.name.trim(),
+      emoji:       customDraft.emoji.trim(),
+      category:    customDraft.category.trim() || 'Cultural',
+      price_label: customDraft.price_label.trim() || 'No Additional Cost',
+      admin_note:  '',
+    }])
+    setCustomDraft({ name: '', emoji: '', category: '', price_label: '' })
+    setShowCustomForm(false)
+  }
 
   const nights = Number(tourSummary.duration_nights) || 1
   const primaryNationality = clientInfo.nationality || ''
@@ -377,12 +426,13 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
           ...itinerary.tour_summary,
           ...tourSummary,
           guests,
-          accommodations:  accommodations,
-          inclusions:      inclusions,
-          exclusions:      exclusions,
-          cancellation:    cancellationPolicy,
-          duration_nights: Number(tourSummary.duration_nights) || itinerary.tour_summary?.duration_nights || 1,
-          group_size:      totalPaxCount || Number(tourSummary.group_size) || itinerary.tour_summary?.group_size || 1,
+          accommodations:   accommodations,
+          inclusions:       inclusions,
+          exclusions:       exclusions,
+          cancellation:     cancellationPolicy,
+          travel_interests: travelInterests,
+          duration_nights:  Number(tourSummary.duration_nights) || itinerary.tour_summary?.duration_nights || 1,
+          group_size:       totalPaxCount || Number(tourSummary.group_size) || itinerary.tour_summary?.group_size || 1,
         },
         flights,
         day_by_day: days,
@@ -400,14 +450,15 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
 
   // ── tabs ───────────────────────────────────────────────────
   const TABS = [
-    { id: 'client',      label: 'Client',      icon: User },
-    { id: 'tour',        label: 'Tour',         icon: MapPin },
-    { id: 'flights',     label: 'Flights',      icon: Plane },
-    { id: 'itinerary',   label: 'Itinerary',    icon: Calendar },
-    { id: 'hotels',      label: 'Hotels',       icon: BedDouble },
-    { id: 'pricing',     label: 'Pricing',      icon: DollarSign },
-    { id: 'inclusions',  label: 'Incl./Excl.',  icon: ListChecks },
-    { id: 'policy',      label: 'Policy',       icon: ShieldAlert },
+    { id: 'client',          label: 'Client',           icon: User },
+    { id: 'tour',            label: 'Tour',             icon: MapPin },
+    { id: 'flights',         label: 'Flights',          icon: Plane },
+    { id: 'itinerary',       label: 'Itinerary',        icon: Calendar },
+    { id: 'travelinterest',  label: 'Travel Interest',  icon: ListChecks },
+    { id: 'hotels',          label: 'Hotels',           icon: BedDouble },
+    { id: 'pricing',         label: 'Pricing',          icon: DollarSign },
+    { id: 'inclusions',      label: 'Incl./Excl.',      icon: ListChecks },
+    { id: 'policy',          label: 'Policy',           icon: ShieldAlert },
   ]
 
   return (
@@ -1040,6 +1091,199 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
               </button>
             </div>
           )}
+
+          {/* ── Travel Interest Tab ── */}
+          {activeTab === 'travelinterest' && (() => {
+            const inp = 'w-full bg-stone-900 border border-white/10 rounded-xl px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:outline-none focus:border-amber-500/50 transition-colors'
+            const filteredActivities = allActivities.filter(a =>
+              !travelInterests.some(t => t.id === a.id) &&
+              (!activitySearch || a.name.toLowerCase().includes(activitySearch.toLowerCase()) || a.category.toLowerCase().includes(activitySearch.toLowerCase()))
+            )
+            return (
+              <div className="space-y-4">
+                {/* Action bar */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    onClick={() => { setShowActivityPick(v => !v); setShowCustomForm(false) }}
+                    className="flex items-center gap-1.5 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded-xl transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add from Activities
+                  </button>
+                  <button
+                    onClick={() => { setShowCustomForm(v => !v); setShowActivityPick(false) }}
+                    className="flex items-center gap-1.5 text-xs font-semibold border border-white/10 text-stone-300 hover:text-white hover:bg-white/5 px-3 py-2 rounded-xl transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add Custom
+                  </button>
+                  {travelInterests.length > 0 && (
+                    <span className="ml-auto text-[11px] text-stone-500">
+                      {travelInterests.length} experience{travelInterests.length !== 1 ? 's' : ''} ·{' '}
+                      <span className="text-amber-500">
+                        {travelInterests.filter(ti => (ti.price_label || ti.priceLabel || '') !== 'No Additional Cost').length} chargeable
+                      </span>
+                    </span>
+                  )}
+                </div>
+
+                {/* Pick from activities dropdown */}
+                {showActivityPick && (
+                  <div className="bg-stone-800 border border-amber-500/30 rounded-xl overflow-hidden">
+                    <div className="p-3 border-b border-white/5">
+                      <input
+                        autoFocus
+                        value={activitySearch}
+                        onChange={e => setActivitySearch(e.target.value)}
+                        placeholder="Search activities by name or category…"
+                        className={inp}
+                      />
+                    </div>
+                    <div className="max-h-60 overflow-y-auto divide-y divide-white/5">
+                      {filteredActivities.length === 0 ? (
+                        <p className="px-4 py-6 text-center text-stone-500 text-xs">
+                          {activitySearch ? 'No matching activities.' : 'All activities already added.'}
+                        </p>
+                      ) : filteredActivities.map(act => (
+                        <button
+                          key={act.id}
+                          onClick={() => addFromActivity(act)}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 text-left transition-colors"
+                        >
+                          <span className="text-lg shrink-0 w-7">{act.emoji || '•'}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-stone-200 font-medium truncate">{act.name}</p>
+                            <p className="text-[10px] text-stone-500">{act.category}</p>
+                          </div>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                            act.cost_per_person === 0 ? 'text-green-400 bg-green-500/15' : 'text-amber-400 bg-amber-500/15'
+                          }`}>
+                            {act.price_label || (act.cost_per_person === 0 ? 'Free' : `$${act.cost_per_person}`)}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Add custom form */}
+                {showCustomForm && (
+                  <div className="bg-stone-800 border border-white/10 rounded-xl p-4 space-y-3">
+                    <p className="text-xs font-bold text-stone-400 uppercase tracking-wider">Add Custom Experience</p>
+                    <div className="grid grid-cols-4 gap-3">
+                      <div className="col-span-1">
+                        <label className="text-[10px] text-stone-500 uppercase tracking-wider font-bold block mb-1.5">Emoji</label>
+                        <input value={customDraft.emoji} onChange={e => setCustomDraft(d => ({ ...d, emoji: e.target.value }))}
+                          placeholder="🎯" className={inp} />
+                      </div>
+                      <div className="col-span-3">
+                        <label className="text-[10px] text-stone-500 uppercase tracking-wider font-bold block mb-1.5">Experience Name *</label>
+                        <input value={customDraft.name} onChange={e => setCustomDraft(d => ({ ...d, name: e.target.value }))}
+                          placeholder="e.g. Hot Stone Bath" className={inp} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] text-stone-500 uppercase tracking-wider font-bold block mb-1.5">Category</label>
+                        <select value={customDraft.category} onChange={e => setCustomDraft(d => ({ ...d, category: e.target.value }))}
+                          className={inp + ' cursor-pointer'}>
+                          <option value="">Select…</option>
+                          {['Cultural','Spiritual','Trekking','Adventure','Wellness','Photography','Nature','Leisure'].map(c => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-stone-500 uppercase tracking-wider font-bold block mb-1.5">Price Label</label>
+                        <input value={customDraft.price_label} onChange={e => setCustomDraft(d => ({ ...d, price_label: e.target.value }))}
+                          placeholder="e.g. USD 50/Person or No Additional Cost" className={inp} />
+                      </div>
+                    </div>
+                    <div className="flex gap-2 pt-1">
+                      <button onClick={addCustomInterest} disabled={!customDraft.name.trim()}
+                        className="flex items-center gap-1.5 text-xs font-semibold bg-amber-600 hover:bg-amber-700 disabled:opacity-40 text-white px-4 py-2 rounded-xl transition-colors">
+                        <Plus className="w-3.5 h-3.5" /> Add Experience
+                      </button>
+                      <button onClick={() => { setShowCustomForm(false); setCustomDraft({ name: '', emoji: '', category: '', price_label: '' }) }}
+                        className="text-xs text-stone-500 hover:text-stone-300 px-3 py-2 rounded-xl hover:bg-white/5 transition-colors">
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Existing interests list */}
+                {travelInterests.length === 0 && !showActivityPick && !showCustomForm ? (
+                  <div className="text-center py-12 border-2 border-dashed border-white/10 rounded-xl">
+                    <ListChecks className="w-8 h-8 text-stone-600 mx-auto mb-3" />
+                    <p className="text-stone-500 text-sm font-medium">No travel experiences added yet</p>
+                    <p className="text-stone-600 text-xs mt-1">Use the buttons above to add from the activities list or create a custom experience</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {travelInterests.map((ti, i) => {
+                      const isFree = (ti.price_label || ti.priceLabel || '') === 'No Additional Cost'
+                      return (
+                        <div key={i} className="bg-stone-800 border border-white/5 rounded-xl overflow-hidden">
+                          {/* Card header — editable name + emoji + category */}
+                          <div className="flex items-center gap-2 px-3 py-2.5 border-b border-white/5">
+                            <input
+                              value={ti.emoji || ''}
+                              onChange={e => updateInterest(i, 'emoji', e.target.value)}
+                              placeholder="🎯"
+                              className="w-11 bg-stone-900 border border-white/10 rounded-lg px-2 py-1.5 text-center text-base focus:outline-none focus:border-amber-500/50 transition-colors"
+                            />
+                            <input
+                              value={ti.name || ''}
+                              onChange={e => updateInterest(i, 'name', e.target.value)}
+                              className="flex-1 bg-stone-900 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white font-semibold focus:outline-none focus:border-amber-500/50 transition-colors min-w-0"
+                            />
+                            <select
+                              value={ti.category || ''}
+                              onChange={e => updateInterest(i, 'category', e.target.value)}
+                              className="bg-stone-900 border border-white/10 rounded-lg px-2 py-1.5 text-[11px] text-stone-300 focus:outline-none focus:border-amber-500/50 transition-colors cursor-pointer"
+                            >
+                              {['Cultural','Spiritual','Trekking','Adventure','Wellness','Photography','Nature','Leisure'].map(c => (
+                                <option key={c} value={c}>{c}</option>
+                              ))}
+                            </select>
+                            <span className={`text-[10px] font-bold px-2 py-1 rounded-full shrink-0 ${
+                              isFree ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'
+                            }`}>
+                              {isFree ? 'Free' : 'Paid'}
+                            </span>
+                            <button onClick={() => removeInterest(i)}
+                              className="text-stone-600 hover:text-red-400 transition-colors p-1 shrink-0">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          {/* Editable price + notes */}
+                          <div className="px-3 py-2.5 grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block mb-1">Price Label</label>
+                              <input
+                                value={ti.price_label || ti.priceLabel || ''}
+                                onChange={e => updateInterest(i, 'price_label', e.target.value)}
+                                placeholder="e.g. USD 40/Person or No Additional Cost"
+                                className={inp}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block mb-1">Admin Notes</label>
+                              <input
+                                value={ti.admin_note || ''}
+                                onChange={e => updateInterest(i, 'admin_note', e.target.value)}
+                                placeholder="e.g. Scheduled for Day 4"
+                                className={inp}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          })()}
 
           {/* ── Hotels Tab ── */}
           {activeTab === 'hotels' && (

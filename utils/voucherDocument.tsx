@@ -132,10 +132,11 @@ export function VoucherDocument({ booking }: { booking: any }) {
   const usd = (n: number) => '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   const inr = (n: number) => '₹' + Math.round(n).toLocaleString('en-IN')
 
-  const flights          = Array.isArray(booking.flights)            ? booking.flights            : []
-  const itinerary        = Array.isArray(booking.itinerary)          ? booking.itinerary          : []
-  const accommodation    = Array.isArray(booking.accommodation)      ? booking.accommodation      : []
+  const flights            = Array.isArray(booking.flights)            ? booking.flights            : []
+  const itinerary          = Array.isArray(booking.itinerary)          ? booking.itinerary          : []
+  const accommodation      = Array.isArray(booking.accommodation)      ? booking.accommodation      : []
   const cancellationPolicy = Array.isArray(booking.cancellationPolicy) ? booking.cancellationPolicy : []
+  const travelInterests    = Array.isArray(booking.travelInterests)    ? booking.travelInterests    : []
 
   return (
     <Document
@@ -259,6 +260,38 @@ export function VoucherDocument({ booking }: { booking: any }) {
                 ))}
               </View>
               <Text style={s.noteText}>B = Breakfast · L = Lunch · D = Dinner</Text>
+            </>
+          )}
+
+          {/* Requested Travel Experiences */}
+          {travelInterests.length > 0 && (
+            <>
+              <SectionHead>Requested Travel Experiences</SectionHead>
+              <View style={[s.table, { marginBottom: 4 }]}>
+                <View style={[s.thead, { backgroundColor: '#92400e' }]}>
+                  <Text style={[s.th, { flex: 3 }]}>Experience</Text>
+                  <Text style={[s.th, { flex: 2 }]}>Category</Text>
+                  <Text style={[s.th, { flex: 2, textAlign: 'right' }]}>Price Indication</Text>
+                </View>
+                {travelInterests.map((ti: any, i: number) => {
+                  const isFree = (ti.price_label || ti.priceLabel || '') === 'No Additional Cost' || ti.free === true
+                  return (
+                    <View key={i} style={[s.tr, { alignItems: 'center' }, i % 2 === 1 ? { backgroundColor: '#fafaf9' } : {}]}>
+                      <View style={[s.td, { flex: 3, flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+                        {ti.emoji ? <Text style={{ fontSize: 10 }}>{ti.emoji}</Text> : null}
+                        <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 9, color: '#1c1917' }}>{ti.name}</Text>
+                      </View>
+                      <Text style={[s.td, { flex: 2, fontSize: 8.5, color: '#57534e' }]}>{ti.category || '—'}</Text>
+                      <Text style={[s.td, { flex: 2, textAlign: 'right', fontFamily: 'Helvetica-Bold', fontSize: 8.5 }, isFree ? { color: '#16a34a' } : { color: '#b45309' }]}>
+                        {ti.price_label || ti.priceLabel || '—'}
+                      </Text>
+                    </View>
+                  )
+                })}
+              </View>
+              <Text style={s.noteText}>
+                * Prices above are indicative — your Arise Bhutan specialist will confirm exact costs and incorporate these experiences into your day-by-day itinerary.
+              </Text>
             </>
           )}
 

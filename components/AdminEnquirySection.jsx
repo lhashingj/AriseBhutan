@@ -210,6 +210,7 @@ function SendVoucherModal({ enquiry, existingVoucher, onClose, onSent, onVoucher
       inclusions:         form.inclusions.filter(Boolean),
       exclusions:         form.exclusions.filter(Boolean),
       cancellationPolicy: form.cancellationPolicy.filter(r => r.period),
+      travelInterests:    Array.isArray(enquiry.travel_interests) ? enquiry.travel_interests : [],
     }
   }
 
@@ -301,12 +302,13 @@ function SendVoucherModal({ enquiry, existingVoucher, onClose, onSent, onVoucher
   const usd = (n) => '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
   const TABS = [
-    ['details',   'Details'],
-    ['flights',   'Flights'],
-    ['itinerary', 'Itinerary'],
-    ['pricing',   'Pricing'],
-    ['hotels',    'Hotels'],
-    ['package',   'Package'],
+    ['details',        'Details'],
+    ['flights',        'Flights'],
+    ['itinerary',      'Itinerary'],
+    ['travelinterest', 'Travel Interest'],
+    ['pricing',        'Pricing'],
+    ['hotels',         'Hotels'],
+    ['package',        'Package'],
   ]
 
   return (
@@ -560,6 +562,71 @@ function SendVoucherModal({ enquiry, existingVoucher, onClose, onSent, onVoucher
                   )}
                 </div>
               )}
+
+              {/* ══ TAB: Travel Interest ══ */}
+              {tab === 'travelinterest' && (() => {
+                const interests = Array.isArray(enquiry.travel_interests) ? enquiry.travel_interests : []
+                return (
+                  <div className="space-y-4">
+                    <div className="bg-stone-800 border border-white/5 rounded-xl px-4 py-3 flex items-start gap-3">
+                      <span className="text-amber-400 text-lg shrink-0">✦</span>
+                      <div>
+                        <p className="text-xs font-semibold text-stone-200">Client-Selected Experiences</p>
+                        <p className="text-xs text-stone-500 mt-0.5">These activities were chosen by the client when building their package. They are read-only — incorporate them into the day-by-day itinerary as appropriate.</p>
+                      </div>
+                    </div>
+
+                    {interests.length === 0 ? (
+                      <div className="text-center py-12 border-2 border-dashed border-white/10 rounded-xl">
+                        <p className="text-stone-500 text-sm">No travel interests were selected for this booking.</p>
+                      </div>
+                    ) : (
+                      <div className="rounded-xl overflow-hidden border border-white/10">
+                        <table className="w-full border-collapse">
+                          <thead>
+                            <tr className="bg-stone-800 text-[10px] font-bold text-stone-400 uppercase tracking-widest">
+                              <th className="px-4 py-3 text-left">Experience</th>
+                              <th className="px-4 py-3 text-left">Category</th>
+                              <th className="px-4 py-3 text-right">Price</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/5">
+                            {interests.map((ti, i) => {
+                              const isFree = (ti.price_label || ti.priceLabel || '') === 'No Additional Cost' || ti.free === true
+                              return (
+                                <tr key={i} className="hover:bg-white/5 transition-colors">
+                                  <td className="px-4 py-3">
+                                    <div className="flex items-center gap-2">
+                                      {ti.emoji && <span className="text-base">{ti.emoji}</span>}
+                                      <span className="text-sm font-semibold text-white">{ti.name}</span>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3">
+                                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-stone-700 text-stone-300">
+                                      {ti.category || '—'}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-3 text-right">
+                                    <span className={`text-xs font-bold ${isFree ? 'text-green-400' : 'text-amber-400'}`}>
+                                      {ti.price_label || ti.priceLabel || '—'}
+                                    </span>
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                        <div className="bg-stone-800/60 border-t border-white/5 px-4 py-2 flex items-center justify-between">
+                          <p className="text-[11px] text-stone-500">{interests.length} experience{interests.length !== 1 ? 's' : ''} requested</p>
+                          <p className="text-[11px] text-amber-500 font-semibold">
+                            {interests.filter(ti => (ti.price_label || ti.priceLabel || '') !== 'No Additional Cost' && ti.free !== true).length} with additional cost
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
 
               {/* ══ TAB: Pricing ══ */}
               {tab === 'pricing' && (
