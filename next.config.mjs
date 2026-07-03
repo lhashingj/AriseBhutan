@@ -9,6 +9,13 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  experimental: {
+    serverActions: {
+      // Travel-document uploads (flight tickets / visa PDFs) exceed
+      // the 1 MB default; keep in sync with the storage bucket limit.
+      bodySizeLimit: '10mb',
+    },
+  },
   async redirects() {
     return [
       // Redirect bare domain to www

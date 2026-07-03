@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Calendar, ChevronDown, ChevronRight, ExternalLink, BedDouble, Clock, Utensils } from 'lucide-react'
 import { tours } from '@/data/tours'
+import TravelDocumentsSection from '@/components/TravelDocumentsSection'
 
 const STATUS_CFG = {
   enquiry_pending: { label: 'Enquiry',   borderL: 'border-l-rose-400',  badge: 'bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200',   dot: 'bg-rose-400' },
@@ -229,6 +230,9 @@ export default function ItineraryCard({ itin, showDayPlan = true }) {
           })}
         </div>
       )}
+
+      {/* ── Travel Documents & Clearances ── */}
+      {ref && <TravelDocumentsSection bookingId={ref} />}
 
       {/* ── Requested Experiences ── */}
       {(() => {

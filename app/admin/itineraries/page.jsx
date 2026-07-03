@@ -11,6 +11,8 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/utils/supabase/client'
+import AdminTravelDocuments from '@/components/AdminTravelDocuments'
+import AdminBookingGuests from '@/components/AdminBookingGuests'
 
 // ── Flight reference data ─────────────────────────────────────
 const FLIGHT_SECTORS = [
@@ -459,6 +461,8 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
     { id: 'pricing',         label: 'Pricing',          icon: DollarSign },
     { id: 'inclusions',      label: 'Incl./Excl.',      icon: ListChecks },
     { id: 'policy',          label: 'Policy',           icon: ShieldAlert },
+    { id: 'documents',       label: 'Documents',        icon: FileText },
+    { id: 'guests',          label: 'Guests',           icon: User },
   ]
 
   return (
@@ -1801,6 +1805,16 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
                 These terms appear in the cancellation section of the client voucher PDF.
               </p>
             </div>
+          )}
+
+          {/* ── Documents Tab ── */}
+          {activeTab === 'documents' && (
+            <AdminTravelDocuments bookingId={itinerary.booking_reference} />
+          )}
+
+          {/* ── Guests Tab ── */}
+          {activeTab === 'guests' && (
+            <AdminBookingGuests bookingId={itinerary.booking_reference} />
           )}
 
           {saveErr && (

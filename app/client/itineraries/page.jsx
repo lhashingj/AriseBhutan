@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { MapPin } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
+import { claimGuestInvitations, fetchGuestItineraries } from '@/utils/bookingGuests'
 import ItineraryCard from '@/components/ItineraryCard'
 
 export default function ClientItinerariesPage() {
@@ -17,13 +18,17 @@ export default function ClientItinerariesPage() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) return
 
-      const [{ data: byUserId }, { data: byEmail }] = await Promise.all([
+      // Redeem any pending group-booking invitations (idempotent)
+      await claimGuestInvitations()
+
+      const [{ data: byUserId }, { data: byEmail }, byMembership] = await Promise.all([
         supabase.from('itineraries').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false }),
         supabase.from('itineraries').select('*').filter('client_info->>email', 'eq', session.user.email).order('created_at', { ascending: false }),
+        fetchGuestItineraries(),
       ])
 
       const seen = new Set()
-      const merged = [...(byUserId || []), ...(byEmail || [])].filter(i => {
+      const merged = [...(byUserId || []), ...(byEmail || []), ...(byMembership || [])].filter(i => {
         if (seen.has(i.id)) return false
         seen.add(i.id)
         return true
