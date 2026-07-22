@@ -1,3 +1,5 @@
+import { isRateLimited, getClientIp, rateLimitResponse } from '@/utils/rateLimit'
+
 const SYSTEM_PROMPT = `You are the Arise Bhutan Assistant — a warm, knowledgeable travel concierge for Arise Bhutan Tours & Travels (arisebhutan.com), a DOT-licensed tour operator based in Paro, Bhutan.
 
 Your role is dual:
@@ -26,6 +28,10 @@ ARISE BHUTAN FACTS:
 Keep responses warm, concise (under 150 words), and helpful. Use Kuzuzangpo occasionally.`
 
 export async function POST(req: Request) {
+  if (isRateLimited(`chat:${getClientIp(req)}`, 20, 10 * 60_000)) {
+    return rateLimitResponse()
+  }
+
   const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY
 
   if (!apiKey) {

@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { isRateLimited, getClientIp, rateLimitResponse } from '@/utils/rateLimit'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(req: NextRequest) {
+  if (isRateLimited(`simple-contact:${getClientIp(req)}`, 5, 10 * 60_000)) {
+    return rateLimitResponse()
+  }
+
   try {
     const { name, email, phone, message } = await req.json()
 

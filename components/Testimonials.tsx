@@ -1,45 +1,6 @@
 import { Star, Quote } from 'lucide-react'
 import Image from 'next/image'
-
-// ── Real Google reviews (shown when API is not configured) ────────────────────
-const STATIC_REVIEWS = [
-  {
-    author_name: 'Being Indian',
-    countryFlag: '🇮🇳 India',
-    rating: 5,
-    text: 'Best tour guide in whole bhutan and he will arrange for your all needs taxis hotels and guide all will be taken care of',
-    relative_time_description: 'a year ago',
-    profile_photo_url: null as string | null,
-    reviewPhoto: '/reviews/being-indian.jpg',
-  },
-  {
-    author_name: 'Divyesh Patel',
-    countryFlag: '🇮🇳 India',
-    rating: 5,
-    text: 'Just want to say missing Bhutan and missing our guide Kuenzang wangchuk. Must must visit bhutan',
-    relative_time_description: 'a year ago',
-    profile_photo_url: null as string | null,
-    reviewPhoto: '/reviews/divyesh-patel.jpg',
-  },
-  {
-    author_name: 'sujit kumar',
-    countryFlag: '🇮🇳 India',
-    rating: 5,
-    text: 'We have had an excellent trip to Bhutan. It was one of our best trip. All thanks to our tour guide Kunzang (DJ) who was very punctual, friendly and caring. He gave us lots of historical and cultural information about Bhutan. We really had an amazing time together. Hope to see you again!',
-    relative_time_description: 'a year ago',
-    profile_photo_url: null as string | null,
-    reviewPhoto: null as string | null,
-  },
-  {
-    author_name: 'K in Motion',
-    countryFlag: '',
-    rating: 5,
-    text: 'Wangchuk is a lively young man who will show you the best of his country and make sure you are taken care of. He\'s a wonderful human who goes above and beyond what is expected to ensure that your time in Bhutan is full of good times.',
-    relative_time_description: 'a year ago',
-    profile_photo_url: null as string | null,
-    reviewPhoto: null as string | null,
-  },
-]
+import { STATIC_REVIEWS } from '@/data/reviews'
 
 interface GoogleReview {
   author_name: string

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import { isRateLimited, getClientIp, rateLimitResponse } from '@/utils/rateLimit'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,6 +10,10 @@ const supabase = createClient(
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(req: NextRequest) {
+  if (isRateLimited(`subscribe:${getClientIp(req)}`, 5, 10 * 60_000)) {
+    return rateLimitResponse()
+  }
+
   try {
     const { email } = await req.json()
 

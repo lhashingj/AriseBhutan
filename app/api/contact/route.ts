@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
 import { tours } from '@/data/tours'
+import { isRateLimited, getClientIp, rateLimitResponse } from '@/utils/rateLimit'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -92,6 +93,10 @@ function buildDayByDay(
 }
 
 export async function POST(req: NextRequest) {
+  if (isRateLimited(`contact:${getClientIp(req)}`, 5, 10 * 60_000)) {
+    return rateLimitResponse()
+  }
+
   try {
     const body = await req.json()
     const {

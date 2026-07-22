@@ -107,9 +107,9 @@ export default function AdminLayout({ children }) {
         <div className="px-3 py-4 border-t border-white/10 space-y-2">
           <Link href="/admin/profile" onClick={() => setSideOpen(false)}
             className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-colors">
-            <div className="w-8 h-8 rounded-full overflow-hidden bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+            <div className="relative w-8 h-8 rounded-full overflow-hidden bg-amber-500/20 flex items-center justify-center flex-shrink-0">
               {profile?.avatar_url
-                ? <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                ? <Image src={profile.avatar_url} alt="" fill sizes="32px" className="object-cover" />
                 : <span className="text-amber-400 font-bold text-xs">{profile?.name?.[0]?.toUpperCase() || 'A'}</span>}
             </div>
             <div className="min-w-0">

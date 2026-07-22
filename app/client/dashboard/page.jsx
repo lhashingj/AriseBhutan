@@ -4,10 +4,12 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { PlusCircle, FileText, Clock, CheckCircle2, XCircle, Package, Pencil, Calendar, ChevronRight, ExternalLink, Star, MapPin, Users, Compass } from 'lucide-react'
+import Image from 'next/image'
+import { PlusCircle, FileText, Clock, CheckCircle2, XCircle, Package, Pencil, Calendar, ChevronRight, ExternalLink, Star, MapPin, Users, Compass, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/utils/supabase/client'
 import { claimGuestInvitations, fetchGuestItineraries } from '@/utils/bookingGuests'
+import { collectPassportWarnings } from '@/utils/passportExpiry'
 import PackageBuilder from '@/components/PackageBuilder'
 import ItineraryCard from '@/components/ItineraryCard'
 import { tours } from '@/data/tours'
@@ -33,6 +35,7 @@ export default function ClientDashboard() {
   const [showBuilder, setBuilder]     = useState(false)
   const [editingBooking, setEditing]  = useState(null)
   const [selectedTour, setSelectedTour] = useState(null)
+  const [passportWarnings, setPassportWarnings] = useState([])
 
   async function load() {
     const { data: { session } } = await supabase.auth.getSession()
@@ -62,6 +65,7 @@ export default function ClientDashboard() {
     setBookings(bookingList)
 
     const itineraryList = allItins || []
+    setPassportWarnings(collectPassportWarnings(itineraryList))
 
     // Build ref map for bookings that have a matching admin itinerary
     const selfRefs = new Set(bookingList.map(b => getRef(b)))
@@ -119,6 +123,18 @@ export default function ClientDashboard() {
           <PlusCircle className="w-4 h-4" /> Build New Package
         </button>
       </div>
+
+      {/* Passport expiry warning */}
+      {passportWarnings.length > 0 && (
+        <div className="rounded-2xl border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-5 py-3.5 flex items-center gap-3 transition-colors duration-300">
+          <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
+          <p className="text-xs text-red-700 dark:text-red-400 leading-snug">
+            <span className="font-semibold">{passportWarnings.length === 1 ? 'A passport needs' : `${passportWarnings.length} passports need`} renewing soon</span>
+            {' — '}{passportWarnings.map(w => w.name).join(', ')}. Bhutan requires 6+ months validity beyond travel dates.{' '}
+            <Link href="/client/itineraries" className="underline font-semibold hover:text-red-800 dark:hover:text-red-300">View details</Link>
+          </p>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-2 sm:gap-4">
@@ -317,7 +333,7 @@ export default function ClientDashboard() {
               <div key={tour.id} className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-100 dark:border-stone-800 shadow-sm overflow-hidden flex flex-col hover:shadow-md dark:hover:shadow-black/40 transition-all duration-300">
                 {/* Image */}
                 <div className="relative h-44 overflow-hidden flex-shrink-0">
-                  <img src={tour.image} alt={tour.title} className="w-full h-full object-cover" />
+                  <Image src={tour.image} alt={tour.title} fill sizes="(max-width: 640px) 100vw, 320px" className="object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                   <span className={`absolute top-3 left-3 text-[10px] font-bold px-2 py-0.5 rounded-full border ${catCls}`}>
                     {tour.categoryLabel}

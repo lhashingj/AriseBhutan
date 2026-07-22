@@ -8,6 +8,7 @@ import { LayoutDashboard, UserCircle, LogOut, Menu, MailWarning, RefreshCw, MapP
 import { supabase } from '@/utils/supabase/client'
 import { useEmailVerified } from '@/utils/useEmailVerified'
 import ThemeToggle from '@/components/ThemeToggle'
+import ClientNotificationBell from '@/components/ClientNotificationBell'
 
 const navItems = [
   { label: 'Dashboard',      href: '/client/dashboard',   icon: LayoutDashboard },
@@ -112,13 +113,16 @@ export default function ClientLayout({ children }) {
         <div className="px-3 py-4 border-t border-white/10 space-y-2">
           <div className="flex items-center justify-between px-3 py-1.5">
             <span className="text-stone-500 text-xs font-medium uppercase tracking-wider">Theme</span>
-            <ThemeToggle className="text-stone-400 hover:text-amber-400 hover:bg-white/10" />
+            <div className="flex items-center gap-1">
+              <ClientNotificationBell className="text-stone-400 hover:text-amber-400 hover:bg-white/10" />
+              <ThemeToggle className="text-stone-400 hover:text-amber-400 hover:bg-white/10" />
+            </div>
           </div>
           <Link href="/client/profile" onClick={() => setSidebar(false)}
             className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-colors">
-            <div className="w-8 h-8 rounded-full overflow-hidden bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+            <div className="relative w-8 h-8 rounded-full overflow-hidden bg-amber-500/20 flex items-center justify-center flex-shrink-0">
               {profile?.avatar_url
-                ? <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                ? <Image src={profile.avatar_url} alt="" fill sizes="32px" className="object-cover" />
                 : <span className="text-amber-400 font-bold text-xs">{profile?.name?.[0]?.toUpperCase() || '?'}</span>}
             </div>
             <div className="min-w-0">
@@ -151,7 +155,10 @@ export default function ClientLayout({ children }) {
             <Menu className="w-5 h-5" />
           </button>
           <p className="font-serif font-bold text-stone-900 dark:text-stone-50">Client Portal</p>
-          <ThemeToggle className="text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-white/10" />
+          <div className="flex items-center gap-1">
+            <ClientNotificationBell className="text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-white/10" />
+            <ThemeToggle className="text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-white/10" />
+          </div>
         </div>
 
         {/* ── Email verification banner ── */}

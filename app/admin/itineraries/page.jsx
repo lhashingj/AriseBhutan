@@ -7,12 +7,13 @@ import {
   RefreshCw, Search, X, ChevronRight, ChevronDown, Plane, MapPin,
   User, Calendar, DollarSign, Loader2, CheckCircle2,
   Clock, FileText, AlertTriangle, ExternalLink, Mail,
-  Plus, Trash2, BedDouble, ListChecks, ShieldAlert,
+  Plus, Trash2, BedDouble, ListChecks, ShieldAlert, CreditCard,
 } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/utils/supabase/client'
 import AdminTravelDocuments from '@/components/AdminTravelDocuments'
 import AdminBookingGuests from '@/components/AdminBookingGuests'
+import { computePricingDetailed, SAARC_INDIA_SET } from '@/utils/pricingCalculator'
 
 // ── Flight reference data ─────────────────────────────────────
 const FLIGHT_SECTORS = [
@@ -100,72 +101,25 @@ function StatusBadge({ status }) {
   )
 }
 
-// ── SAARC rate sets ───────────────────────────────────────────
-const SAARC_INDIA_SET = new Set(['India'])
-const SAARC_BD_MV_SET = new Set(['Bangladesh', 'Maldives'])
-const SAARC_ALL_SET   = new Set(['India', 'Bangladesh', 'Maldives'])
+// Enquiry response SLA — Arise Bhutan promises a 24h turnaround.
+// Only meaningful while a booking is still awaiting an admin quote.
+function SlaBadge({ createdAt }) {
+  const hours = (Date.now() - new Date(createdAt).getTime()) / 3_600_000
+  const tone = hours >= 24
+    ? 'bg-red-500/15 text-red-400 border-red-500/25'
+    : hours >= 12
+      ? 'bg-amber-500/15 text-amber-400 border-amber-500/25'
+      : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25'
+  const label = hours < 1 ? '<1h' : hours < 48 ? `${Math.floor(hours)}h` : `${Math.floor(hours / 24)}d`
+  return (
+    <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${tone}`} title="Time since enquiry — 24h response SLA">
+      <Clock className="w-2.5 h-2.5" /> {label}
+    </span>
+  )
+}
 
 // ── Pricing computation (nationality-aware) ───────────────────
-function computePricingDetailed({
-  nationality, nights, adultPax, child611Pax, infantPax,
-  serviceRate, entranceFeePerPax, specialsPerPax,
-  flightPerPax, includeFlights, wireTransfer,
-}) {
-  const n       = Math.max(0, Math.floor(Number(nights)      || 0))
-  const adults  = Math.max(0, Number(adultPax)   || 0)
-  const c611    = Math.max(0, Number(child611Pax) || 0)
-  const infants = Math.max(0, Number(infantPax)   || 0)
-  const totalPax = adults + c611 + infants
-
-  const isSaarcIndia = SAARC_INDIA_SET.has(nationality)
-  const isSaarcBdMv  = SAARC_BD_MV_SET.has(nationality)
-  const isSaarc      = isSaarcIndia || isSaarcBdMv
-  const currency     = isSaarc ? 'INR / Nu.' : 'USD ($)'
-  const sym          = isSaarc ? '₹' : '$'
-
-  // SDF — India: adults 1200/night, children 6-11 600/night, infants free
-  //        BD/MV: all paying pax 1200/night
-  //        International: all pax $100/night
-  let sdfAdult = 0, sdfChild = 0, sdfTotal = 0
-  if (isSaarcIndia) {
-    sdfAdult = 1200 * adults * n
-    sdfChild = 600  * c611   * n
-    sdfTotal = sdfAdult + sdfChild
-  } else if (isSaarcBdMv) {
-    sdfTotal = 1200 * (adults + c611) * n
-  } else {
-    sdfTotal = 100 * totalPax * n
-  }
-
-  // Visa — SAARC exempt (Entry Permit / Visa on Arrival, no advance fee)
-  const visaPerPax = isSaarc ? 0 : 40
-  const visaTotal  = visaPerPax * totalPax
-
-  // Service (Guide / Vehicle / Meals) — GST applies ONLY to this
-  const svcRate  = Number(serviceRate)       || 0
-  const svcTotal = svcRate * (adults + c611) * n
-
-  // Other items (no GST)
-  const entrTotal = (Number(entranceFeePerPax) || 0) * totalPax
-  const specTotal = (Number(specialsPerPax)    || 0) * totalPax
-  const fltTotal  = includeFlights ? (Number(flightPerPax) || 0) * totalPax : 0
-  const wire      = Number(wireTransfer) || 0
-
-  // GST 5% — on service charge only (not SDF, not visa, not entrance, not flights)
-  const gst       = svcTotal * 0.05
-  const pkgCost   = sdfTotal + visaTotal + svcTotal + entrTotal + specTotal + fltTotal + wire
-  const grandTotal = pkgCost + gst
-
-  return {
-    isSaarc, isSaarcIndia, isSaarcBdMv, currency, sym,
-    sdfAdult, sdfChild, sdfTotal,
-    visaPerPax, visaTotal,
-    svcRate, svcTotal,
-    entrTotal, specTotal, fltTotal, wire,
-    gst, pkgCost, grandTotal,
-    totalPax, adultsNum: adults, c611Num: c611, infantsNum: infants,
-  }
-}
+// Extracted to utils/pricingCalculator.js — unit tested there.
 
 // ── Input / label style helpers ───────────────────────────────
 const inp = 'w-full bg-stone-800 border border-white/10 rounded-xl px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:outline-none focus:border-amber-500/50 transition-colors'
@@ -243,6 +197,7 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
   const [includeFlights,    setIncludeFlights]    = useState(itinerary.pricing?.include_flights      ?? false)
   const [wireTransfer,      setWireTransfer]      = useState(itinerary.pricing?.wire_transfer        ?? '')
   const [inrRate,           setInrRate]           = useState(itinerary.pricing?.inr_rate             ?? 83.5)
+  const [paymentLink,       setPaymentLink]       = useState(itinerary.payment_link                  ?? '')
 
   const DEFAULT_INCLUSIONS = [
     'Accommodation as per itinerary',
@@ -437,9 +392,10 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
           group_size:       totalPaxCount || Number(tourSummary.group_size) || itinerary.tour_summary?.group_size || 1,
         },
         flights,
-        day_by_day: days,
-        pricing:    pricingPayload,
-        status:     nextStatus,
+        day_by_day:   days,
+        pricing:      pricingPayload,
+        payment_link: paymentLink.trim() || null,
+        status:       nextStatus,
       })
       .eq('id', itinerary.id)
       .select()
@@ -447,6 +403,21 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
 
     setSaving(false)
     if (error) { setSaveErr(error.message); return }
+
+    // Notify the client by email the moment their itinerary moves to
+    // Quoted or Confirmed — fire-and-forget, never blocks the save.
+    const statusChanged = nextStatus !== itinerary.status
+    if (statusChanged && (nextStatus === 'quoted' || nextStatus === 'confirmed')) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session) return
+        fetch('/api/notify-itinerary-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ bookingReference: itinerary.booking_reference, status: nextStatus }),
+        }).catch(err => console.error('Status notification failed:', err))
+      })
+    }
+
     onSaved(data)
   }
 
@@ -1566,6 +1537,59 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
                 </div>
               </div>
 
+              {/* Client Payment Checkout — Bhutan Payments */}
+              <div className="space-y-2">
+                <p className={lbl}>
+                  <CreditCard className="w-3.5 h-3.5 inline -mt-0.5 mr-1 text-amber-400" />
+                  Client Payment Checkout
+                </p>
+                <div className="bg-stone-800/60 rounded-xl border border-white/5 p-3">
+                  <label className="text-[10px] text-stone-400 uppercase tracking-wider block mb-1.5">
+                    Bhutan Payments Link
+                  </label>
+                  <input
+                    type="url"
+                    value={paymentLink}
+                    onChange={e => setPaymentLink(e.target.value)}
+                    placeholder="https://checkout.bhutanpayments.com/…"
+                    className={inp}
+                  />
+                  <p className="text-[10px] text-stone-500 mt-1.5 leading-relaxed">
+                    Paste the hosted checkout link generated from your Bhutan Payments / BNB merchant
+                    dashboard for this booking. Once saved and the itinerary is Quoted or Confirmed, the
+                    client&apos;s voucher shows a &quot;Pay via Credit/Debit Card&quot; button linking here.
+                  </p>
+                  {paymentLink.trim() && (
+                    <a
+                      href={paymentLink.trim()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 mt-2 text-[11px] font-semibold text-amber-400 hover:text-amber-300"
+                    >
+                      <ExternalLink className="w-3 h-3" /> Preview link
+                    </a>
+                  )}
+                </div>
+
+                {/* Direct API checkout — disabled: no public Bhutan Payments API docs exist yet */}
+                <div className="bg-stone-800/30 rounded-xl border border-dashed border-white/10 p-3 opacity-60">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] text-stone-400 uppercase tracking-wider">
+                      Direct API Checkout (Merchant Credentials)
+                    </label>
+                    <span className="text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-stone-700 text-stone-400">
+                      Not Available
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-stone-500 mt-1.5 leading-relaxed">
+                    Bhutan Payments does not yet publish developer API documentation, so a direct hosted-checkout
+                    session integration can&apos;t be built without fabricating endpoint/auth details. Use the
+                    payment link above for now — once Bhutan Payments/BNB issue merchant API credentials and specs,
+                    this section can be wired up for real-time checkout session creation.
+                  </p>
+                </div>
+              </div>
+
               {/* Cost summary */}
               <div className="bg-stone-950 rounded-2xl p-5 space-y-2.5 border border-white/5">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-stone-500 mb-3">Cost Summary</p>
@@ -1894,6 +1918,9 @@ export default function AdminItinerariesPage() {
   const [filter,      setFilter]      = useState('all')
   const [search,      setSearch]      = useState('')
   const [selected,    setSelected]    = useState(null)
+  const [selectMode,  setSelectMode]  = useState(false)
+  const [selectedIds, setSelectedIds] = useState(new Set())
+  const [bulkBusy,    setBulkBusy]    = useState(false)
 
   async function load() {
     setRefreshing(true)
@@ -1931,6 +1958,91 @@ export default function AdminItinerariesPage() {
     setSelected(updated)
   }
 
+  // ── Bulk actions ──────────────────────────────────────────────
+  function toggleSelectMode() {
+    setSelectMode(v => !v)
+    setSelectedIds(new Set())
+  }
+
+  function toggleSelected(id) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function selectAllVisible() {
+    setSelectedIds(new Set(visible.map(it => it.id)))
+  }
+
+  const selectedItems = itineraries.filter(it => selectedIds.has(it.id))
+
+  async function bulkUpdateStatus(fromStatus, toStatus) {
+    const targets = selectedItems.filter(it => it.status === fromStatus)
+    if (targets.length === 0 || bulkBusy) return
+    setBulkBusy(true)
+    try {
+      const { error } = await supabase
+        .from('itineraries')
+        .update({ status: toStatus })
+        .in('id', targets.map(t => t.id))
+      if (error) throw error
+
+      setItineraries(prev => prev.map(i => targets.some(t => t.id === i.id) ? { ...i, status: toStatus } : i))
+      setSelectedIds(new Set())
+      setSelectMode(false)
+
+      // Notify clients when bulk-confirming already-quoted bookings
+      if (toStatus === 'confirmed') {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          for (const t of targets) {
+            fetch('/api/notify-itinerary-status', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+              body: JSON.stringify({ bookingReference: t.booking_reference, status: 'confirmed' }),
+            }).catch(err => console.error('Bulk status notification failed:', err))
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Bulk status update failed:', err)
+    } finally {
+      setBulkBusy(false)
+    }
+  }
+
+  function exportSelectedCsv() {
+    if (selectedItems.length === 0) return
+    const rows = [
+      ['Booking Reference', 'Guest Name', 'Email', 'Status', 'Tour Package', 'Nights', 'Guests', 'Departure', 'Grand Total', 'Currency'],
+      ...selectedItems.map(it => [
+        it.booking_reference || '',
+        it.client_info?.guest_name || '',
+        it.client_info?.email || '',
+        it.status || '',
+        it.tour_summary?.tour_package || '',
+        it.tour_summary?.duration_nights || '',
+        it.tour_summary?.group_size || '',
+        it.tour_summary?.departure_date || '',
+        it.pricing?.grand_total || '',
+        it.pricing?.is_saarc ? 'INR' : 'USD',
+      ]),
+    ]
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `arise-bhutan-itineraries-${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="-m-6 lg:-m-8 min-h-screen bg-stone-950 p-6 lg:p-8">
 
@@ -1942,15 +2054,64 @@ export default function AdminItinerariesPage() {
             Review incoming requests, set pricing &amp; issue quotations
           </p>
         </div>
-        <button
-          onClick={load}
-          disabled={refreshing}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 text-stone-400 hover:text-white hover:border-white/20 text-sm font-medium transition-colors disabled:opacity-40"
-        >
-          <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleSelectMode}
+            className={`px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
+              selectMode
+                ? 'bg-amber-600 border-amber-600 text-white'
+                : 'border-white/10 text-stone-400 hover:text-white hover:border-white/20'
+            }`}
+          >
+            {selectMode ? 'Cancel Selection' : 'Select'}
+          </button>
+          <button
+            onClick={load}
+            disabled={refreshing}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 text-stone-400 hover:text-white hover:border-white/20 text-sm font-medium transition-colors disabled:opacity-40"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+        </div>
       </div>
+
+      {/* Bulk action bar */}
+      {selectMode && (
+        <div className="flex flex-wrap items-center gap-3 mb-6 bg-stone-900 border border-white/10 rounded-2xl px-5 py-4">
+          <p className="text-sm text-stone-300 font-medium">
+            {selectedIds.size} selected
+          </p>
+          <button
+            onClick={selectAllVisible}
+            className="text-xs font-semibold text-amber-400 hover:text-amber-300"
+          >
+            Select all visible ({visible.length})
+          </button>
+          <div className="flex-1" />
+          <button
+            onClick={() => bulkUpdateStatus('enquiry_pending', 'pending_review')}
+            disabled={bulkBusy || !selectedItems.some(it => it.status === 'enquiry_pending')}
+            className="text-xs font-semibold px-3.5 py-2 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            Mark Reviewing
+          </button>
+          <button
+            onClick={() => bulkUpdateStatus('quoted', 'confirmed')}
+            disabled={bulkBusy || !selectedItems.some(it => it.status === 'quoted')}
+            className="text-xs font-semibold px-3.5 py-2 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            Mark Confirmed
+          </button>
+          <button
+            onClick={exportSelectedCsv}
+            disabled={selectedIds.size === 0}
+            className="text-xs font-semibold px-3.5 py-2 rounded-xl bg-stone-800 text-stone-300 border border-white/10 hover:text-white hover:border-white/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            Export CSV
+          </button>
+        </div>
+      )}
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-7">
@@ -2038,19 +2199,38 @@ export default function AdminItinerariesPage() {
             return (
               <div
                 key={it.id}
-                className={`bg-stone-900 rounded-2xl border ${s.card} p-5 flex flex-col gap-4 hover:border-opacity-60 transition-all group`}
+                onClick={selectMode ? () => toggleSelected(it.id) : undefined}
+                className={`bg-stone-900 rounded-2xl border ${s.card} p-5 flex flex-col gap-4 hover:border-opacity-60 transition-all group ${
+                  selectMode ? 'cursor-pointer' : ''
+                } ${selectedIds.has(it.id) ? 'ring-2 ring-amber-500/60' : ''}`}
               >
                 {/* Card header */}
                 <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-mono text-xs text-stone-500 tracking-wider">
-                      {it.booking_reference}
-                    </p>
-                    <p className="text-white font-serif font-semibold text-base mt-0.5 line-clamp-1">
-                      {it.tour_summary?.tour_package || 'Custom Itinerary'}
-                    </p>
+                  <div className="flex items-start gap-3 min-w-0">
+                    {selectMode && (
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(it.id)}
+                        onChange={() => toggleSelected(it.id)}
+                        onClick={e => e.stopPropagation()}
+                        className="mt-1 rounded accent-amber-500 w-4 h-4 cursor-pointer shrink-0"
+                      />
+                    )}
+                    <div className="min-w-0">
+                      <p className="font-mono text-xs text-stone-500 tracking-wider">
+                        {it.booking_reference}
+                      </p>
+                      <p className="text-white font-serif font-semibold text-base mt-0.5 line-clamp-1">
+                        {it.tour_summary?.tour_package || 'Custom Itinerary'}
+                      </p>
+                    </div>
                   </div>
-                  <StatusBadge status={it.status} />
+                  <div className="flex flex-col items-end gap-1.5 shrink-0">
+                    <StatusBadge status={it.status} />
+                    {(it.status === 'enquiry_pending' || it.status === 'pending_review') && (
+                      <SlaBadge createdAt={it.created_at} />
+                    )}
+                  </div>
                 </div>
 
                 {/* Client */}
@@ -2113,23 +2293,25 @@ export default function AdminItinerariesPage() {
                   </div>
                 )}
 
-                {/* Actions */}
-                <div className="flex items-center gap-2 pt-1">
-                  <button
-                    onClick={() => setSelected(it)}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/30 text-amber-400 text-xs font-semibold transition-colors"
-                  >
-                    {it.status === 'enquiry_pending' ? 'Review & Create Voucher' : 'Edit Itinerary'}
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                  <Link
-                    href={`/itinerary/${it.booking_reference}`}
-                    target="_blank"
-                    className="p-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-400 hover:text-white transition-colors"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
+                {/* Actions — hidden in selection mode so card clicks only toggle selection */}
+                {!selectMode && (
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      onClick={() => setSelected(it)}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/30 text-amber-400 text-xs font-semibold transition-colors"
+                    >
+                      {it.status === 'enquiry_pending' ? 'Review & Create Voucher' : 'Edit Itinerary'}
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                    <Link
+                      href={`/itinerary/${it.booking_reference}`}
+                      target="_blank"
+                      className="p-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 border border-white/5 text-stone-400 hover:text-white transition-colors"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                )}
               </div>
             )
           })}

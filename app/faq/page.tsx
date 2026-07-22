@@ -1,6 +1,7 @@
 import FaqSection from '@/components/FaqSection'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { faqs } from '@/data/bhutanContent'
 
 export const metadata: Metadata = {
   title: 'Travel FAQ | Arise Bhutan',
@@ -8,8 +9,22 @@ export const metadata: Metadata = {
 }
 
 export default function FaqPage() {
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map(f => ({
+      '@type': 'Question',
+      name: f.question,
+      acceptedAnswer: { '@type': 'Answer', text: f.answer },
+    })),
+  }
+
   return (
     <div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       {/* Hero */}
       <section
         className="relative pt-36 pb-20 sm:pt-44 sm:pb-24 text-white text-center overflow-hidden"

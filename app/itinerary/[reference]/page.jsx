@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
-import { Loader2, AlertCircle, Download, ArrowLeft, Settings } from 'lucide-react'
+import { Loader2, AlertCircle, Download, ArrowLeft, Settings, CreditCard } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/utils/supabase/client'
 import { generateVoucherPDF } from '@/utils/pdfGenerator'
@@ -180,30 +180,34 @@ export default function ItineraryVoucherPage() {
           ) : (
             <a href="/client/dashboard" className="text-xs text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors">← Back to dashboard</a>
           )}
-          <button
-            onClick={async () => {
-              setPdfLoading(true)
-              const wasDark = stripDarkTheme()
-              // one settle frame so html2canvas captures the light styles
-              await new Promise(r => setTimeout(r, 60))
-              try {
-                await generateVoucherPDF('voucher-doc', `Arise-Bhutan-${it.booking_reference}.pdf`)
-              } catch (e) {
-                console.error('PDF error:', e)
-              } finally {
-                restoreDarkTheme(wasDark)
-                setPdfLoading(false)
+          {/* PDF export only available once the itinerary carries a confirmed price — an
+              enquiry/under-review voucher has no bank details or cost breakdown to export. */}
+          {showPricing && (
+            <button
+              onClick={async () => {
+                setPdfLoading(true)
+                const wasDark = stripDarkTheme()
+                // one settle frame so html2canvas captures the light styles
+                await new Promise(r => setTimeout(r, 60))
+                try {
+                  await generateVoucherPDF('voucher-doc', `Arise-Bhutan-${it.booking_reference}.pdf`)
+                } catch (e) {
+                  console.error('PDF error:', e)
+                } finally {
+                  restoreDarkTheme(wasDark)
+                  setPdfLoading(false)
+                }
+              }}
+              disabled={pdfLoading}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold transition-all shadow-lg disabled:opacity-70"
+              style={{ background: 'linear-gradient(135deg, #D97706, #B45309)' }}
+            >
+              {pdfLoading
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
+                : <><Download className="w-4 h-4" /> Download PDF</>
               }
-            }}
-            disabled={pdfLoading}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold transition-all shadow-lg disabled:opacity-70"
-            style={{ background: 'linear-gradient(135deg, #D97706, #B45309)' }}
-          >
-            {pdfLoading
-              ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
-              : <><Download className="w-4 h-4" /> Download PDF</>
-            }
-          </button>
+            </button>
+          )}
         </div>
 
         {/* ── Voucher document ─────────────────────────────────── */}
@@ -752,6 +756,113 @@ export default function ItineraryVoucherPage() {
                       </ul>
                     </div>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── PAYMENT OPTIONS (Credit Card + Bank Transfer) ── */}
+            {/* Only shown once the itinerary is Quoted or Confirmed — enquiries
+                and under-review itineraries have no confirmed price to pay against. */}
+            {showPricing && (
+              <div className="page-break-avoid">
+                <SectionHead>Payment Options</SectionHead>
+
+                {/* Credit / Debit Card — Bhutan Payments */}
+                {it.payment_link && (
+                  <div className="mt-3 rounded-xl border border-amber-200 dark:border-amber-500/30 bg-gradient-to-br from-amber-50 to-white dark:from-amber-500/10 dark:to-stone-900 overflow-hidden page-break-avoid">
+                    <div className="px-5 py-4 sm:flex sm:items-center sm:justify-between gap-4">
+                      <div>
+                        <p className="flex items-center gap-2 font-serif font-bold text-stone-900 dark:text-stone-50 text-sm sm:text-base">
+                          <CreditCard className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                          Pay via Credit / Debit Card
+                        </p>
+                        <p className="text-stone-500 dark:text-stone-400 text-xs mt-1 leading-relaxed max-w-md">
+                          Credit card payments are processed securely via Bhutan Payments / BNB. International
+                          processing fees may apply.
+                        </p>
+                      </div>
+                      <a
+                        href={it.payment_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="no-print mt-3 sm:mt-0 inline-flex items-center gap-2 shrink-0 px-5 py-2.5 rounded-xl text-white text-sm font-bold transition-all shadow-md"
+                        style={{ background: 'linear-gradient(135deg, #D97706, #B45309)' }}
+                      >
+                        <CreditCard className="w-4 h-4" /> Pay via Credit Card
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                <p className="mt-4 mb-1 text-[10px] font-bold uppercase tracking-widest text-stone-400 dark:text-stone-500">
+                  {it.payment_link ? 'Or pay by international wire transfer (SWIFT)' : 'International Wire Transfer (SWIFT)'}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mt-2">
+                  {/* Local Currency (BTN) Account */}
+                  <div className="rounded-xl overflow-hidden border border-stone-200 dark:border-stone-700">
+                    <div className="bg-stone-800 dark:bg-stone-950 px-4 py-2.5">
+                      <p className="text-white text-[10px] font-bold uppercase tracking-widest">Local Currency Account (BTN)</p>
+                    </div>
+                    <div className="divide-y divide-stone-100 dark:divide-stone-700/60">
+                      {[
+                        ['Account Holder', 'ARISE TOURS AND TRAVELS'],
+                        ['Currency',       'BTN — Bhutanese Ngultrum'],
+                        ['Account No.',    '642075256'],
+                        ['Bank',           'Bhutan National Bank Ltd. (Paro Branch)'],
+                        ['SWIFT Code',     'BNBTBTBT'],
+                      ].map(([label, val]) => (
+                        <div key={label} className="flex flex-col gap-0.5 px-4 py-2 sm:flex-row sm:gap-0 sm:items-baseline">
+                          <span className="text-stone-400 dark:text-stone-500 text-[10px] sm:w-32 sm:flex-shrink-0 font-medium">{label}</span>
+                          <span className="text-stone-800 dark:text-stone-100 text-xs font-semibold leading-snug font-mono break-words">{val}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Foreign Currency (USD) Account */}
+                  <div className="rounded-xl overflow-hidden border border-stone-200 dark:border-stone-700">
+                    <div className="px-4 py-2.5" style={{ background: 'linear-gradient(90deg, #92400E, #D97706)' }}>
+                      <p className="text-white text-[10px] font-bold uppercase tracking-widest">Foreign Currency Account (USD)</p>
+                    </div>
+                    <div className="divide-y divide-stone-100 dark:divide-stone-700/60">
+                      {[
+                        ['Account Holder', 'ARISE TOURS AND TRAVELS'],
+                        ['Currency',       'USD — US Dollars'],
+                        ['Account No.',    '642075482'],
+                        ['Bank',           'Bhutan National Bank Ltd. (Paro Branch)'],
+                        ['SWIFT Code',     'BNBTBTBT'],
+                      ].map(([label, val]) => (
+                        <div key={label} className="flex flex-col gap-0.5 px-4 py-2 sm:flex-row sm:gap-0 sm:items-baseline">
+                          <span className="text-stone-400 dark:text-stone-500 text-[10px] sm:w-32 sm:flex-shrink-0 font-medium">{label}</span>
+                          <span className="text-stone-800 dark:text-stone-100 text-xs font-semibold leading-snug font-mono break-words">{val}</span>
+                        </div>
+                      ))}
+                      <div className="px-4 py-2.5 bg-stone-50 dark:bg-stone-800/50">
+                        <p className="text-stone-400 dark:text-stone-500 text-[10px] font-medium mb-1.5">Intermediary Bank (for USD SWIFT wires)</p>
+                        {[
+                          ['Bank',        'Standard Chartered Bank, New York'],
+                          ['SWIFT Code',  'SCBLUS33'],
+                          ['Account No.', '358-202-171-9001'],
+                        ].map(([label, val]) => (
+                          <div key={label} className="flex flex-col gap-0.5 py-1 sm:flex-row sm:gap-0 sm:items-baseline">
+                            <span className="text-stone-400 dark:text-stone-500 text-[10px] sm:w-24 sm:flex-shrink-0 font-medium">{label}</span>
+                            <span className="text-stone-700 dark:text-stone-200 text-xs font-semibold leading-snug font-mono break-words">{val}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* OUR-fees instruction note */}
+                <div className="mt-4 rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-5 py-4 flex items-start gap-3 page-break-avoid">
+                  <div className="w-7 h-7 rounded-full bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center shrink-0 text-amber-700 dark:text-amber-400 font-bold text-xs">!</div>
+                  <p className="text-amber-800 dark:text-amber-300 text-xs leading-relaxed">
+                    <strong>Important:</strong> When initiating your wire transfer, SWIFT Field 71A must be selected as{' '}
+                    <strong>&ldquo;OUR&rdquo;</strong> (sender pays all transfer fees) — not SHA or BEN. This ensures the full
+                    quoted amount is received by Arise Bhutan without deduction. Transfers received short due to an
+                    incorrect fee designation may delay confirmation of your booking.
+                  </p>
                 </div>
               </div>
             )}

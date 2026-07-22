@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Clock, Users, Star, MapPin, Mountain, CheckCircle, XCircle, Calendar, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react'
 import { getTourBySlug } from '@/data/tours'
+import { STATIC_REVIEWS } from '@/data/reviews'
 import BookTourButton from '@/components/BookTourButton'
 
 const DESTINATIONS: Record<string, { description: string; icon: string }> = {
@@ -63,8 +64,49 @@ export default function TourDetailPage({ params }: { params: { slug: string } })
   const tour = getTourBySlug(params.slug)
   if (!tour) notFound()
 
+  const tourJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'TouristTrip',
+    name: tour.title,
+    description: tour.overview,
+    image: `https://www.arisebhutan.com${tour.heroImage}`,
+    touristType: tour.categoryLabel,
+    itinerary: {
+      '@type': 'ItemList',
+      itemListElement: tour.itinerary.map((day, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        name: day.title,
+        description: day.description,
+      })),
+    },
+    offers: {
+      '@type': 'Offer',
+      price: tour.startingFrom,
+      priceCurrency: 'USD',
+      availability: 'https://schema.org/InStock',
+      url: `https://www.arisebhutan.com/tours/${tour.slug}`,
+    },
+    provider: {
+      '@type': 'TravelAgency',
+      name: 'Arise Bhutan Tours & Travels',
+      url: 'https://www.arisebhutan.com',
+    },
+    ...(tour.reviews > 0 && {
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: tour.rating,
+        reviewCount: tour.reviews,
+      },
+    }),
+  }
+
   return (
     <div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(tourJsonLd) }}
+      />
       {/* Hero */}
       <div className="relative h-[60vh] min-h-[480px] overflow-hidden">
         <Image src={tour.heroImage} alt={tour.title} fill className="object-cover" priority />
@@ -192,6 +234,32 @@ export default function TourDetailPage({ params }: { params: { slug: string } })
                     </div>
                   </div>
                 )}
+
+                {/* What our guests say */}
+                <div className="mt-10">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-50">What Our Guests Say</h3>
+                    <span className="flex items-center gap-1 text-sm text-stone-500 dark:text-stone-400">
+                      <Star className="w-4 h-4 fill-amber-400 text-amber-400" /> {tour.rating} ({tour.reviews} reviews)
+                    </span>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    {STATIC_REVIEWS.slice(0, 2).map(r => (
+                      <div key={r.author_name} className="bg-stone-50 dark:bg-stone-900 rounded-xl border border-stone-100 dark:border-stone-800 p-5">
+                        <div className="flex gap-0.5 mb-2.5">
+                          {[...Array(r.rating)].map((_, i) => (
+                            <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                          ))}
+                        </div>
+                        <p className="text-stone-700 dark:text-stone-300 text-sm leading-relaxed italic mb-3">&ldquo;{r.text}&rdquo;</p>
+                        <p className="text-stone-500 dark:text-stone-400 text-xs">
+                          <span className="font-semibold text-stone-700 dark:text-stone-300">{r.author_name}</span>
+                          {r.countryFlag && ` · ${r.countryFlag}`}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 

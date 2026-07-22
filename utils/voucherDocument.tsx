@@ -4,7 +4,7 @@
  */
 
 import {
-  Document, Page, View, Text, Image, StyleSheet,
+  Document, Page, View, Text, Image, StyleSheet, Link,
 } from '@react-pdf/renderer'
 import { computePricing } from './pdfGenerator'
 
@@ -87,6 +87,21 @@ const s = StyleSheet.create({
   footerNote:      { fontSize: 7.5, color: '#6b7280' },
 
   noteText:        { fontSize: 8, color: '#78716c', marginTop: 2, marginBottom: 6 },
+
+  // ── Bank details / OUR-fees note ──
+  bankSubHeader:   { fontSize: 7.5, color: '#78716c', paddingHorizontal: 10, paddingTop: 6, paddingBottom: 2 },
+  bankNote:        { flexDirection: 'row', gap: 8, backgroundColor: '#fffbeb', borderWidth: 1, borderColor: '#fde68a', borderRadius: 6, padding: 10, marginTop: 4, marginBottom: 4 },
+  bankNoteBadge:   { width: 16, height: 16, borderRadius: 8, backgroundColor: '#fde68a', alignItems: 'center', justifyContent: 'center' },
+  bankNoteBadgeTx: { fontFamily: 'Helvetica-Bold', fontSize: 9, color: '#92400e' },
+  bankNoteText:    { flex: 1, fontSize: 8.5, color: '#78350f', lineHeight: 1.5 },
+
+  // ── Card payment (Bhutan Payments) ──
+  cardPayBox:      { backgroundColor: '#fffbeb', borderWidth: 1, borderColor: '#fde68a', borderRadius: 6, padding: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  cardPayTitle:    { fontFamily: 'Helvetica-Bold', fontSize: 11, color: '#92400e', marginBottom: 3 },
+  cardPayNote:     { fontSize: 8, color: '#78716c', lineHeight: 1.5, maxWidth: 320 },
+  cardPayBtn:      { backgroundColor: '#b45309', borderRadius: 5, paddingHorizontal: 14, paddingVertical: 8 },
+  cardPayBtnText:  { fontFamily: 'Helvetica-Bold', fontSize: 9, color: '#ffffff' },
+  paymentSubLabel: { fontFamily: 'Helvetica-Bold', fontSize: 7.5, color: '#a8a29e', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 4, marginTop: 2 },
 })
 
 function SectionHead({ children }: { children: string }) {
@@ -131,6 +146,10 @@ export function VoucherDocument({ booking }: { booking: any }) {
 
   const usd = (n: number) => '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   const inr = (n: number) => '₹' + Math.round(n).toLocaleString('en-IN')
+
+  // Bank details & PDF-download eligibility only apply once a firm price
+  // exists — hidden for enquiry / under-review vouchers.
+  const showBankDetails    = ['quoted', 'confirmed'].includes(String(booking.status ?? '').toLowerCase())
 
   const flights            = Array.isArray(booking.flights)            ? booking.flights            : []
   const itinerary          = Array.isArray(booking.itinerary)          ? booking.itinerary          : []
@@ -390,6 +409,71 @@ export function VoucherDocument({ booking }: { booking: any }) {
               </View>
             </View>
           </View>
+
+          {/* Payment Options: Credit Card + Bank Transfer */}
+          {showBankDetails && (
+            <>
+              <SectionHead>Payment Options</SectionHead>
+
+              {booking.paymentLink && (
+                <View style={s.cardPayBox}>
+                  <View>
+                    <Text style={s.cardPayTitle}>Pay via Credit / Debit Card</Text>
+                    <Text style={s.cardPayNote}>
+                      Credit card payments are processed securely via Bhutan Payments / BNB.
+                      International processing fees may apply.
+                    </Text>
+                  </View>
+                  <Link src={booking.paymentLink} style={s.cardPayBtn}>
+                    <Text style={s.cardPayBtnText}>PAY VIA CREDIT CARD</Text>
+                  </Link>
+                </View>
+              )}
+
+              <Text style={s.paymentSubLabel}>
+                {booking.paymentLink ? 'Or pay by international wire transfer (SWIFT)' : 'International Wire Transfer (SWIFT)'}
+              </Text>
+              <View style={s.grid2}>
+                <View style={s.card}>
+                  <View style={s.cardHeader}><Text style={s.cardHeaderText}>Local Currency Account (BTN)</Text></View>
+                  <InfoGrid rows={[
+                    ['Account Holder', 'ARISE TOURS AND TRAVELS'],
+                    ['Currency',       'BTN — Ngultrum'],
+                    ['Account No.',    '642075256'],
+                    ['Bank',           'Bhutan National Bank Ltd.'],
+                    ['Branch',         'Paro Branch'],
+                    ['SWIFT Code',     'BNBTBTBT'],
+                  ]} />
+                </View>
+                <View style={s.card}>
+                  <View style={s.cardHeaderAmber}><Text style={s.cardHeaderText}>Foreign Currency Account (USD)</Text></View>
+                  <InfoGrid rows={[
+                    ['Account Holder', 'ARISE TOURS AND TRAVELS'],
+                    ['Currency',       'USD — US Dollars'],
+                    ['Account No.',    '642075482'],
+                    ['Bank',           'Bhutan National Bank Ltd.'],
+                    ['Branch',         'Paro Branch'],
+                    ['SWIFT Code',     'BNBTBTBT'],
+                  ]} />
+                  <Text style={s.bankSubHeader}>INTERMEDIARY BANK (FOR USD SWIFT WIRES)</Text>
+                  <InfoGrid rows={[
+                    ['Bank',        'Standard Chartered Bank, New York'],
+                    ['SWIFT Code',  'SCBLUS33'],
+                    ['Account No.', '358-202-171-9001'],
+                  ]} />
+                </View>
+              </View>
+              <View style={s.bankNote}>
+                <View style={s.bankNoteBadge}><Text style={s.bankNoteBadgeTx}>!</Text></View>
+                <Text style={s.bankNoteText}>
+                  Important: When initiating your wire transfer, SWIFT Field 71A must be selected as &quot;OUR&quot;
+                  (sender pays all transfer fees) — not SHA or BEN. This ensures the full quoted amount is received by
+                  Arise Bhutan without deduction. Transfers received short due to an incorrect fee designation may
+                  delay confirmation of your booking.
+                </Text>
+              </View>
+            </>
+          )}
 
           {/* Accommodation Schedule */}
           {accommodation.length > 0 && (
