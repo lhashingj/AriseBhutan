@@ -26,3 +26,6 @@ Thumbs.db
 !public/images/
 .vercel
 .env*
+
+# Sentry Config File
+.env.sentry-build-plugin
