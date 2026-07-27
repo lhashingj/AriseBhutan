@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(npm install next-themes)",
+      "PowerShell(npx tsc --noEmit 2>&1)",
+      "PowerShell(npm run build)",
+      "PowerShell(npm install -D vitest @vitejs/plugin-react @testing-library/react jsdom)",
+      "PowerShell(npx vitest run 2>&1)",
+      "Bash(node scripts/theme-codemod.mjs)",
+      "Bash(git restore *)",
+      "Bash(rm scripts/theme-codemod.mjs)",
+      "Bash(rmdir scripts *)"
+    ]
+  }
+}
