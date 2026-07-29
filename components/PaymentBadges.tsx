@@ -1,40 +1,36 @@
-import { siVisa, siMastercard, siJcb, siDiscover, siDinersclub, siGooglepay, siApplepay } from 'simple-icons'
 import { Landmark } from 'lucide-react'
 
-// Payment methods Arise Bhutan actually accepts today: SWIFT bank transfer
-// (primary method), plus everything routed through the Bhutan Payments / BNB
-// secure checkout (Stripe-powered) — card networks confirmed via BNB's own
-// payment-gateway page, and Google Pay / Apple Pay / Amazon Pay confirmed by
-// testing the live checkout. UnionPay/Alipay/WeChat Pay are deliberately
-// omitted — neither source confirms Arise Bhutan actually accepts them.
+// Payment logos sourced from Datatrans' open payment-logos repository
+// (github.com/datatrans/payment-logos, CC BY-SA 4.0), saved locally under
+// public/payment-logos/. Methods shown are what Arise Bhutan actually
+// accepts today: SWIFT bank transfer (primary), plus everything routed
+// through the Bhutan Payments / BNB secure checkout (Stripe-powered) — card
+// networks confirmed via BNB's own payment-gateway page, Google Pay / Apple
+// Pay / Amazon Pay confirmed by testing the live checkout. UnionPay, Alipay
+// and WeChat Pay are deliberately omitted — neither source confirms
+// Arise Bhutan actually accepts them.
 
-interface BrandIcon {
-  title: string
-  path: string
-  hex: string
-}
+const CARD_LOGOS = [
+  { file: 'visa', alt: 'Visa' },
+  { file: 'mastercard', alt: 'Mastercard' },
+  { file: 'jcb', alt: 'JCB' },
+  { file: 'discover', alt: 'Discover' },
+  { file: 'diners', alt: 'Diners Club' },
+]
 
-const CARD_NETWORKS: BrandIcon[] = [siVisa, siMastercard, siJcb, siDiscover, siDinersclub]
-const WALLETS: BrandIcon[] = [siGooglepay, siApplepay]
+const WALLET_LOGOS = [
+  { file: 'google-pay', alt: 'Google Pay' },
+  { file: 'apple-pay', alt: 'Apple Pay' },
+  { file: 'amazon-pay', alt: 'Amazon Pay' },
+]
 
-function LogoBadge({ icon }: { icon: BrandIcon }) {
+function Logo({ file, alt }: { file: string; alt: string }) {
   return (
-    <span
-      title={icon.title}
-      className="inline-flex items-center justify-center w-11 h-8 rounded-md bg-white shadow-sm ring-1 ring-black/5 dark:ring-white/10 flex-shrink-0"
-    >
-      <svg viewBox="0 0 24 24" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
-        <path fill={`#${icon.hex}`} d={icon.path} />
-      </svg>
-    </span>
-  )
-}
-
-function TextBadge({ label }: { label: string }) {
-  return (
-    <span className="inline-flex items-center justify-center h-8 px-2.5 rounded-md bg-white shadow-sm ring-1 ring-black/5 dark:ring-white/10 text-[10px] font-bold text-stone-700 flex-shrink-0">
-      {label}
-    </span>
+    <img
+      src={`/payment-logos/${file}.svg`}
+      alt={alt}
+      className="h-8 w-auto rounded shadow-sm flex-shrink-0"
+    />
   )
 }
 
@@ -50,9 +46,8 @@ export default function PaymentBadges({ variant = 'light' }: { variant?: 'light'
         <span className={`text-xs font-medium ${labelCls}`}>Bank Transfer (SWIFT)</span>
       </div>
       <div className="flex flex-wrap items-center gap-1.5">
-        {CARD_NETWORKS.map(b => <LogoBadge key={b.title} icon={b} />)}
-        {WALLETS.map(b => <LogoBadge key={b.title} icon={b} />)}
-        <TextBadge label="Amazon Pay" />
+        {CARD_LOGOS.map(l => <Logo key={l.file} {...l} />)}
+        {WALLET_LOGOS.map(l => <Logo key={l.file} {...l} />)}
       </div>
     </div>
   )
