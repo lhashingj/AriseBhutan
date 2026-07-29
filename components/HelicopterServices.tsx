@@ -41,11 +41,23 @@ const PRICING_TIERS = [
   },
 ]
 
-const CHARTER_ROUTES = [
-  { name: 'Paro → Haa', time: '~12 min', note: 'One of the shortest hops — the remote Haa valley in minutes.' },
-  { name: 'Paro → Thimphu / Punakha / Gasa', time: '15–30 min', note: 'Skip the mountain-pass drive between the western valleys.' },
-  { name: 'Paro → Bumthang / Trongsa', time: '~1 hr', note: 'Reach central Bhutan in a fraction of the 7–8 hour drive.' },
-  { name: 'Paro → Trashigang', time: '~2 hr 48 min', note: 'The longest domestic route — eastern Bhutan without the two-day journey by road.' },
+const PARO_CHARTERS = [
+  { to: 'Haa',        landing: 'Imtrat Helipad',              time: '12 min',  price: '$875' },
+  { to: 'Thimphu',    landing: 'Lungtenphu RBA Ground',        time: '20 min',  price: '$1,458' },
+  { to: 'Punakha',    landing: 'Zomling Thang',                time: '50 min',  price: '$3,646' },
+  { to: 'Gasa',       landing: 'Gasa Public Ground',           time: '52 min',  price: '$3,792' },
+  { to: 'Laya',       landing: 'Langothang Village',           time: '80 min',  price: '$5,833' },
+  { to: 'Trongsa',    landing: 'Sherubling HSS Ground',        time: '80 min',  price: '$5,833' },
+  { to: 'Bumthang',   landing: 'Batpalathang Airport',         time: '110 min', price: '$8,021' },
+  { to: 'Manas',      landing: 'Manas Park Football Ground',   time: '150 min', price: '$10,938' },
+  { to: 'Trashigang', landing: 'Kanglung',                     time: '168 min', price: '$12,250' },
+]
+
+const BUMTHANG_TOURS = [
+  { name: 'Hidden Lake Tour',         route: 'Bumthang → Gomthang → Bumthang',           time: '35 min',  price: '$2,552' },
+  { name: 'Traditional Textile Tour', route: 'Bumthang → Khoma → Bumthang',              time: '50 min',  price: '$3,646' },
+  { name: 'Royal Manas Wildlife Tour', route: 'Bumthang → Manas → Bumthang',             time: '80 min',  price: '$5,833' },
+  { name: 'Merak-Sakteng Tour',       route: 'Bumthang → Sakteng → Merak → Bumthang',    time: '107 min', price: '$7,802' },
 ]
 
 export default function HelicopterServices() {
@@ -90,6 +102,39 @@ export default function HelicopterServices() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── About the operator ── */}
+      <section className="py-16 sm:py-20 surface-section-alt">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid md:grid-cols-2 gap-10 sm:gap-14">
+          <div>
+            <span className="section-badge">About the Operator</span>
+            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-stone-100 mb-4 leading-tight">
+              Rooted at Paro, Reaching All of Bhutan
+            </h2>
+            <p className="text-stone-600 dark:text-stone-400 leading-relaxed">
+              Royal Bhutan Helicopter Services (RBHS) took its first flight on 11 November 2015, timed to mark
+              His Majesty the Fourth King&apos;s 60th birthday. Flying two Airbus H130 helicopters out of Paro
+              Airport&apos;s original hangar, the fleet has since carried thousands of passengers over more than
+              1,500 flight hours — from first-time visitors chasing a view of Tiger&apos;s Nest to villagers who&apos;d
+              otherwise face a multi-day walk to the nearest road.
+            </p>
+          </div>
+          <div>
+            <span className="section-badge">Why It Matters</span>
+            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-stone-100 mb-4 leading-tight">
+              Why Bhutan Depends on Rotor Wings
+            </h2>
+            <p className="text-stone-600 dark:text-stone-400 leading-relaxed">
+              Bhutan&apos;s dzongkhags are separated by some of the steepest terrain on earth — Paro to eastern
+              Trashigang can take two full days by road, and several valleys have no all-weather road at all.
+              RBHS closes that gap: in its first six months of operation alone, the service airlifted more than
+              40 medical patients to hospitals in Thimphu, and it continues to support search and rescue,
+              disaster relief, cargo runs and government transport alongside its scenic flights and charters.
+              As the Department of Air Transport builds helipads across all 18 dzongkhags, that reach keeps growing.
+            </p>
           </div>
         </div>
       </section>
@@ -178,41 +223,75 @@ export default function HelicopterServices() {
         </div>
       </section>
 
-      {/* ── Point-to-point charters ── */}
+      {/* ── Charter Pricing ── */}
       <section className="py-16 sm:py-20 surface-section">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10 sm:mb-14">
-            <span className="section-badge">Point-to-Point Charters</span>
+            <span className="section-badge">Charter Pricing</span>
             <h2 className="section-title">Skip the Mountain Roads</h2>
-            <p className="section-subtitle">Bhutan&apos;s valleys are close as the crow flies, far by road — a charter turns a full day of driving into minutes.</p>
+            <p className="section-subtitle">One-way fares per helicopter, up to 5 passengers — contact us in advance so we can confirm your booking with RBHS.</p>
           </div>
-          <div className="bg-stone-50 dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 overflow-hidden">
+
+          <h3 className="font-serif font-bold text-stone-900 dark:text-stone-100 text-lg mb-4">From Paro</h3>
+          <div className="bg-stone-50 dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 overflow-hidden mb-10">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-stone-100 dark:bg-stone-950/60 text-left text-[10px] font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500">
-                    <th className="py-3 px-5">Route</th>
+                    <th className="py-3 px-5">Destination</th>
+                    <th className="py-3 px-5">Landing Spot</th>
                     <th className="py-3 px-5">Flight Time</th>
-                    <th className="py-3 px-5">Why fly it</th>
+                    <th className="py-3 px-5">Cost (USD)</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {CHARTER_ROUTES.map((r, i) => (
-                    <tr key={r.name} className={i < CHARTER_ROUTES.length - 1 ? 'border-b border-stone-200 dark:border-stone-800' : ''}>
-                      <td className="py-3.5 px-5 font-semibold text-stone-800 dark:text-stone-200">{r.name}</td>
+                  {PARO_CHARTERS.map((r, i) => (
+                    <tr key={r.to} className={i < PARO_CHARTERS.length - 1 ? 'border-b border-stone-200 dark:border-stone-800' : ''}>
+                      <td className="py-3.5 px-5 font-semibold text-stone-800 dark:text-stone-200">{r.to}</td>
+                      <td className="py-3.5 px-5 text-stone-500 dark:text-stone-400">{r.landing}</td>
                       <td className="py-3.5 px-5 text-stone-600 dark:text-stone-400">
                         <span className="inline-flex items-center gap-1.5">
                           <Clock className="w-3 h-3 text-amber-600 flex-shrink-0" />{r.time}
                         </span>
                       </td>
-                      <td className="py-3.5 px-5 text-stone-500 dark:text-stone-400">{r.note}</td>
+                      <td className="py-3.5 px-5 font-semibold text-amber-700 dark:text-amber-400">{r.price}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <h3 className="font-serif font-bold text-stone-900 dark:text-stone-100 text-lg mb-4">Regional Tours from Bumthang</h3>
+          <div className="bg-stone-50 dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-stone-100 dark:bg-stone-950/60 text-left text-[10px] font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500">
+                    <th className="py-3 px-5">Tour</th>
+                    <th className="py-3 px-5">Route</th>
+                    <th className="py-3 px-5">Flight Time</th>
+                    <th className="py-3 px-5">Cost (USD)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {BUMTHANG_TOURS.map((r, i) => (
+                    <tr key={r.name} className={i < BUMTHANG_TOURS.length - 1 ? 'border-b border-stone-200 dark:border-stone-800' : ''}>
+                      <td className="py-3.5 px-5 font-semibold text-stone-800 dark:text-stone-200">{r.name}</td>
+                      <td className="py-3.5 px-5 text-stone-500 dark:text-stone-400">{r.route}</td>
+                      <td className="py-3.5 px-5 text-stone-600 dark:text-stone-400">
+                        <span className="inline-flex items-center gap-1.5">
+                          <Clock className="w-3 h-3 text-amber-600 flex-shrink-0" />{r.time}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-5 font-semibold text-amber-700 dark:text-amber-400">{r.price}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
             <p className="px-5 py-3 text-xs text-stone-400 dark:text-stone-500 border-t border-stone-200 dark:border-stone-800 flex items-center gap-1.5">
-              <MapPin className="w-3 h-3 flex-shrink-0" /> RBHS also flies to Laya, Manas, Gasa and other remote dzongkhags on request.
+              <MapPin className="w-3 h-3 flex-shrink-0" /> All fares are one-way, per helicopter — pair a flight in with a road journey out, or book the return leg the same way.
             </p>
           </div>
         </div>
