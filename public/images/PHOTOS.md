@@ -43,6 +43,12 @@ Next.js will auto-convert them to WebP/AVIF for fast loading.
 - `pilgrimage-group.jpg` — Large pilgrim group
 - `guide-tourist.jpg` — Guide with tourist(s)
 
+### Flights & Helicopter
+- `flight-schedule-hero.jpg` — Aircraft on tarmac, used as the default `/flight-schedule` hero background
+- `drukair-hero.jpg` — Drukair aircraft, used when `/flight-schedule` is filtered to Druk Air
+- `bhutan-airlines-hero.jpg` — Bhutan Airlines aircraft, used when `/flight-schedule` is filtered to Bhutan Airlines
+- `helicopter-hero.jpg` — RBHS helicopter, used as the `/helicopter-services` hero background
+
 ## Tips for fast loading
 - Resize images to max 1920px wide before copying here
 - Next.js will handle WebP conversion and responsive sizes automatically

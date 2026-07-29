@@ -14,46 +14,13 @@ import { supabase } from '@/utils/supabase/client'
 import AdminTravelDocuments from '@/components/AdminTravelDocuments'
 import AdminBookingGuests from '@/components/AdminBookingGuests'
 import { computePricingDetailed, SAARC_INDIA_SET } from '@/utils/pricingCalculator'
+import {
+  getSectors, getAirlinesForSector, getFlightsForSector, findFlight,
+  parseSector, daysLabel, ALL_AIRLINES, AIRPORTS, SCHEDULE_EFFECTIVE,
+} from '@/data/flightSchedule'
 
-// ── Flight reference data ─────────────────────────────────────
-const FLIGHT_SECTORS = [
-  'Bangkok (BKK) → Paro (PBH)',
-  'Paro (PBH) → Bangkok (BKK)',
-  'Delhi (DEL) → Paro (PBH)',
-  'Paro (PBH) → Delhi (DEL)',
-  'Mumbai (BOM) → Paro (PBH)',
-  'Paro (PBH) → Mumbai (BOM)',
-  'Kathmandu (KTM) → Paro (PBH)',
-  'Paro (PBH) → Kathmandu (KTM)',
-  'Singapore (SIN) → Paro (PBH)',
-  'Paro (PBH) → Singapore (SIN)',
-  'Kolkata (CCU) → Paro (PBH)',
-  'Paro (PBH) → Kolkata (CCU)',
-  'Dhaka (DAC) → Paro (PBH)',
-  'Paro (PBH) → Dhaka (DAC)',
-  'Kuala Lumpur (KUL) → Paro (PBH)',
-  'Paro (PBH) → Kuala Lumpur (KUL)',
-]
-
-const AIRLINES = ['Druk Air (KB)', 'Bhutan Airlines (B3)']
-
-// Pre-fill helper: common flight numbers by sector keyword
-const SECTOR_FLIGHTS = {
-  'Bangkok': { 'Druk Air (KB)': ['KB 131', 'KB 132'], 'Bhutan Airlines (B3)': ['B3 700', 'B3 701', 'B3 707'] },
-  'Delhi':   { 'Druk Air (KB)': ['KB 200', 'KB 201'], 'Bhutan Airlines (B3)': ['B3 710', 'B3 711'] },
-  'Mumbai':  { 'Druk Air (KB)': ['KB 210', 'KB 211'], 'Bhutan Airlines (B3)': ['B3 720', 'B3 721'] },
-  'Kathmandu': { 'Druk Air (KB)': ['KB 220', 'KB 221'], 'Bhutan Airlines (B3)': ['B3 730', 'B3 731'] },
-  'Singapore': { 'Druk Air (KB)': ['KB 140', 'KB 141'], 'Bhutan Airlines (B3)': ['B3 740', 'B3 741'] },
-  'Kolkata': { 'Druk Air (KB)': ['KB 150', 'KB 151'], 'Bhutan Airlines (B3)': ['B3 750', 'B3 751'] },
-  'Dhaka':   { 'Druk Air (KB)': ['KB 160', 'KB 161'], 'Bhutan Airlines (B3)': ['B3 760', 'B3 761'] },
-  'Kuala Lumpur': { 'Druk Air (KB)': ['KB 170', 'KB 171'], 'Bhutan Airlines (B3)': ['B3 770', 'B3 771'] },
-}
-
-function getFlightNos(sector, airline) {
-  if (!sector || !airline) return []
-  const city = Object.keys(SECTOR_FLIGHTS).find(k => sector.includes(k))
-  return city ? (SECTOR_FLIGHTS[city][airline] ?? []) : []
-}
+// ── Flight reference data — real Druk Air / Bhutan Airlines schedules ──
+const FLIGHT_SECTORS = getSectors().map(s => s.label)
 
 // ── Status config ─────────────────────────────────────────────
 const STATUS = {
@@ -302,6 +269,42 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
   }
   function removeFlight(idx) {
     setFlights(prev => prev.filter((_, i) => i !== idx))
+  }
+  function handleSectorChange(idx, sector) {
+    setFlights(prev => prev.map((f, i) => i === idx
+      ? { ...f, sector, airline: '', flight_no: '', departs: '', arrives: '' }
+      : f))
+  }
+  function handleAirlineChange(idx, airline) {
+    setFlights(prev => prev.map((f, i) => i === idx
+      ? { ...f, airline, flight_no: '', departs: '', arrives: '' }
+      : f))
+  }
+  function handleFlightNoChange(idx, flightNo, sector, date) {
+    setFlights(prev => prev.map((f, i) => {
+      if (i !== idx) return f
+      const parsed = parseSector(sector)
+      const match = parsed && flightNo !== '__other__' ? findFlight(flightNo, parsed.from, parsed.to, date) : null
+      return {
+        ...f,
+        flight_no: flightNo,
+        departs: match ? match.departs : f.departs,
+        arrives: match ? match.arrives : f.arrives,
+      }
+    }))
+  }
+  function handleDateChange(idx, date, sector, flightNo) {
+    setFlights(prev => prev.map((f, i) => {
+      if (i !== idx) return f
+      const parsed = parseSector(sector)
+      const match = parsed && flightNo && flightNo !== '__other__' ? findFlight(flightNo, parsed.from, parsed.to, date) : null
+      return {
+        ...f,
+        date,
+        departs: match ? match.departs : f.departs,
+        arrives: match ? match.arrives : f.arrives,
+      }
+    }))
   }
 
   // ── day helpers ────────────────────────────────────────────
@@ -828,7 +831,7 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
                           <label className={lbl}>Sector</label>
                           <select
                             value={f.sector}
-                            onChange={e => updateFlight(idx, 'sector', e.target.value)}
+                            onChange={e => handleSectorChange(idx, e.target.value)}
                             className={inp}
                           >
                             <option value="">Select route…</option>
@@ -843,40 +846,66 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
                           <label className={lbl}>Airline</label>
                           <select
                             value={f.airline}
-                            onChange={e => updateFlight(idx, 'airline', e.target.value)}
+                            onChange={e => handleAirlineChange(idx, e.target.value)}
                             className={inp}
                           >
                             <option value="">Select airline…</option>
-                            {AIRLINES.map(a => (
-                              <option key={a} value={a}>{a}</option>
-                            ))}
+                            {(() => {
+                              const parsed = parseSector(f.sector)
+                              const options = parsed ? getAirlinesForSector(parsed.from, parsed.to) : ALL_AIRLINES
+                              return (options.length > 0 ? options : ALL_AIRLINES).map(a => (
+                                <option key={a} value={a}>{a}</option>
+                              ))
+                            })()}
                           </select>
                         </div>
 
-                        {/* Flight No — dropdown if known, else free text */}
+                        {/* Flight No — dropdown of real scheduled flights, else free text */}
                         <div>
                           <label className={lbl}>Flight No.</label>
-                          {getFlightNos(f.sector, f.airline).length > 0 ? (
-                            <select
-                              value={f.flight_no}
-                              onChange={e => updateFlight(idx, 'flight_no', e.target.value)}
-                              className={inp}
-                            >
-                              <option value="">Select flight no…</option>
-                              {getFlightNos(f.sector, f.airline).map(n => (
-                                <option key={n} value={n}>{n}</option>
-                              ))}
-                              <option value="__other__">Other (type below)</option>
-                            </select>
-                          ) : (
-                            <input
-                              type="text"
-                              value={f.flight_no}
-                              onChange={e => updateFlight(idx, 'flight_no', e.target.value)}
-                              placeholder="e.g. KB 131"
-                              className={inp}
-                            />
-                          )}
+                          {(() => {
+                            const parsed = parseSector(f.sector)
+                            const scheduled = parsed ? getFlightsForSector(parsed.from, parsed.to, f.airline || undefined) : []
+                            const flightNos = [...new Set(scheduled.map(s => s.flightNo))]
+                            const selectedMatch = parsed && f.flight_no && f.flight_no !== '__other__'
+                              ? findFlight(f.flight_no, parsed.from, parsed.to, f.date)
+                              : null
+                            return flightNos.length > 0 ? (
+                              <>
+                                <select
+                                  value={f.flight_no}
+                                  onChange={e => handleFlightNoChange(idx, e.target.value, f.sector, f.date)}
+                                  className={inp}
+                                >
+                                  <option value="">Select flight no…</option>
+                                  {flightNos.map(n => {
+                                    const variant = findFlight(n, parsed.from, parsed.to, f.date) || scheduled.find(s => s.flightNo === n)
+                                    return (
+                                      <option key={n} value={n}>
+                                        {n} · {variant.departs}→{variant.arrives}{variant.via ? ` via ${AIRPORTS[variant.via]}` : ''} · {daysLabel(variant.days)}
+                                      </option>
+                                    )
+                                  })}
+                                  <option value="__other__">Other (type below)</option>
+                                </select>
+                                {selectedMatch && (
+                                  <p className="text-[10px] text-stone-500 mt-1">
+                                    Scheduled: {selectedMatch.departs} → {selectedMatch.arrives}
+                                    {selectedMatch.via ? ` via ${AIRPORTS[selectedMatch.via]}` : ''} · {daysLabel(selectedMatch.days)}
+                                    {f.airline && SCHEDULE_EFFECTIVE[f.airline] ? ` · schedule effective ${SCHEDULE_EFFECTIVE[f.airline]}` : ''}
+                                  </p>
+                                )}
+                              </>
+                            ) : (
+                              <input
+                                type="text"
+                                value={f.flight_no}
+                                onChange={e => updateFlight(idx, 'flight_no', e.target.value)}
+                                placeholder="e.g. KB 131"
+                                className={inp}
+                              />
+                            )
+                          })()}
                           {f.flight_no === '__other__' && (
                             <input
                               type="text"
@@ -895,7 +924,7 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
                             <input
                               type="date"
                               value={f.date}
-                              onChange={e => updateFlight(idx, 'date', e.target.value)}
+                              onChange={e => handleDateChange(idx, e.target.value, f.sector, f.flight_no)}
                               className={inp}
                             />
                           </div>

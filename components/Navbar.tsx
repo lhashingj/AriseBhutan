@@ -10,6 +10,11 @@ const navLinks = [
   { label: 'Home',     href: '/' },
   { label: 'Tours',    href: '/tours' },
   { label: 'Gallery',  href: '/gallery' },
+  { label: 'Flight',   href: '/flight-schedule', children: [
+      { label: 'Drukair Schedule',          href: '/flight-schedule?airline=druk' },
+      { label: 'Bhutan Airlines Schedule',  href: '/flight-schedule?airline=bhutan' },
+      { label: 'Helicopter Services',       href: '/helicopter-services' },
+    ] },
   { label: 'About Us', href: '/about' },
   { label: 'Contact',  href: '/contact' },
 ]
@@ -17,6 +22,7 @@ const navLinks = [
 export default function Navbar() {
   const [scrolled, setScrolled]     = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [mobileSubOpen, setMobileSubOpen] = useState<string | null>(null)
   const [user, setUser]             = useState<{ name: string; role: string } | null>(null)
   const [userMenuOpen, setUserMenu]       = useState(false)
   const [showLogoutConfirm, setLogoutConfirm] = useState(false)
@@ -36,6 +42,7 @@ export default function Navbar() {
 
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? 'hidden' : ''
+    if (!mobileOpen) setMobileSubOpen(null)
     return () => { document.body.style.overflow = '' }
   }, [mobileOpen])
 
@@ -108,17 +115,46 @@ export default function Navbar() {
           {/* ── Desktop Nav ── */}
           <nav className="hidden lg:flex items-center gap-0.5">
             {navLinks.map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                className={`text-sm font-medium px-3.5 py-2 rounded-lg transition-all duration-200 ${
-                  solid
-                    ? 'text-stone-700 hover:text-amber-600 hover:bg-amber-50/80 dark:text-stone-300 dark:hover:text-amber-400 dark:hover:bg-white/5'
-                    : 'text-white/90 hover:text-white hover:bg-white/10'
-                }`}
-              >
-                {link.label}
-              </Link>
+              link.children ? (
+                <div key={link.label} className="relative group">
+                  <Link
+                    href={link.href}
+                    className={`flex items-center gap-1 text-sm font-medium px-3.5 py-2 rounded-lg transition-all duration-200 ${
+                      solid
+                        ? 'text-stone-700 hover:text-amber-600 hover:bg-amber-50/80 dark:text-stone-300 dark:hover:text-amber-400 dark:hover:bg-white/5'
+                        : 'text-white/90 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    {link.label}
+                    <ChevronDown className="w-3.5 h-3.5 transition-transform duration-200 group-hover:rotate-180" />
+                  </Link>
+                  <div className="absolute left-0 top-full pt-2 opacity-0 invisible -translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-200 z-50">
+                    <div className="w-60 bg-white dark:bg-stone-900 rounded-2xl shadow-xl border border-stone-100 dark:border-stone-800 py-2 overflow-hidden">
+                      {link.children.map((child) => (
+                        <Link
+                          key={child.label}
+                          href={child.href}
+                          className="block px-4 py-2.5 text-sm text-stone-700 dark:text-stone-300 hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-500/10 dark:hover:text-amber-400 transition-colors"
+                        >
+                          {child.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  className={`text-sm font-medium px-3.5 py-2 rounded-lg transition-all duration-200 ${
+                    solid
+                      ? 'text-stone-700 hover:text-amber-600 hover:bg-amber-50/80 dark:text-stone-300 dark:hover:text-amber-400 dark:hover:bg-white/5'
+                      : 'text-white/90 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              )
             ))}
           </nav>
 
@@ -231,18 +267,48 @@ export default function Navbar() {
       {/* ── Mobile Menu ── */}
       <div
         className="lg:hidden overflow-hidden transition-[max-height] duration-300 ease-in-out"
-        style={{ maxHeight: mobileOpen ? '560px' : '0px' }}
+        style={{ maxHeight: mobileOpen ? '760px' : '0px' }}
       >
         <div className="bg-white dark:bg-stone-950 border-t border-stone-100 dark:border-stone-800 px-4 pb-7 pt-2 transition-colors duration-300">
           {navLinks.map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              className="flex py-3.5 text-stone-800 dark:text-stone-200 font-medium text-sm border-b border-stone-50 dark:border-stone-800/60 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
-              onClick={() => setMobileOpen(false)}
-            >
-              {link.label}
-            </Link>
+            link.children ? (
+              <div key={link.label} className="border-b border-stone-50 dark:border-stone-800/60">
+                <button
+                  type="button"
+                  onClick={() => setMobileSubOpen(mobileSubOpen === link.label ? null : link.label)}
+                  className="w-full flex items-center justify-between py-3.5 text-stone-800 dark:text-stone-200 font-medium text-sm hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+                >
+                  {link.label}
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${mobileSubOpen === link.label ? 'rotate-180' : ''}`} />
+                </button>
+                <div
+                  className="overflow-hidden transition-[max-height] duration-300 ease-in-out"
+                  style={{ maxHeight: mobileSubOpen === link.label ? '200px' : '0px' }}
+                >
+                  <div className="pb-2 pl-3 flex flex-col">
+                    {link.children.map((child) => (
+                      <Link
+                        key={child.label}
+                        href={child.href}
+                        className="py-2.5 text-sm text-stone-600 dark:text-stone-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        {child.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <Link
+                key={link.label}
+                href={link.href}
+                className="flex py-3.5 text-stone-800 dark:text-stone-200 font-medium text-sm border-b border-stone-50 dark:border-stone-800/60 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+                onClick={() => setMobileOpen(false)}
+              >
+                {link.label}
+              </Link>
+            )
           ))}
 
           <div className="mt-5 flex flex-col gap-2.5">
