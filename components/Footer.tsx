@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Mail, Phone, MapPin, Facebook, Instagram, Youtube } from 'lucide-react'
 import NewsletterForm from '@/components/NewsletterForm'
+import PaymentBadges from '@/components/PaymentBadges'
 
 const quickLinks = [
   { label: 'Classic Cultural Tour', href: '/tours/classic-bhutan-cultural-tour' },
@@ -114,6 +115,14 @@ export default function Footer() {
             <p className="text-sm font-medium text-white mb-3">Get Bhutan Travel Tips</p>
             <NewsletterForm />
           </div>
+        </div>
+      </div>
+
+      {/* Payment options */}
+      <div className="border-t border-stone-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+          <h3 className="font-semibold text-white text-xs tracking-wider uppercase flex-shrink-0">Payment Options</h3>
+          <PaymentBadges variant="dark" />
         </div>
       </div>
 

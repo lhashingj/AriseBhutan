@@ -7,6 +7,7 @@ import { Loader2, AlertCircle, Download, ArrowLeft, Settings, CreditCard } from 
 import Link from 'next/link'
 import { supabase } from '@/utils/supabase/client'
 import { generateVoucherPDF } from '@/utils/pdfGenerator'
+import PaymentBadges from '@/components/PaymentBadges'
 
 // ── Helpers ───────────────────────────────────────────────────
 function fmtDate(d) {
@@ -766,6 +767,9 @@ export default function ItineraryVoucherPage() {
             {showPricing && (
               <div className="page-break-avoid">
                 <SectionHead>Payment Options</SectionHead>
+                <div className="no-print mt-2">
+                  <PaymentBadges />
+                </div>
 
                 {/* Credit / Debit Card — Bhutan Payments */}
                 {it.payment_link && (

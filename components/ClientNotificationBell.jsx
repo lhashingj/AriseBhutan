@@ -57,7 +57,7 @@ function buildEvents(itineraries, docs, since) {
   return events.sort((a, b) => new Date(b.at) - new Date(a.at)).slice(0, 12)
 }
 
-export default function ClientNotificationBell({ className = '' }) {
+export default function ClientNotificationBell({ className = '', align = 'right', direction = 'down' }) {
   const [open, setOpen] = useState(false)
   const [items, setItems] = useState([])
   const [lastSeen, setLastSeen] = useState(0)
@@ -131,7 +131,7 @@ export default function ClientNotificationBell({ className = '' }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl shadow-stone-900/10 dark:shadow-black/40 z-50 overflow-hidden">
+        <div className={`absolute ${align === 'left' ? 'left-0' : 'right-0'} ${direction === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'} w-80 max-w-[calc(100vw-2rem)] rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl shadow-stone-900/10 dark:shadow-black/40 z-50 overflow-hidden`}>
           <div className="px-4 py-3 border-b border-stone-100 dark:border-stone-800">
             <p className="text-sm font-serif font-bold text-stone-900 dark:text-stone-50">Recent Updates</p>
           </div>

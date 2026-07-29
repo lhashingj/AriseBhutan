@@ -114,7 +114,7 @@ export default function ClientLayout({ children }) {
           <div className="flex items-center justify-between px-3 py-1.5">
             <span className="text-stone-500 text-xs font-medium uppercase tracking-wider">Theme</span>
             <div className="flex items-center gap-1">
-              <ClientNotificationBell className="text-stone-400 hover:text-amber-400 hover:bg-white/10" />
+              <ClientNotificationBell className="text-stone-400 hover:text-amber-400 hover:bg-white/10" align="left" direction="up" />
               <ThemeToggle className="text-stone-400 hover:text-amber-400 hover:bg-white/10" />
             </div>
           </div>

@@ -119,14 +119,14 @@ const FAQS = [
 
   // Flights
   {
-    patterns: ['flight', 'airport', 'arrive', 'drukair', 'bhutan airlines', 'fly', 'flying to bhutan', 'paro airport', 'how to reach', 'how to get to bhutan', 'connecting flight', 'bangkok', 'delhi', 'kolkata', 'singapore'],
-    answer: "**Getting to Bhutan:**\n\n✈️ Flights land at **Paro International Airport (PBH)** — one of the world's most scenic landings!\n\n**Airlines:**\n• **Druk Air** (Royal Bhutan Airlines)\n• **Bhutan Airlines**\n\n**Connecting hubs:**\nBangkok • Singapore • Delhi • Kolkata • Kathmandu\n\nWe can recommend the best flight options once your dates are confirmed. Paro Airport can be weather-dependent — we always build buffer days into itineraries.",
+    patterns: ['flight', 'airport', 'arrive', 'drukair', 'bhutan airlines', 'fly', 'flying to bhutan', 'paro airport', 'how to reach', 'how to get to bhutan', 'connecting flight', 'bangkok', 'delhi', 'kolkata', 'singapore', 'flight schedule', 'flight time', 'departure time', 'arrival time'],
+    answer: "**Getting to Bhutan:**\n\n✈️ Flights land at **Paro International Airport (PBH)** — one of the world's most scenic landings!\n\n**Airlines:**\n• **Druk Air** (Royal Bhutan Airlines)\n• **Bhutan Airlines**\n\n**Connecting hubs:**\nBangkok • Singapore • Delhi • Kolkata • Kathmandu\n\n🔎 [Check Flight Schedule & Times →](/flight-schedule) — real Druk Air and Bhutan Airlines departure/arrival times by route and date.\n\nWe can recommend the best flight options once your dates are confirmed. Paro Airport can be weather-dependent — we always build buffer days into itineraries.",
   },
 
   // Payment
   {
-    patterns: ['payment', 'pay', 'bank transfer', 'deposit', 'advance', 'how to pay', 'inr', 'usd', 'currency', 'wire transfer', 'installment', 'payment method'],
-    answer: "**Payment Details:**\n\n💰 We accept bank transfers in **USD or INR**\n\n📋 Payment schedule:\n• **30% deposit** — to confirm your booking and lock in dates\n• **Remaining 70%** — due at least 30 days before arrival\n\nFull banking details and a booking confirmation letter are sent immediately upon deposit. We do not accept payments via credit card or PayPal at this time.",
+    patterns: ['payment', 'pay', 'bank transfer', 'deposit', 'advance', 'how to pay', 'inr', 'usd', 'currency', 'wire transfer', 'installment', 'payment method', 'payment options'],
+    answer: "**Payment Options:**\n\n🏦 **Bank Transfer (SWIFT)** — our primary method; full banking details sent with your quote\n💳 **Credit/Debit Card** — Visa, Mastercard, JCB, Discover & Diners Club accepted via our secure checkout link (Bhutan Payments / BNB)\n\n📋 Payment schedule:\n• **30% deposit** — to confirm your booking and lock in dates\n• **Remaining 70%** — due at least 30 days before arrival\n\nYour payment link and full banking details are sent as soon as your itinerary is quoted.",
   },
 
   // Cancellation Policy
@@ -176,6 +176,12 @@ const FAQS = [
     patterns: ['pack', 'packing', 'what to bring', 'what to wear', 'clothes', 'clothing', 'dress code', 'temple dress', 'monastery dress', 'luggage'],
     answer: "**Packing Tips for Bhutan:**\n\n👕 **Layering is key** — temperatures vary greatly between valleys and altitudes\n🙏 **Modest clothing** — cover shoulders and knees when visiting dzongs & monasteries\n👟 **Comfortable walking shoes** — you'll do a lot of walking!\n☀️ **Sunscreen & sunglasses** — UV is strong at altitude\n💊 **Basic medications** — pharmacies exist but limited in remote areas\n📸 **Camera** — Bhutan is incredibly photogenic!\n\nFor trekking: good hiking boots, warm layers, rain gear, and a walking pole are essential.",
   },
+
+  // Helicopter Services
+  {
+    patterns: ['helicopter', 'heli', 'chopper', 'helicopter service', 'helicopter charter', 'helicopter tour', 'scenic flight', 'heli tour', 'rbhs', 'helicopter price', 'helicopter cost', 'helicopter excursion'],
+    answer: "**Helicopter Services:**\n\n🚁 Royal Bhutan Helicopter Services (RBHS) offers scenic flights over Paro Valley, Tiger's Nest and Mount Jomolhari — 30/60/90-minute excursions from **$2,500 per trip** (up to 5 passengers) — plus point-to-point charters to Thimphu, Punakha, Bumthang, Trashigang and beyond.\n\n🚁 [View Helicopter Services & Pricing →](/helicopter-services)\n\nWe arrange your charter with RBHS as part of your itinerary — just tell us which route or scenic flight you're interested in.",
+  },
 ]
 
 // ── Fuzzy Matching ───────────────────────────────────────────────────────────
@@ -203,6 +209,7 @@ const KEYWORDS = {
   packing:     ['pack', 'packing', 'clothes', 'clothing', 'dress', 'bring', 'luggage', 'wear', 'temple'],
   environment: ['carbon', 'environment', 'sustainable', 'happiness', 'gnh', 'nature', 'forest', 'conservation'],
   group:       ['group', 'solo', 'couple', 'family', 'private', 'personal', 'individual', 'honeymoon'],
+  helicopter:  ['helicopter', 'heli', 'chopper', 'rbhs', 'scenic', 'charter'],
 }
 
 const KEYWORD_TO_FAQ = {
@@ -210,6 +217,7 @@ const KEYWORD_TO_FAQ = {
   tours: 15, booking: 16, trekking: 17, festival: 18, landmark: 19,
   destination: 20, flight: 21, payment: 22, cancel: 23, contact: 24,
   group: 25, environment: 26, included: 27, internet: 28, currency: 29, packing: 30,
+  helicopter: 31,
 }
 
 function charOverlap(a, b) {
@@ -241,11 +249,14 @@ const SUGGESTION_LIST = [
   'When is Paro Tshechu 2026?',
   'Show me the festival calendar',
   'How do I get to Bhutan by flight?',
+  'What is the Drukair flight schedule?',
+  'Tell me about helicopter services',
   'How do I contact Arise Bhutan?',
   'What is the cancellation policy?',
   'What hotels do you offer?',
   'What should I pack for Bhutan?',
   'What currency is used in Bhutan?',
+  'What payment options do you accept?',
 ]
 
 function getSuggestions(input) {
@@ -266,6 +277,8 @@ function getSuggestions(input) {
 const QUICK_ACTIONS = [
   { label: 'View My Itineraries',   emoji: '🗺️', action: 'link',     value: '/register' },
   { label: 'Adventure Builder',     emoji: '🏗️', action: 'link',     value: '/contact' },
+  { label: 'Flight Schedule',       emoji: '✈️', action: 'link',     value: '/flight-schedule' },
+  { label: 'Helicopter Services',   emoji: '🚁', action: 'link',     value: '/helicopter-services' },
   { label: 'Talk to Live Agent',    emoji: '💬', action: 'whatsapp' },
 ]
 
@@ -297,10 +310,20 @@ function matchesPattern(low, pattern) {
 function findAnswer(text) {
   const low = text.toLowerCase().trim()
 
-  // 1. Exact / substring pattern matching
+  // 1. Exact / substring pattern matching — the most specific (longest) matching
+  // pattern wins, so e.g. "helicopter cost" prefers the helicopter FAQ's own
+  // pattern over a shorter, more generic pattern like "cost" from another FAQ.
+  let best = null
+  let bestLen = 0
   for (const faq of FAQS) {
-    if (faq.patterns.some(p => matchesPattern(low, p))) return faq.answer
+    for (const p of faq.patterns) {
+      if (p.length > bestLen && matchesPattern(low, p)) {
+        best = faq
+        bestLen = p.length
+      }
+    }
   }
+  if (best) return best.answer
 
   // 2. Fuzzy keyword matching — handles typos like "itratcy" → "itinerary"
   const words = low.replace(/[^a-z\s]/g, '').split(/\s+/).filter(w => w.length >= 4)
