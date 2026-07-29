@@ -3,10 +3,13 @@
 import { useState, useMemo } from 'react'
 import { ChevronLeft, ChevronRight, MapPin } from 'lucide-react'
 import { allEvents2026, type FestivalEvent } from '@/data/bhutanEvents2026'
+import { allEvents2027 } from '@/data/bhutanEvents2027'
 
 // ─── constants ───────────────────────────────────────────────────────────────
 
-const YEAR = 2026
+const ALL_EVENTS = [...allEvents2026, ...allEvents2027]
+const MIN_YEAR = 2026
+const MAX_YEAR = 2027
 const MONTHS = [
   'January','February','March','April','May','June',
   'July','August','September','October','November','December',
@@ -33,7 +36,7 @@ function toKey(y: number, m: number, d: number) {
 function buildDateMap() {
   const map = new Map<string, { event: FestivalEvent; position: 'single' | 'start' | 'mid' | 'end' }[]>()
 
-  for (const event of allEvents2026) {
+  for (const event of ALL_EVENTS) {
     const cur = new Date(event.start + 'T12:00:00')
     const end = new Date(event.end + 'T12:00:00')
     const isSingle = event.start === event.end
@@ -56,36 +59,36 @@ function buildDateMap() {
 
 const DATE_MAP = buildDateMap()
 
-function getGridDays(month: number) {
-  const firstDow = new Date(YEAR, month, 1).getDay()
-  const totalDays = new Date(YEAR, month + 1, 0).getDate()
-  const prevTotal = new Date(YEAR, month, 0).getDate()
+function getGridDays(year: number, month: number) {
+  const firstDow = new Date(year, month, 1).getDay()
+  const totalDays = new Date(year, month + 1, 0).getDate()
+  const prevTotal = new Date(year, month, 0).getDate()
 
   const cells: { dateStr: string; day: number; isCurrentMonth: boolean }[] = []
 
   for (let i = firstDow - 1; i >= 0; i--) {
     const d = prevTotal - i
     const m = month === 0 ? 11 : month - 1
-    const y = month === 0 ? YEAR - 1 : YEAR
+    const y = month === 0 ? year - 1 : year
     cells.push({ dateStr: toKey(y, m, d), day: d, isCurrentMonth: false })
   }
   for (let d = 1; d <= totalDays; d++) {
-    cells.push({ dateStr: toKey(YEAR, month, d), day: d, isCurrentMonth: true })
+    cells.push({ dateStr: toKey(year, month, d), day: d, isCurrentMonth: true })
   }
   const trailing = 42 - cells.length
   for (let d = 1; d <= trailing; d++) {
     const m = month === 11 ? 0 : month + 1
-    const y = month === 11 ? YEAR + 1 : YEAR
+    const y = month === 11 ? year + 1 : year
     cells.push({ dateStr: toKey(y, m, d), day: d, isCurrentMonth: false })
   }
   return cells
 }
 
-function getMonthEvents(month: number): FestivalEvent[] {
+function getMonthEvents(year: number, month: number): FestivalEvent[] {
   const seen = new Set<string>()
-  const rangeStart = new Date(YEAR, month, 1)
-  const rangeEnd = new Date(YEAR, month + 1, 0)
-  return allEvents2026
+  const rangeStart = new Date(year, month, 1)
+  const rangeEnd = new Date(year, month + 1, 0)
+  return ALL_EVENTS
     .filter(ev => {
       if (seen.has(ev.id)) return false
       const s = new Date(ev.start + 'T12:00:00')
@@ -116,16 +119,39 @@ const MAX_BARS = 3
 
 // ─── component ───────────────────────────────────────────────────────────────
 
+function getDefaultYearMonth() {
+  const now = new Date()
+  const y = now.getFullYear()
+  return (y >= MIN_YEAR && y <= MAX_YEAR) ? { year: y, month: now.getMonth() } : { year: MIN_YEAR, month: 0 }
+}
+
+const DEFAULT_YEAR_MONTH = getDefaultYearMonth()
+
 export default function FestivalCalendar() {
-  const [month, setMonth] = useState(5) // default June
+  const [year, setYear]   = useState(DEFAULT_YEAR_MONTH.year)   // default to current year (if in range)
+  const [month, setMonth] = useState(DEFAULT_YEAR_MONTH.month)  // default to current month
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
 
-  const gridDays    = useMemo(() => getGridDays(month),    [month])
-  const monthEvents = useMemo(() => getMonthEvents(month), [month])
+  const gridDays    = useMemo(() => getGridDays(year, month),    [year, month])
+  const monthEvents = useMemo(() => getMonthEvents(year, month), [year, month])
   const selectedEvents = selectedDate ? (DATE_MAP.get(selectedDate) ?? []) : []
 
-  const prevMonth = () => { setMonth(m => m === 0 ? 11 : m - 1); setSelectedDate(null) }
-  const nextMonth = () => { setMonth(m => m === 11 ? 0 : m + 1); setSelectedDate(null) }
+  const prevMonth = () => {
+    setSelectedDate(null)
+    if (month === 0) {
+      if (year - 1 >= MIN_YEAR) { setYear(y => y - 1); setMonth(11) }
+    } else {
+      setMonth(m => m - 1)
+    }
+  }
+  const nextMonth = () => {
+    setSelectedDate(null)
+    if (month === 11) {
+      if (year + 1 <= MAX_YEAR) { setYear(y => y + 1); setMonth(0) }
+    } else {
+      setMonth(m => m + 1)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-stone-100 dark:bg-stone-950 font-sans transition-colors duration-300">
@@ -135,7 +161,7 @@ export default function FestivalCalendar() {
         <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10 pt-[60px] pb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-8">
           <div>
             <p className="text-amber-200 text-xs tracking-widest uppercase mb-1.5">འབྲུག་གི་དུས་ཆེན་ལོ་ཐོ།</p>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight leading-snug">Bhutan Festival & Holiday Calendar 2026</h1>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight leading-snug">Bhutan Festival & Holiday Calendar 2026–2027</h1>
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
             <button onClick={prevMonth} aria-label="Previous month"
@@ -143,7 +169,7 @@ export default function FestivalCalendar() {
               <ChevronLeft className="w-5 h-5" />
             </button>
             <span className="text-base sm:text-lg font-semibold w-44 text-center select-none">
-              {MONTHS[month]} {YEAR}
+              {MONTHS[month]} {year}
             </span>
             <button onClick={nextMonth} aria-label="Next month"
               className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/35 flex items-center justify-center transition">
@@ -288,6 +314,11 @@ export default function FestivalCalendar() {
                         style={{ backgroundColor: event.color }}>
                         {event.type === 'holiday' ? 'Public Holiday' : 'Festival'}
                       </span>
+                      {event.description && (
+                        <p className="text-[11px] text-gray-600 dark:text-stone-400 leading-relaxed mt-2">
+                          {event.description}
+                        </p>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -298,7 +329,7 @@ export default function FestivalCalendar() {
           {/* Month event list */}
           <div className="bg-white dark:bg-stone-900 rounded-2xl shadow-sm border border-gray-200 dark:border-stone-800 p-4 flex-1 transition-colors duration-300">
             <h3 className="text-[10px] font-bold text-gray-400 dark:text-stone-500 uppercase tracking-wider mb-3">
-              {MONTHS[month]} Events
+              {MONTHS[month]} {year} Events
             </h3>
 
             {monthEvents.length === 0 ? (
