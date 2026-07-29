@@ -1,6 +1,7 @@
 import HeroSection from '@/components/HeroSection'
 import TrustBadges from '@/components/TrustBadges'
 import BrandPhilosophy from '@/components/BrandPhilosophy'
+import WhyChooseUs from '@/components/WhyChooseUs'
 import TourCard from '@/components/TourCard'
 import GallerySection from '@/components/GallerySection'
 import Testimonials from '@/components/Testimonials'
@@ -24,6 +25,7 @@ export default function HomePage() {
       <HeroSection />
       <TrustBadges />
       <BrandPhilosophy />
+      <WhyChooseUs />
 
       {/* Featured Tours */}
       <section className="py-16 sm:py-20 bg-white dark:bg-stone-950 transition-colors duration-300">

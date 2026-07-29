@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { supabase } from '@/utils/supabase/client'
 import { generateVoucherPDF } from '@/utils/pdfGenerator'
 import PaymentBadges from '@/components/PaymentBadges'
+import { WHY_ARISE_BHUTAN } from '@/data/whyChooseUs'
 
 // ── Helpers ───────────────────────────────────────────────────
 function fmtDate(d) {
@@ -55,17 +56,21 @@ const DEFAULT_INCLUSIONS = [
   'Sustainable Development Fee (SDF) — $100/person/night',
   'All monument & dzong entry fees',
   'Meals as per itinerary',
+  'International flights (economy class)',
 ]
 const DEFAULT_EXCLUSIONS = [
-  'International flights (DEL ↔ PBH)',
   'Travel & medical insurance',
   'Personal expenses',
   'Gratuities for guide & driver',
 ]
 const DEFAULT_CANCELLATION = [
-  { period: '60+ days before departure',   policy: 'Full refund less $150 processing fee' },
-  { period: '30–59 days before departure', policy: '50% refund' },
-  { period: 'Under 30 days / No-show',     policy: 'Non-refundable' },
+  { period: 'Tour Package — 60+ days before departure',   policy: 'USD $250/person flat fee + bank transfer charges' },
+  { period: 'Tour Package — 60–10 days before departure', policy: '45% of package cost retained' },
+  { period: 'Tour Package — Under 10 days / No-show',     policy: '100% of package cost retained (non-refundable)' },
+  { period: 'Air Ticket — 30+ days before travel',        policy: '75% refund' },
+  { period: 'Air Ticket — 10–30 days before travel',      policy: '50% refund' },
+  { period: 'Air Ticket — Under 4 days before travel',    policy: '25% refund' },
+  { period: 'Air Ticket — Within 4 days / No-show',       policy: 'Non-refundable' },
 ]
 
 // ── Status config ─────────────────────────────────────────────
@@ -723,8 +728,8 @@ export default function ItineraryVoucherPage() {
                       </div>
                       <ul className="divide-y divide-stone-100 dark:divide-stone-700/60">
                         {[
-                          '50% deposit to confirm reservation & book flights',
-                          'Balance due 60 days before arrival',
+                          '50% deposit to confirm your booking — secures flights & hotel rooms',
+                          'Remaining 50% due within 60 days of arrival — covers your SDF and starts visa processing',
                           px.is_saarc ? 'Bank transfer (INR / Nu.)' : 'USD bank transfer or credit card (5% fee)',
                         ].map((t, i) => (
                           <li key={i} className="flex items-start gap-2 px-4 py-2.5 text-xs text-stone-600 dark:text-stone-400">
@@ -906,6 +911,19 @@ export default function ItineraryVoucherPage() {
               </div>
             </div>
 
+            {/* ── WHY TRAVEL WITH ARISE BHUTAN ── */}
+            <div className="page-break-avoid">
+              <SectionHead>Why Travel With Arise Bhutan</SectionHead>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                {WHY_ARISE_BHUTAN.map(({ title, body }) => (
+                  <div key={title} className="rounded-xl border border-stone-200 dark:border-stone-700 px-4 py-3">
+                    <p className="text-xs font-bold text-stone-800 dark:text-stone-100 mb-1">{title}</p>
+                    <p className="text-[11px] text-stone-500 dark:text-stone-400 leading-relaxed">{body}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* ── CANCELLATION POLICY ── */}
             <div className="page-break-avoid">
               <SectionHead>Cancellation &amp; Refund Policy</SectionHead>
@@ -928,7 +946,7 @@ export default function ItineraryVoucherPage() {
               </table>
               </div>
               <p className="text-[9px] text-stone-400 dark:text-stone-500 mt-1.5 italic">
-                Force majeure events (natural disasters, civil unrest, airline cancellations) handled on a case-by-case basis. Travel insurance strongly recommended.
+                Flight reschedules requested less than 72 hours before departure incur a USD $50 fee per change (waived for Business Class tickets). Force majeure events (natural disasters, civil unrest, airline cancellations) handled on a case-by-case basis. Travel insurance strongly recommended.
               </p>
             </div>
 

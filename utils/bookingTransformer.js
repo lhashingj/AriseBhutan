@@ -110,22 +110,26 @@ export function buildVoucherData(booking, profile) {
       `Sustainable Development Fee (SDF) — $100/person/night`,
       'All monument & dzong entry fees',
       'Meals as per itinerary',
+      'International flights (economy class)',
     ],
     exclusions: [
-      'International flights (DEL ↔ PBH)',
       'Travel & medical insurance',
       'Personal expenses',
       'Gratuities for guide & driver',
     ],
     cancellation: [
-      { period: '60+ days before departure',   refund: 'Full refund less $150 processing fee' },
-      { period: '30–59 days before departure',  refund: '50% refund' },
-      { period: 'Under 30 days / No-show',      refund: 'Non-refundable' },
+      { period: 'Tour Package — 60+ days before departure',   refund: 'USD $250/person flat fee + bank transfer charges' },
+      { period: 'Tour Package — 60–10 days before departure', refund: '45% of package cost retained' },
+      { period: 'Tour Package — Under 10 days / No-show',     refund: '100% of package cost retained (non-refundable)' },
+      { period: 'Air Ticket — 30+ days before travel',        refund: '75% refund' },
+      { period: 'Air Ticket — 10–30 days before travel',      refund: '50% refund' },
+      { period: 'Air Ticket — Under 4 days before travel',    refund: '25% refund' },
+      { period: 'Air Ticket — Within 4 days / No-show',       refund: 'Non-refundable' },
     ],
     payment: [
-      '30% deposit to confirm reservation',
-      'Balance due 30 days before departure',
-      'USD bank transfer or credit card',
+      '50% deposit to confirm your booking — secures flights & hotel rooms',
+      'Remaining 50% due within 60 days of arrival — covers your SDF and starts visa processing',
+      'USD bank transfer or credit card (5% fee)',
     ],
   }
 }

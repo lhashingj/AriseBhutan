@@ -162,7 +162,7 @@ export default function FreeQuoteLanding() {
               </ul>
               <p className="border-t border-stone-100 px-6 py-4 text-xs leading-relaxed text-stone-500 dark:border-stone-800 dark:text-stone-400">
                 Most operators quote low, then add the SDF later. We don&apos;t. The number on your quote
-                is the number you pay — international flights are the only extra.
+                is the number you pay — including your international flights, itemised for you.
               </p>
             </div>
 

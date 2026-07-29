@@ -4,6 +4,7 @@ import { useState } from 'react'
 
 import { Download, Loader2 } from 'lucide-react'
 import { generateVoucherPDF, computePricing } from '@/utils/pdfGenerator'
+import { WHY_ARISE_BHUTAN } from '@/data/whyChooseUs'
 
 // ─── Formatting helpers ───────────────────────────────────────────────────────
 const usd = (n) =>
@@ -456,7 +457,20 @@ export default function BookingVoucher({ booking }) {
             </div>
           </div>
 
-          {/* ── 8. CANCELLATION POLICY ──────────────────────────── */}
+          {/* ── 8. WHY TRAVEL WITH ARISE BHUTAN ─────────────────── */}
+          <div>
+            <SectionHead>Why Travel With Arise Bhutan</SectionHead>
+            <div className="grid grid-cols-2 gap-3">
+              {WHY_ARISE_BHUTAN.map(({ title, body }) => (
+                <div key={title} className="border border-stone-200 rounded-lg px-4 py-3">
+                  <p style={{ fontSize: 11 }} className="font-bold text-stone-900 mb-1">{title}</p>
+                  <p style={{ fontSize: 10, lineHeight: 1.5 }} className="text-stone-500">{body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── 8B. CANCELLATION POLICY ─────────────────────────── */}
           <div>
             <SectionHead>Cancellation &amp; Refund Policy</SectionHead>
             <div className="rounded-lg border border-stone-200 overflow-hidden">
@@ -478,7 +492,7 @@ export default function BookingVoucher({ booking }) {
               </table>
             </div>
             <p style={{ fontSize: 10 }} className="text-stone-400 mt-1.5 pl-1">
-              Force majeure events (natural disasters, civil unrest, airline cancellations) handled on a case-by-case basis. Travel insurance strongly recommended.
+              Flight reschedules requested less than 72 hours before departure incur a USD $50 fee per change (waived for Business Class tickets). Force majeure events (natural disasters, civil unrest, airline cancellations) handled on a case-by-case basis. Travel insurance strongly recommended.
             </p>
           </div>
 

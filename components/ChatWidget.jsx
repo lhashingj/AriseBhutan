@@ -156,7 +156,7 @@ const FAQS = [
   // What's included
   {
     patterns: ['included', 'inclusive', 'include', 'what is included', 'meals', 'food', 'breakfast', 'lunch', 'dinner', 'guide', 'transport', 'car', 'driver'],
-    answer: "**All Arise Bhutan packages include:**\n\n✅ All accommodation (as per chosen tier)\n✅ All meals — Breakfast, Lunch & Dinner\n✅ Licensed English-speaking guide\n✅ Private vehicle & driver\n✅ SDF government fee\n✅ Visa & entry permit processing\n✅ All monument & attraction entry fees\n✅ Airport transfers\n\n**Not included:** International flights, personal expenses, travel insurance, and alcoholic beverages.",
+    answer: "**All Arise Bhutan packages include:**\n\n✅ All accommodation (as per chosen tier)\n✅ All meals — Breakfast, Lunch & Dinner\n✅ Licensed English-speaking guide\n✅ Private vehicle & driver\n✅ SDF government fee\n✅ Visa & entry permit processing\n✅ All monument & attraction entry fees\n✅ Airport transfers\n✅ International flights (economy class)\n\n**Not included:** Personal expenses, travel insurance, and alcoholic beverages.",
   },
 
   // Internet / Connectivity
