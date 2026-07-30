@@ -61,10 +61,6 @@ export const metadata: Metadata = {
     description: 'Licensed tour agency in Bhutan. Cultural tours, trekking, festivals & luxury retreats in the Kingdom of Happiness.',
     images: ['/images/tigers-nest-2.jpg'],
   },
-  icons: {
-    icon: '/images/logo.jpeg',
-    apple: '/images/logo.jpeg',
-  },
   robots: {
     index: true,
     follow: true,
