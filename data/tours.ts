@@ -29,8 +29,6 @@ export interface Tour {
   heroImage: string;
   gallery: string[];
   bestSeason: string;
-  rating: number;
-  reviews: number;
   featured: boolean;
   locations: string[];
   badge?: string;
@@ -54,7 +52,6 @@ export const tours: Tour[] = [
     badge: 'Most Popular',
     featured: true,
     bestSeason: 'March–May, September–November',
-    rating: 4.9, reviews: 127,
     image: '/images/monastery-architecture.jpg',
     heroImage: '/images/couple-dzong.jpg',
     gallery: ['/images/couple-dzong.jpg', '/images/monastery-architecture.jpg', '/images/buddha-dordenma.jpg', '/images/river-bridge.jpg'],
@@ -119,7 +116,6 @@ export const tours: Tour[] = [
     locations: ['Paro', 'Thimphu', 'Punakha', 'Wangdue Phodrang'],
     featured: true,
     bestSeason: 'March–May, September–November',
-    rating: 4.8, reviews: 89,
     image: '/images/guide-valley-wide.jpg',
     heroImage: '/images/river-temple.jpg',
     gallery: ['/images/river-temple.jpg', '/images/guide-valley-wide.jpg', '/images/pilgrimage-group.jpg', '/images/group-temple.jpg'],
@@ -197,7 +193,6 @@ export const tours: Tour[] = [
     badge: 'Best Value',
     featured: false,
     bestSeason: 'March–May, September–November',
-    rating: 4.9, reviews: 63,
     image: '/images/mountain-valley.jpg',
     heroImage: '/images/guide-valley-village.jpg',
     gallery: ['/images/mountain-valley.jpg', '/images/guide-valley-village.jpg', '/images/group-temple.jpg', '/images/monastery-architecture.jpg'],
@@ -294,7 +289,6 @@ export const tours: Tour[] = [
     badge: 'Day Trip',
     featured: true,
     bestSeason: 'Year-round (best March–Nov)',
-    rating: 5.0, reviews: 215,
     image: '/images/tigers-nest-1.jpg',
     heroImage: '/images/tigers-nest-2.jpg',
     gallery: ['/images/tigers-nest-2.jpg', '/images/tigers-nest-trail.jpg', '/images/tigers-nest-flags-day.jpg', '/images/tigers-nest-pilgrim.jpg'],
@@ -334,7 +328,6 @@ export const tours: Tour[] = [
     locations: ['Paro', 'Thimphu'],
     featured: true,
     bestSeason: 'March–May, September–November',
-    rating: 4.8, reviews: 74,
     image: '/images/trekkers-valley.jpg',
     heroImage: '/images/trekkers-prayer-flags.jpg',
     gallery: ['/images/trekkers-valley.jpg', '/images/trekkers-prayer-flags.jpg', '/images/group-trekkers.jpg', '/images/sunrise-summit.jpg'],
@@ -423,7 +416,6 @@ export const tours: Tour[] = [
     locations: ['Paro', 'Jangothang'],
     featured: false,
     bestSeason: 'April–June, September–October',
-    rating: 4.9, reviews: 41,
     image: '/images/guide-mountain.jpg',
     heroImage: '/images/sunrise-summit.jpg',
     gallery: ['/images/guide-mountain.jpg', '/images/sunrise-summit.jpg', '/images/tour-group-mountains.jpg', '/images/forest-trail.jpg'],
@@ -513,7 +505,6 @@ export const tours: Tour[] = [
     badge: 'Limited Dates',
     featured: true,
     bestSeason: 'March / April (lunar calendar)',
-    rating: 4.9, reviews: 98,
     image: '/images/cham-dance-orange.jpg',
     heroImage: '/images/cham-dance-crowd.jpg',
     gallery: ['/images/cham-dance-crowd.jpg', '/images/cham-dance-orange.jpg', '/images/cham-dance-blue.jpg', '/images/cham-dance-red.jpg', '/images/festival-scene.jpg'],
@@ -577,7 +568,6 @@ export const tours: Tour[] = [
     locations: ['Thimphu', 'Paro', 'Punakha'],
     featured: false,
     bestSeason: 'September / October',
-    rating: 4.8, reviews: 71,
     image: '/images/cham-dance-blue.jpg',
     heroImage: '/images/festival-scene.jpg',
     gallery: ['/images/cham-dance-blue.jpg', '/images/festival-scene.jpg', '/images/cham-dance-green.jpg', '/images/cham-dance-red-pair.jpg'],
@@ -653,7 +643,6 @@ export const tours: Tour[] = [
     locations: ['Paro', 'Thimphu', 'Punakha'],
     featured: false,
     bestSeason: 'February / March',
-    rating: 4.9, reviews: 55,
     image: '/images/cham-dance-red.jpg',
     heroImage: '/images/red-group-dzong.jpg',
     gallery: ['/images/cham-dance-red.jpg', '/images/red-group-dzong.jpg', '/images/cham-dance-orange-2.jpg', '/images/monks-ceremony.jpg'],
@@ -719,7 +708,6 @@ export const tours: Tour[] = [
     badge: 'Premium',
     featured: true,
     bestSeason: 'March–May, September–November',
-    rating: 5.0, reviews: 34,
     image: '/images/tigers-nest-rhododendron.jpg',
     heroImage: '/images/sunrise-silhouette.jpg',
     gallery: ['/images/couple-dzong.jpg', '/images/sunrise-silhouette.jpg', '/images/river-temple.jpg', '/images/butter-lamps.jpg'],
@@ -796,7 +784,6 @@ export const tours: Tour[] = [
     locations: ['Paro', 'Thimphu', 'Punakha'],
     featured: false,
     bestSeason: 'March–May, September–November',
-    rating: 4.9, reviews: 47,
     image: '/images/butter-lamps.jpg',
     heroImage: '/images/prayer-flags-mountains.jpg',
     gallery: ['/images/butter-lamps.jpg', '/images/prayer-flags-mountains.jpg', '/images/monks-ceremony.jpg', '/images/group-blessing.jpg'],

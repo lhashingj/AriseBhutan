@@ -1,8 +1,14 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { Mail, Phone, MapPin, Facebook, Instagram, Youtube } from 'lucide-react'
+import { Mail, Phone, MapPin } from 'lucide-react'
 import NewsletterForm from '@/components/NewsletterForm'
 import PaymentBadges from '@/components/PaymentBadges'
+
+const socialLinks = [
+  { label: 'Facebook',  href: 'https://www.facebook.com/profile.php?id=61581576474002', icon: '/social-icons/facebook.svg' },
+  { label: 'Instagram', href: 'https://www.instagram.com/arisebhutantour/',              icon: '/social-icons/instagram.svg' },
+  { label: 'TikTok',    href: 'https://www.tiktok.com/@arisebhutantourstravels',         icon: '/social-icons/tiktok.svg' },
+]
 
 const quickLinks = [
   { label: 'Classic Cultural Tour', href: '/tours/classic-bhutan-cultural-tour' },
@@ -34,14 +40,10 @@ export default function Footer() {
             </p>
             <p className="text-xs text-stone-500 mb-4">Licensed by DOT · Lic. No. 50001567</p>
             <div className="flex gap-3">
-              {[
-                { Icon: Facebook, label: 'Facebook' },
-                { Icon: Instagram, label: 'Instagram' },
-                { Icon: Youtube, label: 'YouTube' },
-              ].map(({ Icon, label }) => (
-                <a key={label} href="#" aria-label={label}
-                  className="w-9 h-9 rounded-full bg-stone-800 hover:bg-amber-600 flex items-center justify-center transition-colors">
-                  <Icon className="w-4 h-4" />
+              {socialLinks.map(({ label, href, icon }) => (
+                <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
+                  className="w-9 h-9 rounded-full bg-stone-800 hover:bg-stone-700 flex items-center justify-center transition-colors overflow-hidden">
+                  <Image src={icon} alt={label} width={20} height={20} />
                 </a>
               ))}
             </div>
@@ -68,6 +70,7 @@ export default function Footer() {
               {[
                 { label: 'About Us', href: '/about' },
                 { label: 'All Tours', href: '/tours' },
+                { label: 'Blog', href: '/blog' },
                 { label: 'Festival Calendar', href: '/festival-calendar' },
                 { label: 'Flight Schedule', href: '/flight-schedule' },
                 { label: 'Travel FAQ', href: '/faq' },
@@ -131,8 +134,8 @@ export default function Footer() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-stone-500">
           <p>© {new Date().getFullYear()} Arise Bhutan Tours & Travel. All rights reserved.</p>
           <div className="flex gap-6">
-            <Link href="#" className="hover:text-stone-300 transition-colors">Privacy Policy</Link>
-            <Link href="#" className="hover:text-stone-300 transition-colors">Terms & Conditions</Link>
+            <Link href="/privacy-policy" className="hover:text-stone-300 transition-colors">Privacy Policy</Link>
+            <Link href="/terms-conditions" className="hover:text-stone-300 transition-colors">Terms & Conditions</Link>
           </div>
         </div>
       </div>

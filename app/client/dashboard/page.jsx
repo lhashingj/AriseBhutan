@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { PlusCircle, FileText, Clock, CheckCircle2, XCircle, Package, Pencil, Calendar, ChevronRight, ExternalLink, Star, MapPin, Users, Compass, AlertTriangle } from 'lucide-react'
+import { PlusCircle, FileText, Clock, CheckCircle2, XCircle, Package, Pencil, Calendar, ChevronRight, ExternalLink, MapPin, Users, Compass, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/utils/supabase/client'
 import { claimGuestInvitations, fetchGuestItineraries } from '@/utils/bookingGuests'
@@ -347,12 +347,6 @@ export default function ClientDashboard() {
 
                 {/* Body */}
                 <div className="p-4 flex flex-col flex-1">
-                  <div className="flex items-center gap-1 mb-1.5">
-                    <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                    <span className="text-xs font-bold text-stone-700 dark:text-stone-200">{tour.rating}</span>
-                    <span className="text-xs text-stone-400 dark:text-stone-500">({tour.reviews} reviews)</span>
-                  </div>
-
                   <h3 className="font-serif font-bold text-stone-900 dark:text-stone-50 text-sm sm:text-base leading-snug mb-1">{tour.title}</h3>
                   <p className="text-xs text-stone-400 dark:text-stone-500 mb-3 flex items-center gap-1">
                     <MapPin className="w-3 h-3 shrink-0" />{tour.subtitle}

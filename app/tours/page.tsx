@@ -9,7 +9,7 @@ function ToursContent() {
   const searchParams = useSearchParams()
   const [activecat, setActivecat] = useState<string>('all')
   const [search, setSearch] = useState('')
-  const [sortBy, setSortBy] = useState<'rating' | 'duration'>('rating')
+  const [sortBy, setSortBy] = useState<'price' | 'duration'>('price')
 
   useEffect(() => {
     const cat = searchParams.get('cat')
@@ -26,7 +26,7 @@ function ToursContent() {
       return matchCat && matchSearch
     })
     .sort((a, b) => {
-      if (sortBy === 'rating') return b.rating - a.rating
+      if (sortBy === 'price') return a.startingFrom - b.startingFrom
       if (sortBy === 'duration') return a.days - b.days
       return 0
     })
@@ -89,7 +89,7 @@ function ToursContent() {
                   onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
                   className="pl-9 pr-7 py-2 border border-stone-200 dark:border-stone-700 rounded-xl text-sm text-stone-700 dark:text-stone-200 focus:outline-none focus:border-amber-500 appearance-none bg-white dark:bg-stone-900 transition-colors"
                 >
-                  <option value="rating">Top Rated</option>
+                  <option value="price">Price: Low to High</option>
                   <option value="duration">Shortest First</option>
                 </select>
               </div>

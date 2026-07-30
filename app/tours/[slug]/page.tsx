@@ -92,13 +92,6 @@ export default function TourDetailPage({ params }: { params: { slug: string } })
       name: 'Arise Bhutan Tours & Travels',
       url: 'https://www.arisebhutan.com',
     },
-    ...(tour.reviews > 0 && {
-      aggregateRating: {
-        '@type': 'AggregateRating',
-        ratingValue: tour.rating,
-        reviewCount: tour.reviews,
-      },
-    }),
   }
 
   return (
@@ -137,12 +130,20 @@ export default function TourDetailPage({ params }: { params: { slug: string } })
       <div className="bg-white dark:bg-stone-950 border-b border-stone-100 dark:border-stone-800 shadow-sm transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-wrap gap-6 items-center justify-between">
-            <div className="flex flex-wrap gap-6 text-sm text-stone-600 dark:text-stone-300">
-              <span className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-amber-500" /> {tour.duration}</span>
-              <span className="flex items-center gap-1.5"><Users className="w-4 h-4 text-amber-500" /> {tour.groupSize}</span>
-              <span className="flex items-center gap-1.5"><MapPin className="w-4 h-4 text-amber-500" /> {tour.locations.join(' · ')}</span>
-              <span className="flex items-center gap-1.5"><Star className="w-4 h-4 fill-amber-400 text-amber-400" /> {tour.rating} ({tour.reviews} reviews)</span>
-              <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-amber-500" /> {tour.bestSeason}</span>
+            <div className="flex flex-wrap items-center gap-6">
+              <div>
+                <p className="text-[11px] text-stone-400 dark:text-stone-500 uppercase tracking-wider leading-none mb-1">From</p>
+                <p className="font-bold text-xl text-amber-600 dark:text-amber-400 leading-none">
+                  ${tour.startingFrom.toLocaleString()}
+                  <span className="text-xs font-normal text-stone-400 dark:text-stone-500"> /pax (~${Math.round(tour.startingFrom / tour.days).toLocaleString()}/day)</span>
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-6 text-sm text-stone-600 dark:text-stone-300">
+                <span className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-amber-500" /> {tour.duration}</span>
+                <span className="flex items-center gap-1.5"><Users className="w-4 h-4 text-amber-500" /> {tour.groupSize}</span>
+                <span className="flex items-center gap-1.5"><MapPin className="w-4 h-4 text-amber-500" /> {tour.locations.join(' · ')}</span>
+                <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-amber-500" /> {tour.bestSeason}</span>
+              </div>
             </div>
             <BookTourButton
               tour={tour}
@@ -239,9 +240,11 @@ export default function TourDetailPage({ params }: { params: { slug: string } })
                 <div className="mt-10">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-50">What Our Guests Say</h3>
-                    <span className="flex items-center gap-1 text-sm text-stone-500 dark:text-stone-400">
-                      <Star className="w-4 h-4 fill-amber-400 text-amber-400" /> {tour.rating} ({tour.reviews} reviews)
-                    </span>
+                    <a href="https://www.google.com/maps/place/Arise+Bhutan+Tours+%26+Travels/@27.4211577,89.4225462,17z"
+                      target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-sm text-stone-500 dark:text-stone-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+                      <Star className="w-4 h-4 fill-amber-400 text-amber-400" /> See all reviews on Google
+                    </a>
                   </div>
                   <div className="grid sm:grid-cols-2 gap-4">
                     {STATIC_REVIEWS.slice(0, 2).map(r => (

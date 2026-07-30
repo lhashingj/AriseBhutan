@@ -1,4 +1,5 @@
 import FaqSection from '@/components/FaqSection'
+import SdfVisaTable from '@/components/SdfVisaTable'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { faqs } from '@/data/bhutanContent'
@@ -50,6 +51,9 @@ export default function FaqPage() {
           <span className="text-stone-800 dark:text-stone-200 font-medium">Travel FAQ</span>
         </div>
       </div>
+
+      {/* SDF & Visa fee table */}
+      <SdfVisaTable />
 
       {/* FAQ accordion */}
       <FaqSection />

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { Clock, Users, Star, MapPin, ChevronRight } from 'lucide-react'
+import { Clock, Users, MapPin, ChevronRight } from 'lucide-react'
 import type { Tour } from '@/data/tours'
 
 const difficultyColor: Record<string, string> = {
@@ -43,10 +43,9 @@ export default function TourCard({ tour }: { tour: Tour }) {
             </span>
           )}
         </div>
-        {/* Rating */}
-        <div className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-full">
-          <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-          {tour.rating} ({tour.reviews} reviews)
+        {/* Price */}
+        <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-full">
+          From <span className="font-bold">${tour.startingFrom.toLocaleString()}</span>
         </div>
       </div>
 
@@ -81,8 +80,11 @@ export default function TourCard({ tour }: { tour: Tour }) {
         </span>
 
         {/* Footer */}
-        <div className="mt-auto pt-4 border-t border-stone-100 dark:border-stone-800 flex items-center justify-end">
-          <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-semibold text-sm group-hover:gap-2 transition-all">
+        <div className="mt-auto pt-4 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between gap-2">
+          <p className="text-xs text-stone-400 dark:text-stone-500">
+            ~${Math.round(tour.startingFrom / tour.days).toLocaleString()}/day
+          </p>
+          <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-semibold text-sm group-hover:gap-2 transition-all flex-shrink-0">
             View Tour
             <ChevronRight className="w-4 h-4" />
           </div>

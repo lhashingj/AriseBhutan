@@ -10,6 +10,7 @@ const navLinks = [
   { label: 'Home',     href: '/' },
   { label: 'Tours',    href: '/tours' },
   { label: 'Gallery',  href: '/gallery' },
+  { label: 'Blog',     href: '/blog' },
   { label: 'Flight',   href: '/flight-schedule', children: [
       { label: 'Drukair Schedule',          href: '/flight-schedule?airline=druk' },
       { label: 'Bhutan Airlines Schedule',  href: '/flight-schedule?airline=bhutan' },

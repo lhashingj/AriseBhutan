@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next'
 import { tours } from '@/data/tours'
+import { blogPosts } from '@/data/blog'
 
 const BASE = 'https://www.arisebhutan.com'
 
@@ -12,6 +13,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/faq`,                     priority: 0.6, changeFrequency: 'monthly' },
     { url: `${BASE}/gallery`,                 priority: 0.6, changeFrequency: 'monthly' },
     { url: `${BASE}/festival-calendar`,       priority: 0.7, changeFrequency: 'yearly'  },
+    { url: `${BASE}/blog`,                    priority: 0.7, changeFrequency: 'weekly'  },
+    { url: `${BASE}/privacy-policy`,          priority: 0.3, changeFrequency: 'yearly'  },
+    { url: `${BASE}/terms-conditions`,        priority: 0.3, changeFrequency: 'yearly'  },
   ]
 
   const tourPages: MetadataRoute.Sitemap = tours.map((tour) => ({
@@ -20,5 +24,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     changeFrequency: 'monthly',
   }))
 
-  return [...staticPages, ...tourPages]
+  const blogPages: MetadataRoute.Sitemap = blogPosts.map((post) => ({
+    url: `${BASE}/blog/${post.slug}`,
+    priority: 0.6,
+    changeFrequency: 'monthly',
+  }))
+
+  return [...staticPages, ...tourPages, ...blogPages]
 }

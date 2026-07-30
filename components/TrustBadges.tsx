@@ -1,13 +1,18 @@
-import { Shield, Users, Star, Clock } from 'lucide-react'
+import { Shield, Compass, Star, Clock } from 'lucide-react'
+import { fetchGooglePlaceDetails } from '@/utils/googlePlaces'
 
-const badges = [
-  { icon: Shield, value: 'DOT Certified',     label: 'Licensed by Bhutan Tourism' },
-  { icon: Users,  value: '1,000+ Travelers', label: 'Happy clients since 2026' },
-  { icon: Star,   value: '4.9 / 5 Stars',    label: 'Average tour rating' },
-  { icon: Clock,  value: '24/7 Support',     label: 'Before & during your trip' },
-]
+export default async function TrustBadges() {
+  const place = await fetchGooglePlaceDetails()
+  const ratingStr = place?.rating ? `${place.rating.toFixed(1)} / 5 Stars` : '5.0 / 5 Stars'
+  const totalStr  = place?.user_ratings_total ? `${place.user_ratings_total.toLocaleString()}+` : '11+'
 
-export default function TrustBadges() {
+  const badges = [
+    { icon: Shield,  value: 'DOT Certified', label: 'Lic. No. 50001567' },
+    { icon: Compass, value: '100% Private',  label: 'No fixed group departures' },
+    { icon: Star,    value: ratingStr,       label: `From ${totalStr} Google reviews` },
+    { icon: Clock,   value: '24/7 Support',  label: 'Before & during your trip' },
+  ]
+
   return (
     <section className="bg-stone-900 py-6 sm:py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

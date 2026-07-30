@@ -5,6 +5,7 @@ import WhyChooseUs from '@/components/WhyChooseUs'
 import TourCard from '@/components/TourCard'
 import GallerySection from '@/components/GallerySection'
 import Testimonials from '@/components/Testimonials'
+import SampleItineraryMagnet from '@/components/SampleItineraryMagnet'
 import { getFeaturedTours } from '@/data/tours'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -79,6 +80,7 @@ export default function HomePage() {
 
       <GallerySection />
       <Testimonials />
+      <SampleItineraryMagnet />
 
       {/* CTA Banner */}
       <section
