@@ -38,12 +38,13 @@ export async function POST(req: NextRequest) {
     }
 
     const day_by_day = (booking.itinerary_days || []).map((d: {
-      title?: string; activities?: string; hotel?: string
+      title?: string; description?: string; location?: string; activities?: string; hotel?: string
       breakfast?: boolean; lunch?: boolean; dinner?: boolean; date?: string
     }, i: number) => ({
       day:                i + 1,
       date:               d.date || null,
-      programme:          [d.title, d.activities].filter(Boolean).join('\n') || '',
+      programme:          [d.title, d.description, d.activities && `Activities: ${d.activities}`].filter(Boolean).join('\n') || '',
+      location:           d.location || null,
       accommodation_name: d.hotel || '',
       meals:              [d.breakfast && 'B', d.lunch && 'L', d.dinner && 'D'].filter(Boolean).join(','),
     }))

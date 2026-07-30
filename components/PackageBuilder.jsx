@@ -128,13 +128,15 @@ function buildInitialDays(tourData) {
       ? day.activities.join(', ')
       : (day.activities || day.description || '')
     return {
-      title:      day.title || '',
-      activities: activitiesText,
-      hotel:      day.accommodation || '',
-      breakfast:  meals.includes('breakfast'),
-      lunch:      meals.includes('lunch'),
-      dinner:     meals.includes('dinner'),
-      date:       `Day ${i + 1}`,
+      title:       day.title || '',
+      description: day.description || '',
+      location:    day.location || '',
+      activities:  activitiesText,
+      hotel:       day.accommodation || '',
+      breakfast:   meals.includes('breakfast'),
+      lunch:       meals.includes('lunch'),
+      dinner:      meals.includes('dinner'),
+      date:        `Day ${i + 1}`,
     }
   })
 }
@@ -217,12 +219,14 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
         ? new Date(new Date(arrivalDate).getTime() + i * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
         : `Day ${i + 1}`
       return {
-        title:      existing.title      || '',
-        activities: existing.activities || '',
-        hotel:      existing.hotel      || '',
-        breakfast:  existing.breakfast  ?? (i > 0),
-        lunch:      existing.lunch      ?? true,
-        dinner:     existing.dinner     ?? (i < totalDays - 1),
+        title:       existing.title       || '',
+        description: existing.description || '',
+        location:    existing.location    || '',
+        activities:  existing.activities  || '',
+        hotel:       existing.hotel       || '',
+        breakfast:   existing.breakfast   ?? (i > 0),
+        lunch:       existing.lunch       ?? true,
+        dinner:      existing.dinner      ?? (i < totalDays - 1),
         date,
       }
     }))

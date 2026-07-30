@@ -3,8 +3,9 @@ import { useState } from 'react'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Clock, Users, Star, MapPin, Mountain, CheckCircle, XCircle, Calendar, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react'
+import { Clock, Users, Star, MapPin, Mountain, Thermometer, CheckCircle, XCircle, Calendar, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react'
 import { getTourBySlug } from '@/data/tours'
+import { getLocationInfo } from '@/data/bhutanLocations'
 import { STATIC_REVIEWS } from '@/data/reviews'
 import BookTourButton from '@/components/BookTourButton'
 
@@ -271,22 +272,40 @@ export default function TourDetailPage({ params }: { params: { slug: string } })
               <div>
                 <h2 className="font-serif text-2xl font-bold text-stone-900 dark:text-stone-50 mb-7">Day-by-Day Itinerary</h2>
                 <div className="space-y-3">
-                  {tour.itinerary.map((day) => (
+                  {tour.itinerary.map((day) => {
+                    const locInfo = getLocationInfo(day.location)
+                    return (
                     <div
                       key={day.day}
                       className="border border-stone-200 dark:border-stone-800 dark:bg-stone-900 rounded-2xl overflow-hidden hover:border-amber-300 dark:hover:border-stone-700 transition-colors"
                     >
                       <button
                         onClick={() => setExpandedDay(expandedDay === day.day ? null : day.day)}
-                        className="w-full flex items-center justify-between p-5 text-left"
+                        className="w-full flex items-center justify-between p-5 text-left gap-3"
                       >
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-4 min-w-0">
                           <span className="w-10 h-10 bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 rounded-xl flex items-center justify-center font-bold text-sm flex-shrink-0">
                             D{day.day}
                           </span>
-                          <div>
+                          <div className="min-w-0">
                             <p className="font-semibold text-stone-900 dark:text-stone-100">{day.title}</p>
-                            <p className="text-sm text-stone-500 dark:text-stone-400">{day.meals}</p>
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                              {day.location && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-stone-600 dark:text-stone-300 bg-stone-100 dark:bg-stone-800 rounded-full px-2 py-0.5">
+                                  <MapPin className="w-2.5 h-2.5 text-amber-600 flex-shrink-0" />{day.location}
+                                </span>
+                              )}
+                              {locInfo && (
+                                <>
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-medium text-stone-600 dark:text-stone-300 bg-stone-100 dark:bg-stone-800 rounded-full px-2 py-0.5">
+                                    <Mountain className="w-2.5 h-2.5 text-amber-600 flex-shrink-0" />{locInfo.elevation}
+                                  </span>
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-medium text-stone-600 dark:text-stone-300 bg-stone-100 dark:bg-stone-800 rounded-full px-2 py-0.5">
+                                    <Thermometer className="w-2.5 h-2.5 text-amber-600 flex-shrink-0" />{locInfo.tempRange}
+                                  </span>
+                                </>
+                              )}
+                            </div>
                           </div>
                         </div>
                         {expandedDay === day.day
@@ -322,7 +341,7 @@ export default function TourDetailPage({ params }: { params: { slug: string } })
                         </div>
                       )}
                     </div>
-                  ))}
+                  )})}
                 </div>
               </div>
             )}

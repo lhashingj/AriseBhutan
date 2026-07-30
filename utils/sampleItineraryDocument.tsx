@@ -5,6 +5,7 @@
 
 import { Document, Page, View, Text, Image, StyleSheet } from '@react-pdf/renderer'
 import type { Tour } from '../data/tours'
+import { getLocationInfo } from '../data/bhutanLocations'
 
 const LOGO_URL = 'https://www.arisebhutan.com/images/logo.jpeg'
 
@@ -107,7 +108,9 @@ export function SampleItineraryDocument({ tour }: { tour: Tour }) {
             <View style={s.sectionLine} />
           </View>
 
-          {tour.itinerary.map((day) => (
+          {tour.itinerary.map((day) => {
+            const locInfo = getLocationInfo(day.location)
+            return (
             <View key={day.day} style={s.dayCard} wrap={false}>
               <View style={s.dayHeader}>
                 <Text style={s.dayNum}>{day.day}</Text>
@@ -116,6 +119,14 @@ export function SampleItineraryDocument({ tour }: { tour: Tour }) {
               <View style={s.dayBody}>
                 <Text style={s.dayDesc}>{day.description}</Text>
                 <View style={s.dayMetaRow}>
+                  {day.location && (
+                    <View>
+                      <Text style={s.dayMetaLabel}>Location</Text>
+                      <Text style={s.dayMetaValue}>
+                        {day.location}{locInfo ? `  ·  ${locInfo.elevation}` : ''}
+                      </Text>
+                    </View>
+                  )}
                   <View>
                     <Text style={s.dayMetaLabel}>Accommodation</Text>
                     <Text style={s.dayMetaValue}>{day.accommodation}</Text>
@@ -127,7 +138,7 @@ export function SampleItineraryDocument({ tour }: { tour: Tour }) {
                 </View>
               </View>
             </View>
-          ))}
+          )})}
 
           <View style={s.sectionRow}>
             <View style={s.sectionLine} />

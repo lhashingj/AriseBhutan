@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
-import { Loader2, AlertCircle, Download, ArrowLeft, Settings, CreditCard } from 'lucide-react'
+import { Loader2, AlertCircle, Download, ArrowLeft, Settings, CreditCard, MapPin } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/utils/supabase/client'
 import { generateVoucherPDF } from '@/utils/pdfGenerator'
 import PaymentBadges from '@/components/PaymentBadges'
 import { WHY_ARISE_BHUTAN } from '@/data/whyChooseUs'
+import { getLocationInfo } from '@/data/bhutanLocations'
 
 // ── Helpers ───────────────────────────────────────────────────
 function fmtDate(d) {
@@ -439,6 +440,12 @@ export default function ItineraryVoucherPage() {
                             {lines.length > 0 ? (
                               <>
                                 <p className="font-bold text-stone-800 dark:text-stone-100 mb-1">{lines[0]}</p>
+                                {d.location && (
+                                  <p className="inline-flex items-center gap-1 text-[9px] font-medium text-stone-500 dark:text-stone-400 bg-stone-100 dark:bg-stone-800 rounded-full px-1.5 py-0.5 mb-1.5">
+                                    <MapPin className="w-2.5 h-2.5 text-amber-500 shrink-0" />
+                                    {d.location}{getLocationInfo(d.location) && ` · ${getLocationInfo(d.location).elevation}`}
+                                  </p>
+                                )}
                                 {lines.slice(1).map((l, li) => (
                                   <p key={li} className="text-stone-500 dark:text-stone-400 text-[10px] flex items-start gap-1">
                                     <span className="text-amber-500 shrink-0 mt-0.5">›</span>{l}
