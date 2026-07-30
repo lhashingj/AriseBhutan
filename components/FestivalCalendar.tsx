@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { ChevronLeft, ChevronRight, MapPin } from 'lucide-react'
 import { allEvents2026, type FestivalEvent } from '@/data/bhutanEvents2026'
 import { allEvents2027 } from '@/data/bhutanEvents2027'
+import { BHUTANESE_DAY_MAP } from '@/data/bhutaneseDayMap'
 
 // ─── constants ───────────────────────────────────────────────────────────────
 
@@ -31,6 +32,11 @@ const LEGEND = [
 
 function toKey(y: number, m: number, d: number) {
   return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+}
+
+const TIB_DIGITS = ['༠','༡','༢','༣','༤','༥','༦','༧','༨','༩']
+function toTibetanNumeral(n: number): string {
+  return String(n).split('').map(d => TIB_DIGITS[Number(d)]).join('')
 }
 
 function buildDateMap() {
@@ -207,6 +213,7 @@ export default function FestivalCalendar() {
               const isSelected  = selectedDate === cell.dateStr && cell.isCurrentMonth
               const visibleBars = dayEvents.slice(0, MAX_BARS)
               const extra       = dayEvents.length - MAX_BARS
+              const bhutaneseDay = BHUTANESE_DAY_MAP[cell.dateStr]
 
               return (
                 <div
@@ -224,6 +231,20 @@ export default function FestivalCalendar() {
                 >
                   {/* Day number */}
                   <div className="flex items-start justify-between px-1.5 pt-1.5 pb-0.5">
+                    {bhutaneseDay && (
+                      <span className="flex flex-col items-start leading-none mt-0.5 select-none">
+                        <span className={`text-[11px] sm:text-xs font-medium ${
+                          !cell.isCurrentMonth ? 'text-red-200 dark:text-red-900/40' : 'text-red-400 dark:text-red-400/70'
+                        }`}>
+                          {toTibetanNumeral(bhutaneseDay[0])}
+                        </span>
+                        <span className={`text-[7px] sm:text-[8px] leading-none ${
+                          !cell.isCurrentMonth ? 'text-gray-200 dark:text-stone-800' : 'text-gray-300 dark:text-stone-600'
+                        }`}>
+                          {bhutaneseDay[0]}
+                        </span>
+                      </span>
+                    )}
                     <span className={`text-xs sm:text-sm font-semibold w-6 h-6 flex items-center justify-center rounded-full leading-none ${
                       !cell.isCurrentMonth  ? 'text-gray-300 dark:text-stone-700'
                       : isToday             ? 'bg-amber-600 text-white'
@@ -314,6 +335,11 @@ export default function FestivalCalendar() {
                         style={{ backgroundColor: event.color }}>
                         {event.type === 'holiday' ? 'Public Holiday' : 'Festival'}
                       </span>
+                      {event.bhutaneseDate && (
+                        <p className="text-[10px] text-gray-500 dark:text-stone-400 mt-1">
+                          Bhutanese Date: {event.bhutaneseDate}
+                        </p>
+                      )}
                       {event.description && (
                         <p className="text-[11px] text-gray-600 dark:text-stone-400 leading-relaxed mt-2">
                           {event.description}
