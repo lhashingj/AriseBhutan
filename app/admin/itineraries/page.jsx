@@ -18,6 +18,28 @@ import {
   getSectors, getAirlinesForSector, getFlightsForSector, findFlight,
   parseSector, daysLabel, ALL_AIRLINES, AIRPORTS, SCHEDULE_EFFECTIVE,
 } from '@/data/flightSchedule'
+import { tours as TOUR_PACKAGES } from '@/data/tours'
+
+// ── Build a day_by_day array from a real tour package (used when an
+//    admin starts a new voucher "from a package" for a WhatsApp/offline lead) ──
+function mealsToCsv(meals) {
+  const codes = []
+  if (/breakfast/i.test(meals || '')) codes.push('B')
+  if (/lunch/i.test(meals || ''))     codes.push('L')
+  if (/dinner/i.test(meals || ''))    codes.push('D')
+  return codes.join(',')
+}
+function buildDayByDayFromTour(tour) {
+  return (tour?.itinerary || []).map((day, i) => ({
+    day:                i + 1,
+    date:               null,
+    programme:          [day.title, day.description, day.activities?.length ? `Activities: ${day.activities.join(', ')}` : '']
+                          .filter(Boolean).join('\n'),
+    location:           day.location || null,
+    accommodation_name: day.accommodation || '',
+    meals:              mealsToCsv(day.meals),
+  }))
+}
 
 // ── Flight reference data — real Druk Air / Bhutan Airlines schedules ──
 const FLIGHT_SECTORS = getSectors().map(s => s.label)
@@ -93,10 +115,24 @@ const inp = 'w-full bg-stone-800 border border-white/10 rounded-xl px-3 py-2 tex
 const lbl = 'text-[11px] text-stone-400 uppercase tracking-wider font-semibold block mb-1.5'
 
 // ── Full Edit Drawer ──────────────────────────────────────────
-function EditDrawer({ itinerary, onClose, onSaved }) {
+function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
 
   const [openFlight, setOpenFlight] = useState(null)
   const [openDay,    setOpenDay]    = useState(null)
+  const [deleting,   setDeleting]   = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  async function handleDelete() {
+    setDeleting(true)
+    const { error } = await supabase.from('itineraries').delete().eq('id', itinerary.id)
+    setDeleting(false)
+    if (error) {
+      setSaveErr(error.message || 'Failed to delete itinerary.')
+      setConfirmDelete(false)
+      return
+    }
+    onDeleted(itinerary.id)
+  }
 
   // ── state ──────────────────────────────────────────────────
   const [clientInfo, setClientInfo] = useState({
@@ -165,6 +201,13 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
   const [wireTransfer,      setWireTransfer]      = useState(itinerary.pricing?.wire_transfer        ?? '')
   const [inrRate,           setInrRate]           = useState(itinerary.pricing?.inr_rate             ?? 83.5)
   const [paymentLink,       setPaymentLink]       = useState(itinerary.payment_link                  ?? '')
+
+  // SDF/visa manual overrides — e.g. a client who already paid these
+  // themselves outside the package. Empty string = auto-calculated.
+  const [sdfOverrideOn,  setSdfOverrideOn]  = useState(itinerary.pricing?.sdf_override  != null)
+  const [sdfOverride,    setSdfOverride]    = useState(itinerary.pricing?.sdf_override  ?? '')
+  const [visaOverrideOn, setVisaOverrideOn] = useState(itinerary.pricing?.visa_override != null)
+  const [visaOverride,   setVisaOverride]   = useState(itinerary.pricing?.visa_override ?? '')
 
   const DEFAULT_INCLUSIONS = [
     'Accommodation as per itinerary',
@@ -259,9 +302,12 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
       adultPax, child611Pax, infantPax,
       serviceRate, entranceFeePerPax, specialsPerPax,
       flightPerPax, includeFlights, wireTransfer,
+      sdfOverride:  sdfOverrideOn  ? (sdfOverride  === '' ? 0 : Number(sdfOverride))  : null,
+      visaOverride: visaOverrideOn ? (visaOverride === '' ? 0 : Number(visaOverride)) : null,
     }),
     [primaryNationality, nights, adultPax, child611Pax, infantPax,
-     serviceRate, entranceFeePerPax, specialsPerPax, flightPerPax, includeFlights, wireTransfer]
+     serviceRate, entranceFeePerPax, specialsPerPax, flightPerPax, includeFlights, wireTransfer,
+     sdfOverrideOn, sdfOverride, visaOverrideOn, visaOverride]
   )
 
   // ── flight helpers ─────────────────────────────────────────
@@ -364,6 +410,8 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
       include_flights:      includeFlights,
       wire_transfer:        Number(wireTransfer)       || 0,
       inr_rate:             Number(inrRate)            || 83.5,
+      sdf_override:         sdfOverrideOn  ? (Number(sdfOverride)  || 0) : null,
+      visa_override:        visaOverrideOn ? (Number(visaOverride) || 0) : null,
       // computed
       is_saarc:             calc.isSaarc,
       currency:             calc.currency,
@@ -1628,45 +1676,111 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
                 <p className="text-[10px] font-bold uppercase tracking-widest text-stone-500 mb-3">Cost Summary</p>
 
                 {/* SDF rows */}
-                {calc.isSaarcIndia ? (
-                  <>
-                    {calc.adultsNum > 0 && (
-                      <div className="flex justify-between text-stone-400 text-sm">
-                        <span>SDF ₹1,200 × {calc.adultsNum} adult{calc.adultsNum > 1 ? 's' : ''} × {nights} nights</span>
-                        <span className="font-mono text-stone-200">₹{calc.sdfAdult.toLocaleString()}</span>
+                {sdfOverrideOn ? (
+                  <div className="flex items-center justify-between gap-2 text-stone-400 text-sm">
+                    <span>SDF (manual override)</span>
+                    <div className="flex items-center gap-2">
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-500 text-xs">{calc.sym}</span>
+                        <input
+                          type="number"
+                          value={sdfOverride}
+                          onChange={e => setSdfOverride(e.target.value)}
+                          placeholder="0"
+                          className="w-28 bg-stone-800 border border-amber-500/30 rounded-lg pl-6 pr-2 py-1 text-sm text-stone-100 focus:outline-none focus:border-amber-500"
+                        />
                       </div>
-                    )}
-                    {calc.c611Num > 0 && (
-                      <div className="flex justify-between text-stone-400 text-sm">
-                        <span>SDF ₹600 × {calc.c611Num} child(6–11) × {nights} nights</span>
-                        <span className="font-mono text-stone-200">₹{calc.sdfChild.toLocaleString()}</span>
-                      </div>
-                    )}
-                    {calc.infantsNum > 0 && (
-                      <div className="flex justify-between text-stone-400 text-sm">
-                        <span>SDF — {calc.infantsNum} infant(s) / ≤5</span>
-                        <span className="font-mono text-emerald-400 text-xs">Exempt</span>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="flex justify-between text-stone-400 text-sm">
-                    <span>SDF ({calc.isSaarc ? '₹1,200' : '$100'} × {calc.isSaarc ? calc.adultsNum + calc.c611Num : calc.totalPax} pax × {nights} nights)</span>
-                    <span className="font-mono text-stone-200">{calc.sym}{calc.sdfTotal.toLocaleString()}</span>
+                      <button
+                        onClick={() => { setSdfOverrideOn(false); setSdfOverride('') }}
+                        className="text-[11px] text-stone-500 hover:text-stone-300 underline whitespace-nowrap"
+                      >
+                        Reset to auto ({calc.sym}{calc.sdfAuto.toLocaleString()})
+                      </button>
+                    </div>
                   </div>
+                ) : (
+                  <>
+                    {calc.isSaarcIndia ? (
+                      <>
+                        {calc.adultsNum > 0 && (
+                          <div className="flex justify-between text-stone-400 text-sm">
+                            <span>SDF ₹1,200 × {calc.adultsNum} adult{calc.adultsNum > 1 ? 's' : ''} × {nights} nights</span>
+                            <span className="font-mono text-stone-200">₹{calc.sdfAdult.toLocaleString()}</span>
+                          </div>
+                        )}
+                        {calc.c611Num > 0 && (
+                          <div className="flex justify-between text-stone-400 text-sm">
+                            <span>SDF ₹600 × {calc.c611Num} child(6–11) × {nights} nights</span>
+                            <span className="font-mono text-stone-200">₹{calc.sdfChild.toLocaleString()}</span>
+                          </div>
+                        )}
+                        {calc.infantsNum > 0 && (
+                          <div className="flex justify-between text-stone-400 text-sm">
+                            <span>SDF — {calc.infantsNum} infant(s) / ≤5</span>
+                            <span className="font-mono text-emerald-400 text-xs">Exempt</span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="flex justify-between text-stone-400 text-sm">
+                        <span>SDF ({calc.isSaarc ? '₹1,200' : '$100'} × {calc.isSaarc ? calc.adultsNum + calc.c611Num : calc.totalPax} pax × {nights} nights)</span>
+                        <span className="font-mono text-stone-200">{calc.sym}{calc.sdfTotal.toLocaleString()}</span>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => { setSdfOverrideOn(true); setSdfOverride(String(calc.sdfAuto)) }}
+                      className="text-[11px] text-amber-500/80 hover:text-amber-400 underline"
+                    >
+                      Client already paid SDF — override
+                    </button>
+                  </>
                 )}
 
                 {/* Visa */}
-                {calc.isSaarc ? (
-                  <div className="flex justify-between text-stone-400 text-sm">
-                    <span>{calc.isSaarcIndia ? 'Entry Permit (Visa)' : 'Visa on Arrival'}</span>
-                    <span className="font-mono text-emerald-400 text-xs">Exempt</span>
+                {visaOverrideOn ? (
+                  <div className="flex items-center justify-between gap-2 text-stone-400 text-sm">
+                    <span>Visa (manual override)</span>
+                    <div className="flex items-center gap-2">
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-500 text-xs">$</span>
+                        <input
+                          type="number"
+                          value={visaOverride}
+                          onChange={e => setVisaOverride(e.target.value)}
+                          placeholder="0"
+                          className="w-28 bg-stone-800 border border-amber-500/30 rounded-lg pl-6 pr-2 py-1 text-sm text-stone-100 focus:outline-none focus:border-amber-500"
+                        />
+                      </div>
+                      <button
+                        onClick={() => { setVisaOverrideOn(false); setVisaOverride('') }}
+                        className="text-[11px] text-stone-500 hover:text-stone-300 underline whitespace-nowrap"
+                      >
+                        Reset to auto (${calc.visaAuto.toLocaleString()})
+                      </button>
+                    </div>
                   </div>
-                ) : calc.totalPax > 0 && (
-                  <div className="flex justify-between text-stone-400 text-sm">
-                    <span>Visa Processing ($40 × {calc.totalPax} pax)</span>
-                    <span className="font-mono text-stone-200">${calc.visaTotal.toLocaleString()}</span>
-                  </div>
+                ) : (
+                  <>
+                    {calc.isSaarc ? (
+                      <div className="flex justify-between text-stone-400 text-sm">
+                        <span>{calc.isSaarcIndia ? 'Entry Permit (Visa)' : 'Visa on Arrival'}</span>
+                        <span className="font-mono text-emerald-400 text-xs">Exempt</span>
+                      </div>
+                    ) : calc.totalPax > 0 && (
+                      <div className="flex justify-between text-stone-400 text-sm">
+                        <span>Visa Processing ($40 × {calc.totalPax} pax)</span>
+                        <span className="font-mono text-stone-200">${calc.visaTotal.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {!calc.isSaarc && (
+                      <button
+                        onClick={() => { setVisaOverrideOn(true); setVisaOverride(String(calc.visaAuto)) }}
+                        className="text-[11px] text-amber-500/80 hover:text-amber-400 underline"
+                      >
+                        Client already paid visa — override
+                      </button>
+                    )}
+                  </>
                 )}
 
                 {/* Service */}
@@ -1882,6 +1996,31 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
           )}
         </div>
 
+        {/* Delete confirm bar */}
+        {confirmDelete && (
+          <div className="shrink-0 px-4 sm:px-6 py-3 bg-red-500/10 border-t border-red-500/25 flex items-center gap-3 flex-wrap">
+            <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+            <p className="text-sm text-red-300 flex-1 min-w-[180px]">
+              Permanently delete this itinerary? This can&apos;t be undone.
+            </p>
+            <button
+              onClick={() => setConfirmDelete(false)}
+              disabled={deleting}
+              className="px-3.5 py-2 rounded-xl border border-white/10 text-stone-300 hover:text-white text-xs font-semibold transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white text-xs font-semibold transition-colors"
+            >
+              {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+              Delete Permanently
+            </button>
+          </div>
+        )}
+
         {/* Sticky footer */}
         <div className="shrink-0 px-4 sm:px-6 py-3 sm:py-4 bg-stone-950 border-t border-white/10 flex items-center gap-2 flex-wrap">
           <button
@@ -1889,6 +2028,14 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
             className="px-4 py-2.5 rounded-xl border border-white/10 text-stone-400 hover:text-white hover:border-white/20 text-sm font-medium transition-colors"
           >
             Cancel
+          </button>
+
+          <button
+            onClick={() => setConfirmDelete(true)}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-red-500/25 text-red-400 hover:bg-red-500/10 text-sm font-semibold transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Delete
           </button>
 
           <div className="flex-1" />
@@ -1935,6 +2082,164 @@ function EditDrawer({ itinerary, onClose, onSaved }) {
   )
 }
 
+// ── New voucher modal ────────────────────────────────────────
+// For clients who reach out off-platform (WhatsApp, phone, email) and want a
+// custom package quoted — creates a fresh itineraries row the admin can then
+// build out in full via EditDrawer.
+function NewVoucherModal({ onClose, onCreated }) {
+  const [guestName, setGuestName] = useState('')
+  const [phone,     setPhone]     = useState('')
+  const [email,     setEmail]     = useState('')
+  const [tourId,    setTourId]    = useState('')
+  const [creating,  setCreating]  = useState(false)
+  const [err,       setErr]       = useState('')
+
+  async function handleSubmit() {
+    if (!guestName.trim()) {
+      setErr('Guest name is required.')
+      return
+    }
+    setCreating(true)
+    setErr('')
+
+    const chosenTour = TOUR_PACKAGES.find(t => t.id === tourId) || null
+
+    const { data, error } = await supabase
+      .from('itineraries')
+      .insert({
+        status: 'pending_review',
+        client_info: {
+          guest_name: guestName.trim(),
+          email:      email.trim() || null,
+          phone:      phone.trim() || null,
+          nationality: '',
+        },
+        tour_summary: {
+          tour_package:    chosenTour?.title         || 'Custom Itinerary',
+          category:        chosenTour?.categoryLabel  || 'Custom',
+          duration_nights: chosenTour?.nights         ?? null,
+          group_size:      2,
+          hotel_tier:      '',
+          departure_date:  null,
+          return_date:     null,
+        },
+        flights:    [],
+        day_by_day: chosenTour ? buildDayByDayFromTour(chosenTour) : [],
+        pricing:    {},
+      })
+      .select()
+      .single()
+
+    setCreating(false)
+    if (error) {
+      setErr(error.message || 'Failed to create voucher.')
+      return
+    }
+    onCreated(data)
+  }
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40" onClick={onClose} />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="bg-stone-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+            <h2 className="text-white font-serif font-bold text-lg">New Voucher</h2>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 flex items-center justify-center rounded-xl text-stone-400 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="px-6 py-5 space-y-4">
+            <p className="text-xs text-stone-500 leading-relaxed">
+              For a client who reached out on WhatsApp, phone, or email and wants a
+              custom package. This creates a blank voucher you can build out fully —
+              day-by-day itinerary, flights, and pricing — in the editor.
+            </p>
+
+            <div>
+              <label className={lbl}>Guest Name *</label>
+              <input
+                value={guestName}
+                onChange={e => setGuestName(e.target.value)}
+                placeholder="e.g. Jamyang Lhashing"
+                className={inp}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={lbl}>Phone / WhatsApp</label>
+                <input
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  placeholder="+975…"
+                  className={inp}
+                />
+              </div>
+              <div>
+                <label className={lbl}>Email (optional)</label>
+                <input
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="guest@email.com"
+                  className={inp}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className={lbl}>Base This On a Package (optional)</label>
+              <select
+                value={tourId}
+                onChange={e => setTourId(e.target.value)}
+                className={inp}
+              >
+                <option value="">— Fully Custom (blank) —</option>
+                {TOUR_PACKAGES.map(t => (
+                  <option key={t.id} value={t.id}>{t.title} — {t.duration}</option>
+                ))}
+              </select>
+              <p className="text-[11px] text-stone-500 mt-1.5">
+                Pre-fills the day-by-day itinerary from that package so you can
+                tweak it, instead of starting from a blank list.
+              </p>
+            </div>
+
+            {err && (
+              <div className="flex items-start gap-2 text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2.5">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                {err}
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 px-6 py-4 border-t border-white/10">
+            <button
+              onClick={onClose}
+              className="px-4 py-2.5 rounded-xl border border-white/10 text-stone-400 hover:text-white hover:border-white/20 text-sm font-medium transition-colors"
+            >
+              Cancel
+            </button>
+            <div className="flex-1" />
+            <button
+              onClick={handleSubmit}
+              disabled={creating}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white text-sm font-semibold transition-colors"
+            >
+              {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              Create Voucher
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
 // ── Main page ─────────────────────────────────────────────────
 const FILTER_TABS = [
   { key: 'all',             label: 'All' },
@@ -1954,6 +2259,9 @@ export default function AdminItinerariesPage() {
   const [selectMode,  setSelectMode]  = useState(false)
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [bulkBusy,    setBulkBusy]    = useState(false)
+  const [showNewModal, setShowNewModal] = useState(false)
+  const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
 
   async function load() {
     setRefreshing(true)
@@ -1991,10 +2299,22 @@ export default function AdminItinerariesPage() {
     setSelected(updated)
   }
 
+  function handleDeleted(id) {
+    setItineraries(prev => prev.filter(i => i.id !== id))
+    setSelected(null)
+  }
+
+  function handleCreated(created) {
+    setItineraries(prev => [created, ...prev])
+    setShowNewModal(false)
+    setSelected(created)
+  }
+
   // ── Bulk actions ──────────────────────────────────────────────
   function toggleSelectMode() {
     setSelectMode(v => !v)
     setSelectedIds(new Set())
+    setConfirmBulkDelete(false)
   }
 
   function toggleSelected(id) {
@@ -2047,6 +2367,26 @@ export default function AdminItinerariesPage() {
     }
   }
 
+  async function bulkDelete() {
+    if (selectedItems.length === 0 || bulkDeleting) return
+    setBulkDeleting(true)
+    try {
+      const { error } = await supabase
+        .from('itineraries')
+        .delete()
+        .in('id', selectedItems.map(t => t.id))
+      if (error) throw error
+      setItineraries(prev => prev.filter(i => !selectedIds.has(i.id)))
+      setSelectedIds(new Set())
+      setSelectMode(false)
+      setConfirmBulkDelete(false)
+    } catch (err) {
+      console.error('Bulk delete failed:', err)
+    } finally {
+      setBulkDeleting(false)
+    }
+  }
+
   function exportSelectedCsv() {
     if (selectedItems.length === 0) return
     const rows = [
@@ -2088,6 +2428,13 @@ export default function AdminItinerariesPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowNewModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-sm font-semibold transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            New Voucher
+          </button>
           <button
             onClick={toggleSelectMode}
             className={`px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
@@ -2143,6 +2490,35 @@ export default function AdminItinerariesPage() {
           >
             Export CSV
           </button>
+          {confirmBulkDelete ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-red-300">Delete {selectedIds.size} permanently?</span>
+              <button
+                onClick={() => setConfirmBulkDelete(false)}
+                disabled={bulkDeleting}
+                className="text-xs font-semibold px-3 py-2 rounded-xl border border-white/10 text-stone-300 hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={bulkDelete}
+                disabled={bulkDeleting}
+                className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white transition-colors"
+              >
+                {bulkDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                Confirm Delete
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirmBulkDelete(true)}
+              disabled={selectedIds.size === 0}
+              className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-xl bg-red-500/15 text-red-400 border border-red-500/25 hover:bg-red-500/25 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete Selected
+            </button>
+          )}
         </div>
       )}
 
@@ -2364,6 +2740,15 @@ export default function AdminItinerariesPage() {
           itinerary={selected}
           onClose={() => setSelected(null)}
           onSaved={handleSaved}
+          onDeleted={handleDeleted}
+        />
+      )}
+
+      {/* New voucher modal */}
+      {showNewModal && (
+        <NewVoucherModal
+          onClose={() => setShowNewModal(false)}
+          onCreated={handleCreated}
         />
       )}
     </div>

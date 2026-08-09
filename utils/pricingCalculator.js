@@ -23,11 +23,14 @@ export const SAARC_ALL_SET   = new Set(['India', 'Bangladesh', 'Maldives'])
  * @param {number} params.flightPerPax
  * @param {boolean} params.includeFlights
  * @param {number} params.wireTransfer
+ * @param {number|null} [params.sdfOverride] - manual SDF total; null/undefined = auto-calculated
+ * @param {number|null} [params.visaOverride] - manual visa total; null/undefined = auto-calculated
  */
 export function computePricingDetailed({
   nationality, nights, adultPax, child611Pax, infantPax,
   serviceRate, entranceFeePerPax, specialsPerPax,
   flightPerPax, includeFlights, wireTransfer,
+  sdfOverride = null, visaOverride = null,
 }) {
   const n       = Math.max(0, Math.floor(Number(nights)      || 0))
   const adults  = Math.max(0, Number(adultPax)   || 0)
@@ -44,20 +47,27 @@ export function computePricingDetailed({
   // SDF — India: adults 1200/night, children 6-11 600/night, infants free
   //        BD/MV: all paying pax 1200/night
   //        International: all pax $100/night
-  let sdfAdult = 0, sdfChild = 0, sdfTotal = 0
+  let sdfAdult = 0, sdfChild = 0, sdfAuto = 0
   if (isSaarcIndia) {
     sdfAdult = 1200 * adults * n
     sdfChild = 600  * c611   * n
-    sdfTotal = sdfAdult + sdfChild
+    sdfAuto  = sdfAdult + sdfChild
   } else if (isSaarcBdMv) {
-    sdfTotal = 1200 * (adults + c611) * n
+    sdfAuto = 1200 * (adults + c611) * n
   } else {
-    sdfTotal = 100 * totalPax * n
+    sdfAuto = 100 * totalPax * n
   }
 
   // Visa — SAARC exempt (Entry Permit / Visa on Arrival, no advance fee)
   const visaPerPax = isSaarc ? 0 : 40
-  const visaTotal  = visaPerPax * totalPax
+  const visaAuto   = visaPerPax * totalPax
+
+  // Manual overrides — e.g. a client who already paid SDF/visa themselves,
+  // outside this package. null/undefined means "use the auto-calculated value".
+  const isSdfOverridden  = sdfOverride  !== null && sdfOverride  !== undefined
+  const isVisaOverridden = visaOverride !== null && visaOverride !== undefined
+  const sdfTotal  = isSdfOverridden  ? Number(sdfOverride)  || 0 : sdfAuto
+  const visaTotal = isVisaOverridden ? Number(visaOverride) || 0 : visaAuto
 
   // Service (Guide / Vehicle / Meals) — GST applies ONLY to this
   const svcRate  = Number(serviceRate)       || 0
@@ -76,8 +86,8 @@ export function computePricingDetailed({
 
   return {
     isSaarc, isSaarcIndia, isSaarcBdMv, currency, sym,
-    sdfAdult, sdfChild, sdfTotal,
-    visaPerPax, visaTotal,
+    sdfAdult, sdfChild, sdfTotal, sdfAuto, isSdfOverridden,
+    visaPerPax, visaTotal, visaAuto, isVisaOverridden,
     svcRate, svcTotal,
     entrTotal, specTotal, fltTotal, wire,
     gst, pkgCost, grandTotal,

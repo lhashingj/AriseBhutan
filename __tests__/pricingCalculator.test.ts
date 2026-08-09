@@ -115,3 +115,35 @@ describe('computePricingDetailed — edge cases', () => {
     expect(a).toEqual(b)
   })
 })
+
+describe('computePricingDetailed — SDF/visa manual overrides', () => {
+  it('uses the auto-calculated SDF/visa when no override is given', () => {
+    const r = computePricingDetailed(base)
+    expect(r.isSdfOverridden).toBe(false)
+    expect(r.isVisaOverridden).toBe(false)
+    expect(r.sdfTotal).toBe(r.sdfAuto)
+    expect(r.visaTotal).toBe(r.visaAuto)
+  })
+
+  it('overrides SDF total while leaving the auto value visible for reference', () => {
+    const r = computePricingDetailed({ ...base, sdfOverride: 0 })
+    expect(r.isSdfOverridden).toBe(true)
+    expect(r.sdfTotal).toBe(0)
+    expect(r.sdfAuto).toBe(100 * 2 * 5) // unchanged auto calculation, 1000
+  })
+
+  it('overrides visa total independently of SDF', () => {
+    const r = computePricingDetailed({ ...base, visaOverride: 0 })
+    expect(r.isVisaOverridden).toBe(true)
+    expect(r.visaTotal).toBe(0)
+    expect(r.visaAuto).toBe(40 * 2) // unchanged auto calculation, 80
+    expect(r.isSdfOverridden).toBe(false)
+    expect(r.sdfTotal).toBe(r.sdfAuto)
+  })
+
+  it('folds overridden SDF/visa into pkgCost and grandTotal like the auto values would', () => {
+    const r = computePricingDetailed({ ...base, sdfOverride: 500, visaOverride: 20 })
+    expect(r.pkgCost).toBeCloseTo(500 + 20 + r.svcTotal + r.entrTotal + r.specTotal + r.fltTotal + r.wire)
+    expect(r.grandTotal).toBeCloseTo(r.pkgCost + r.gst)
+  })
+})
