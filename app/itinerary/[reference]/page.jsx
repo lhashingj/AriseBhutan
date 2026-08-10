@@ -313,8 +313,8 @@ export default function ItineraryVoucherPage() {
                     ['Duration',      tour.duration_nights ? `${Number(tour.duration_nights) + 1} Days / ${tour.duration_nights} Nights` : '—'],
                     ['Group Size',    tour.group_size ? `${tour.group_size} Pax` : '—'],
                     ['Room Config',   tour.room_config || null],
-                    ['Departure',     fmtDate(tour.departure_date)],
-                    ['Return',        fmtDate(tour.return_date)],
+                    ['Arrival',       fmtDate(tour.departure_date)],
+                    ['Departure',     fmtDate(tour.return_date)],
                     ['Guide',         tour.guide_name || (isPending ? 'Assigned on confirmation' : null)],
                     ['Vehicle',       tour.vehicle_details || (isPending ? 'Private vehicle + driver' : null)],
                   ].filter(([, v]) => v && v !== '—').map(([label, val]) => (

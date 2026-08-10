@@ -181,8 +181,8 @@ export default function BookingVoucher({ booking }) {
                 ['Category',      booking.tour.category],
                 ['Duration',      booking.tour.duration],
                 ['Group Size',    `${booking.tour.pax} Pax`],
-                ['Departure',     booking.tour.startDate],
-                ['Return',        booking.tour.endDate],
+                ['Arrival',       booking.tour.startDate],
+                ['Departure',     booking.tour.endDate],
                 ['Guide',         booking.tour.guide],
                 ['Vehicle',       booking.tour.vehicle],
               ]} />

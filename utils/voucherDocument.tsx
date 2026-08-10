@@ -221,8 +221,8 @@ export function VoucherDocument({ booking }: { booking: any }) {
                 ['Category',     tour.category ?? ''],
                 ['Duration',     tour.duration ?? ''],
                 ['Group Size',   `${tour.pax ?? booking.group_size ?? ''} Pax`],
-                ['Departure',    tour.startDate  ?? ''],
-                ['Return',       tour.endDate    ?? ''],
+                ['Arrival',      tour.startDate  ?? ''],
+                ['Departure',    tour.endDate    ?? ''],
                 ['Guide',        tour.guide      ?? ''],
                 ['Vehicle',      tour.vehicle    ?? ''],
               ]} />

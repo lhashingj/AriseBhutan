@@ -775,7 +775,7 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
                   />
                 </div>
                 <div>
-                  <label className={lbl}>Departure Date</label>
+                  <label className={lbl}>Arrival Date</label>
                   <input
                     type="date"
                     value={tourSummary.departure_date}
@@ -784,7 +784,7 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
                   />
                 </div>
                 <div>
-                  <label className={lbl}>Return Date</label>
+                  <label className={lbl}>Departure Date</label>
                   <input
                     type="date"
                     value={tourSummary.return_date}
@@ -2390,7 +2390,7 @@ export default function AdminItinerariesPage() {
   function exportSelectedCsv() {
     if (selectedItems.length === 0) return
     const rows = [
-      ['Booking Reference', 'Guest Name', 'Email', 'Status', 'Tour Package', 'Nights', 'Guests', 'Departure', 'Grand Total', 'Currency'],
+      ['Booking Reference', 'Guest Name', 'Email', 'Status', 'Tour Package', 'Nights', 'Guests', 'Arrival', 'Grand Total', 'Currency'],
       ...selectedItems.map(it => [
         it.booking_reference || '',
         it.client_info?.guest_name || '',

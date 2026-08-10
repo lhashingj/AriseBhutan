@@ -407,7 +407,7 @@ function SendVoucherModal({ enquiry, existingVoucher, onClose, onSent, onVoucher
                       <input type="date" value={form.arrivalDate} onChange={e => set('arrivalDate', e.target.value)} className={inp} />
                     </div>
                     <div>
-                      <label className={labelCls}>Return Date <span className="text-red-500">*</span></label>
+                      <label className={labelCls}>Departure Date <span className="text-red-500">*</span></label>
                       <input type="date" value={form.returnDate} min={form.arrivalDate || undefined} onChange={e => set('returnDate', e.target.value)} className={inp} />
                     </div>
                   </div>
@@ -502,7 +502,7 @@ function SendVoucherModal({ enquiry, existingVoucher, onClose, onSent, onVoucher
                       className="flex items-center gap-1 text-xs font-semibold text-stone-400 border border-white/10 px-3 py-2 rounded-xl hover:bg-white/5 hover:text-stone-200 transition-colors">
                       <Plus className="w-3 h-3" /> Add Day Manually
                     </button>
-                    {!canProceed && <p className="text-xs text-stone-400">Set arrival & return dates first</p>}
+                    {!canProceed && <p className="text-xs text-stone-400">Set arrival & departure dates first</p>}
                   </div>
 
                   {form.itinerary.map((day, i) => (
@@ -863,7 +863,7 @@ function SendVoucherModal({ enquiry, existingVoucher, onClose, onSent, onVoucher
                 {saveStatus !== 'saved' && saveStatus !== 'saving' && (
                   canProceed
                     ? <span className="text-amber-400 font-semibold">{usd(costs.totalUSD)} · {nights} nights · {pax} pax</span>
-                    : <span className="text-stone-500">Set arrival &amp; return dates to continue</span>
+                    : <span className="text-stone-500">Set arrival &amp; departure dates to continue</span>
                 )}
               </div>
               <button onClick={onClose} className="btn-outline text-sm px-4">Cancel</button>
