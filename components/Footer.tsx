@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { Mail, Phone, MapPin } from 'lucide-react'
+import { Mail, Phone, MapPin, Star } from 'lucide-react'
 import NewsletterForm from '@/components/NewsletterForm'
 import PaymentBadges from '@/components/PaymentBadges'
 
@@ -46,6 +46,10 @@ export default function Footer() {
                   <Image src={icon} alt={label} width={20} height={20} />
                 </a>
               ))}
+              <a href="https://www.trustpilot.com/review/arisebhutan.com" target="_blank" rel="noopener noreferrer" aria-label="Trustpilot Reviews"
+                className="w-9 h-9 rounded-full bg-stone-800 hover:bg-stone-700 flex items-center justify-center transition-colors">
+                <Star className="w-4 h-4" style={{ color: '#00b67a', fill: '#00b67a' }} />
+              </a>
             </div>
           </div>
 
