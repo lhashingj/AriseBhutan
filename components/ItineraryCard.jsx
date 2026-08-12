@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Calendar, ChevronDown, ChevronRight, ExternalLink, BedDouble, Clock, Utensils } from 'lucide-react'
 import { tours } from '@/data/tours'
 import TravelDocumentsSection from '@/components/TravelDocumentsSection'
+import { parseDayProgramme } from '@/utils/dayProgramme'
 
 const STATUS_CFG = {
   enquiry_pending: { label: 'Enquiry',   borderL: 'border-l-rose-400',  badge: 'bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200',   dot: 'bg-rose-400' },
@@ -24,9 +25,10 @@ function DayAccordion({ d, index, defaultOpen = false, staticDay = null }) {
   const [open, setOpen] = useState(defaultOpen)
   const dayNum = d.day ?? index + 1
 
-  const title       = staticDay?.title       || (d.programme || '').split('·')[0]?.trim() || `Day ${dayNum}`
-  const description = staticDay?.description || null
-  const activities  = staticDay?.activities  || (d.programme || '').split('·').slice(1).map(p => p.trim()).filter(Boolean)
+  const parsed      = parseDayProgramme(d)
+  const title       = staticDay?.title       || parsed.title       || `Day ${dayNum}`
+  const description = staticDay?.description || parsed.description || null
+  const activities  = staticDay?.activities  || parsed.activities  || []
   const accom       = staticDay?.accommodation || d.accommodation_name || null
   const mealStr     = staticDay?.meals        || parseMeals(d.meals).map(m => MEAL_LABELS[m] || m).join(' · ')
 
@@ -62,7 +64,7 @@ function DayAccordion({ d, index, defaultOpen = false, staticDay = null }) {
       {open && (
         <div className="px-4 sm:px-5 pb-5 pt-3 bg-stone-50 dark:bg-stone-950/60 border-t border-stone-100 dark:border-stone-800 space-y-4">
           {description && (
-            <p className="text-sm sm:text-[15px] text-stone-600 dark:text-stone-400 leading-relaxed text-justify">{description}</p>
+            <p className="text-sm sm:text-[15px] text-stone-600 dark:text-stone-400 leading-relaxed text-justify whitespace-pre-line">{description}</p>
           )}
 
           {activities.length > 0 && (

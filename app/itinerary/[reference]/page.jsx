@@ -10,6 +10,7 @@ import { generateVoucherPDF } from '@/utils/pdfGenerator'
 import PaymentBadges from '@/components/PaymentBadges'
 import { WHY_ARISE_BHUTAN } from '@/data/whyChooseUs'
 import { getLocationInfo } from '@/data/bhutanLocations'
+import { parseDayProgramme } from '@/utils/dayProgramme'
 
 // ── Helpers ───────────────────────────────────────────────────
 function fmtDate(d) {
@@ -422,7 +423,7 @@ export default function ItineraryVoucherPage() {
                   <tbody>
                     {it.day_by_day.map((d, i) => {
                       const meals = parseMeals(d.meals)
-                      const lines = (d.programme || '').split('\n').filter(Boolean)
+                      const { title, description, activities } = parseDayProgramme(d)
                       return (
                         <tr key={i} className={`page-break-avoid ${i % 2 === 0 ? 'bg-white dark:bg-stone-900' : 'bg-stone-50/70 dark:bg-stone-800/50'}`}>
                           <td className="px-3 py-3 text-center font-bold text-stone-800 dark:text-stone-100 border border-stone-100 dark:border-stone-700/60 align-top">
@@ -437,18 +438,21 @@ export default function ItineraryVoucherPage() {
                               : '—'}
                           </td>
                           <td className="px-3 py-3 border border-stone-100 dark:border-stone-700/60 align-top">
-                            {lines.length > 0 ? (
+                            {title ? (
                               <>
-                                <p className="font-bold text-stone-800 dark:text-stone-100 mb-1">{lines[0]}</p>
+                                <p className="font-bold text-stone-800 dark:text-stone-100 mb-1">{title}</p>
                                 {d.location && (
                                   <p className="inline-flex items-center gap-1 text-[9px] font-medium text-stone-500 dark:text-stone-400 bg-stone-100 dark:bg-stone-800 rounded-full px-1.5 py-0.5 mb-1.5">
                                     <MapPin className="w-2.5 h-2.5 text-amber-500 shrink-0" />
                                     {d.location}{getLocationInfo(d.location) && ` · ${getLocationInfo(d.location).elevation}`}
                                   </p>
                                 )}
-                                {lines.slice(1).map((l, li) => (
+                                {description && (
+                                  <p className="text-stone-500 dark:text-stone-400 text-[10px] mb-1.5 whitespace-pre-line">{description}</p>
+                                )}
+                                {activities.map((a, li) => (
                                   <p key={li} className="text-stone-500 dark:text-stone-400 text-[10px] flex items-start gap-1">
-                                    <span className="text-amber-500 shrink-0 mt-0.5">›</span>{l}
+                                    <span className="text-amber-500 shrink-0 mt-0.5">›</span>{a}
                                   </p>
                                 ))}
                               </>

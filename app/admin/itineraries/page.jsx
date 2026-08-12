@@ -19,6 +19,7 @@ import {
   parseSector, daysLabel, ALL_AIRLINES, AIRPORTS, SCHEDULE_EFFECTIVE,
 } from '@/data/flightSchedule'
 import { tours as TOUR_PACKAGES } from '@/data/tours'
+import { parseDayProgramme } from '@/utils/dayProgramme'
 
 // ── Build a day_by_day array from a real tour package (used when an
 //    admin starts a new voucher "from a package" for a WhatsApp/offline lead) ──
@@ -33,8 +34,9 @@ function buildDayByDayFromTour(tour) {
   return (tour?.itinerary || []).map((day, i) => ({
     day:                i + 1,
     date:               null,
-    programme:          [day.title, day.description, day.activities?.length ? `Activities: ${day.activities.join(', ')}` : '']
-                          .filter(Boolean).join('\n'),
+    title:              day.title || '',
+    description:        day.description || '',
+    activities:         day.activities || [],
     location:           day.location || null,
     accommodation_name: day.accommodation || '',
     meals:              mealsToCsv(day.meals),
@@ -176,7 +178,18 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
   )
 
   const [days, setDays] = useState(
-    (itinerary.day_by_day || []).map(d => ({ ...d }))
+    (itinerary.day_by_day || []).map(d => {
+      // Older records only have a flattened `programme` string — migrate them
+      // into the structured title/description/activities fields on load so
+      // the editor (and the client-facing pages) work off real structure.
+      const parsed = parseDayProgramme(d)
+      return {
+        ...d,
+        title:       d.title       ?? parsed.title       ?? '',
+        description: d.description ?? parsed.description ?? '',
+        activities:  Array.isArray(d.activities) ? d.activities : parsed.activities,
+      }
+    })
   )
 
   const [accommodations, setAccommodations] = useState(
@@ -360,7 +373,7 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
   // ── day helpers ────────────────────────────────────────────
   function addDay() {
     setDays(prev => [...prev, {
-      day: prev.length + 1, date: '', programme: '',
+      day: prev.length + 1, date: '', title: '', description: '', activities: [], location: '',
       accommodation_name: '', meals: 'B,D',
     }])
   }
@@ -447,7 +460,10 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
           group_size:       totalPaxCount || Number(tourSummary.group_size) || itinerary.tour_summary?.group_size || 1,
         },
         flights,
-        day_by_day:   days,
+        day_by_day:   days.map(d => ({
+                        ...d,
+                        activities: (d.activities || []).map(a => (a || '').trim()).filter(Boolean),
+                      })),
         pricing:      pricingPayload,
         payment_link: paymentLink.trim() || null,
         status:       nextStatus,
@@ -1043,7 +1059,7 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
                 const dateStr = d.date
                   ? new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
                   : ''
-                const programmePreview = (d.programme || '').split('·')[0].trim().slice(0, 48)
+                const programmePreview = (d.title || parseDayProgramme(d).title || '').slice(0, 48)
                 return (
                   <div key={idx} className="bg-stone-800/60 rounded-2xl border border-white/5 overflow-hidden">
                     {/* Accordion header */}
@@ -1102,16 +1118,46 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
                           </div>
                         </div>
                         <div>
-                          <label className={lbl}>Programme &amp; Activities</label>
+                          <label className={lbl}>Topic</label>
+                          <input
+                            type="text"
+                            value={d.title || ''}
+                            onChange={e => updateDay(idx, 'title', e.target.value)}
+                            placeholder="e.g. Arrival in Paro → Thimphu"
+                            className={inp}
+                          />
+                        </div>
+                        <div>
+                          <label className={lbl}>Description</label>
                           <textarea
-                            value={d.programme || ''}
-                            onChange={e => updateDay(idx, 'programme', e.target.value)}
+                            value={d.description || ''}
+                            onChange={e => updateDay(idx, 'description', e.target.value)}
                             rows={3}
-                            placeholder="e.g. Arrival in Paro → Thimphu · Airport pickup, Buddha Dordenma, Welcome dinner"
+                            placeholder="Narrative paragraph describing the day…"
+                            className={`${inp} resize-none`}
+                          />
+                        </div>
+                        <div>
+                          <label className={lbl}>Activities</label>
+                          <textarea
+                            value={(d.activities || []).join('\n')}
+                            onChange={e => updateDay(idx, 'activities', e.target.value.split('\n'))}
+                            rows={3}
+                            placeholder={'One activity per line, e.g.\nAirport pickup & Khadar welcome\nBuddha Dordenma\nWelcome dinner'}
                             className={`${inp} resize-none`}
                           />
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div>
+                            <label className={lbl}>Location</label>
+                            <input
+                              type="text"
+                              value={d.location || ''}
+                              onChange={e => updateDay(idx, 'location', e.target.value)}
+                              placeholder="e.g. Thimphu"
+                              className={inp}
+                            />
+                          </div>
                           <div>
                             <label className={lbl}>Accommodation</label>
                             <input
@@ -1122,17 +1168,17 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
                               className={inp}
                             />
                           </div>
-                          <div>
-                            <label className={lbl}>Meals</label>
-                            <input
-                              type="text"
-                              value={d.meals || ''}
-                              onChange={e => updateDay(idx, 'meals', e.target.value)}
-                              placeholder="B,L,D"
-                              className={inp}
-                            />
-                            <p className="text-[10px] text-stone-600 mt-1">B=Breakfast · L=Lunch · D=Dinner</p>
-                          </div>
+                        </div>
+                        <div>
+                          <label className={lbl}>Meals</label>
+                          <input
+                            type="text"
+                            value={d.meals || ''}
+                            onChange={e => updateDay(idx, 'meals', e.target.value)}
+                            placeholder="B,L,D"
+                            className={inp}
+                          />
+                          <p className="text-[10px] text-stone-600 mt-1">B=Breakfast · L=Lunch · D=Dinner</p>
                         </div>
                       </div>
                     )}

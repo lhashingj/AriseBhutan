@@ -43,7 +43,9 @@ export async function POST(req: NextRequest) {
     }, i: number) => ({
       day:                i + 1,
       date:               d.date || null,
-      programme:          [d.title, d.description, d.activities && `Activities: ${d.activities}`].filter(Boolean).join('\n') || '',
+      title:              d.title || '',
+      description:        d.description || '',
+      activities:         d.activities ? d.activities.split(',').map(a => a.trim()).filter(Boolean) : [],
       location:           d.location || null,
       accommodation_name: d.hotel || '',
       meals:              [d.breakfast && 'B', d.lunch && 'L', d.dinner && 'D'].filter(Boolean).join(','),
