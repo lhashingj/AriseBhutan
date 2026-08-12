@@ -8,6 +8,7 @@ import { getTourBySlug } from '@/data/tours'
 import { getLocationInfo } from '@/data/bhutanLocations'
 import { STATIC_REVIEWS } from '@/data/reviews'
 import BookTourButton from '@/components/BookTourButton'
+import RouteMap from '@/components/RouteMap'
 
 const DESTINATIONS: Record<string, { description: string; icon: string }> = {
   'Paro': {
@@ -60,10 +61,23 @@ const difficultyColor: Record<string, string> = {
 
 export default function TourDetailPage({ params }: { params: { slug: string } }) {
   const [activeTab, setActiveTab] = useState<Tab>('Overview')
-  const [expandedDay, setExpandedDay] = useState<number | null>(1)
+  const [openDays, setOpenDays] = useState<Set<number>>(new Set([1]))
 
   const tour = getTourBySlug(params.slug)
   if (!tour) notFound()
+
+  const allDaysExpanded = tour.itinerary.length > 0 && tour.itinerary.every((d) => openDays.has(d.day))
+  function toggleDay(day: number) {
+    setOpenDays((prev) => {
+      const next = new Set(prev)
+      if (next.has(day)) next.delete(day)
+      else next.add(day)
+      return next
+    })
+  }
+  function toggleAllDays() {
+    setOpenDays(allDaysExpanded ? new Set() : new Set(tour!.itinerary.map((d) => d.day)))
+  }
 
   const tourJsonLd = {
     '@context': 'https://schema.org',
@@ -270,17 +284,27 @@ export default function TourDetailPage({ params }: { params: { slug: string } })
             {/* ITINERARY */}
             {activeTab === 'Itinerary' && (
               <div>
-                <h2 className="font-serif text-2xl font-bold text-stone-900 dark:text-stone-50 mb-7">Day-by-Day Itinerary</h2>
+                <div className="flex items-center justify-between mb-7">
+                  <h2 className="font-serif text-2xl font-bold text-stone-900 dark:text-stone-50">Day-by-Day Itinerary</h2>
+                  <button
+                    onClick={toggleAllDays}
+                    className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 transition-colors"
+                  >
+                    {allDaysExpanded ? 'Collapse All' : 'Expand All'}
+                    {allDaysExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
                 <div className="space-y-3">
                   {tour.itinerary.map((day) => {
                     const locInfo = getLocationInfo(day.location)
+                    const isOpen = openDays.has(day.day)
                     return (
                     <div
                       key={day.day}
                       className="border border-stone-200 dark:border-stone-800 dark:bg-stone-900 rounded-2xl overflow-hidden hover:border-amber-300 dark:hover:border-stone-700 transition-colors"
                     >
                       <button
-                        onClick={() => setExpandedDay(expandedDay === day.day ? null : day.day)}
+                        onClick={() => toggleDay(day.day)}
                         className="w-full flex items-center justify-between p-5 text-left gap-3"
                       >
                         <div className="flex items-center gap-4 min-w-0">
@@ -308,12 +332,12 @@ export default function TourDetailPage({ params }: { params: { slug: string } })
                             </div>
                           </div>
                         </div>
-                        {expandedDay === day.day
+                        {isOpen
                           ? <ChevronUp className="w-5 h-5 text-stone-400 flex-shrink-0" />
                           : <ChevronDown className="w-5 h-5 text-stone-400 flex-shrink-0" />
                         }
                       </button>
-                      {expandedDay === day.day && (
+                      {isOpen && (
                         <div className="px-5 pb-5 border-t border-stone-100 dark:border-stone-800 pt-4">
                           <p className="text-stone-600 dark:text-stone-400 text-sm leading-relaxed mb-4">{day.description}</p>
                           <div className="grid sm:grid-cols-2 gap-3">
@@ -343,6 +367,7 @@ export default function TourDetailPage({ params }: { params: { slug: string } })
                     </div>
                   )})}
                 </div>
+                <RouteMap locations={tour.itinerary.map((d) => d.location)} className="mt-8" />
               </div>
             )}
 

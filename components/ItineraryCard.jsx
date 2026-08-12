@@ -2,10 +2,12 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Calendar, ChevronDown, ChevronRight, ExternalLink, BedDouble, Clock, Utensils } from 'lucide-react'
+import { Calendar, ChevronDown, ChevronRight, ExternalLink, BedDouble, Clock, Utensils, MapPin, Mountain, Thermometer } from 'lucide-react'
 import { tours } from '@/data/tours'
 import TravelDocumentsSection from '@/components/TravelDocumentsSection'
 import { parseDayProgramme } from '@/utils/dayProgramme'
+import RouteMap from '@/components/RouteMap'
+import { getLocationInfo } from '@/data/bhutanLocations'
 
 const STATUS_CFG = {
   enquiry_pending: { label: 'Enquiry',   borderL: 'border-l-rose-400',  badge: 'bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200',   dot: 'bg-rose-400' },
@@ -21,8 +23,7 @@ function parseMeals(raw) {
   return raw.split(/[,/\s]+/).map(m => m.trim().toUpperCase()).filter(m => m === 'B' || m === 'L' || m === 'D')
 }
 
-function DayAccordion({ d, index, defaultOpen = false, staticDay = null }) {
-  const [open, setOpen] = useState(defaultOpen)
+function DayAccordion({ d, index, open, onToggle, staticDay = null }) {
   const dayNum = d.day ?? index + 1
 
   const parsed      = parseDayProgramme(d)
@@ -31,6 +32,8 @@ function DayAccordion({ d, index, defaultOpen = false, staticDay = null }) {
   const activities  = staticDay?.activities  || parsed.activities  || []
   const accom       = staticDay?.accommodation || d.accommodation_name || null
   const mealStr     = staticDay?.meals        || parseMeals(d.meals).map(m => MEAL_LABELS[m] || m).join(' · ')
+  const location    = staticDay?.location     || d.location || null
+  const locInfo     = getLocationInfo(location)
 
   const dateStr = d.date
     ? new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -39,7 +42,7 @@ function DayAccordion({ d, index, defaultOpen = false, staticDay = null }) {
   return (
     <div className="border border-stone-200 dark:border-stone-700 rounded-xl overflow-hidden">
       <button
-        onClick={() => setOpen(v => !v)}
+        onClick={onToggle}
         className="w-full flex items-center gap-3 px-4 py-3.5 bg-white dark:bg-stone-900 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors text-left"
       >
         {/* D1 badge */}
@@ -55,6 +58,25 @@ function DayAccordion({ d, index, defaultOpen = false, staticDay = null }) {
               <span className="text-xs text-stone-400 dark:text-stone-500 font-normal shrink-0">{dateStr}</span>
             )}
           </div>
+          {(location || locInfo) && (
+            <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+              {location && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-stone-600 dark:text-stone-300 bg-stone-100 dark:bg-stone-800 rounded-full px-2 py-0.5">
+                  <MapPin className="w-2.5 h-2.5 text-amber-600 flex-shrink-0" />{location}
+                </span>
+              )}
+              {locInfo && (
+                <>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-medium text-stone-600 dark:text-stone-300 bg-stone-100 dark:bg-stone-800 rounded-full px-2 py-0.5">
+                    <Mountain className="w-2.5 h-2.5 text-amber-600 flex-shrink-0" />{locInfo.elevation}
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-medium text-stone-600 dark:text-stone-300 bg-stone-100 dark:bg-stone-800 rounded-full px-2 py-0.5">
+                    <Thermometer className="w-2.5 h-2.5 text-amber-600 flex-shrink-0" />{locInfo.tempRange}
+                  </span>
+                </>
+              )}
+            </div>
+          )}
           {mealStr && <p className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">{mealStr}</p>}
         </div>
 
@@ -110,6 +132,7 @@ function DayAccordion({ d, index, defaultOpen = false, staticDay = null }) {
 export default function ItineraryCard({ itin, showDayPlan = true }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
+  const [openDayIdxs, setOpenDayIdxs] = useState(() => new Set([0]))
 
   const s      = STATUS_CFG[itin.status] || STATUS_CFG.pending_review
   const name   = itin.tour_summary?.tour_package || 'Custom Itinerary'
@@ -121,6 +144,19 @@ export default function ItineraryCard({ itin, showDayPlan = true }) {
   const ref     = itin.booking_reference
   const days   = (itin.day_by_day || []).slice().sort((a, b) => (a.day ?? 0) - (b.day ?? 0))
   const hasPrice = total > 0
+  const allDaysExpanded = days.length > 0 && days.every((_, i) => openDayIdxs.has(i))
+
+  function toggleDay(i) {
+    setOpenDayIdxs(prev => {
+      const next = new Set(prev)
+      if (next.has(i)) next.delete(i)
+      else next.add(i)
+      return next
+    })
+  }
+  function toggleAllDays() {
+    setOpenDayIdxs(allDaysExpanded ? new Set() : new Set(days.map((_, i) => i)))
+  }
 
   // Match to static tour for rich day descriptions
   const pkg = name.toLowerCase()
@@ -225,11 +261,27 @@ export default function ItineraryCard({ itin, showDayPlan = true }) {
       {/* ── Day Plan content ── */}
       {showDayPlan && open && days.length > 0 && (
         <div className="border-t border-stone-100 dark:border-stone-800 p-4 sm:p-6 space-y-2">
+          <div className="flex justify-end">
+            <button
+              onClick={toggleAllDays}
+              className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 transition-colors mb-1"
+            >
+              {allDaysExpanded ? 'Collapse All' : 'Expand All'}
+              <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${allDaysExpanded ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
           {days.map((d, i) => {
             const dayNum    = d.day ?? i + 1
             const staticDay = matchedTour?.itinerary?.find(s => s.day === dayNum) || null
-            return <DayAccordion key={i} d={d} index={i} defaultOpen={i === 0} staticDay={staticDay} />
+            return (
+              <DayAccordion
+                key={i} d={d} index={i} staticDay={staticDay}
+                open={openDayIdxs.has(i)}
+                onToggle={() => toggleDay(i)}
+              />
+            )
           })}
+          <RouteMap locations={days.map(d => d.location)} className="pt-2" />
         </div>
       )}
 
