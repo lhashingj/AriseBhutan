@@ -528,7 +528,7 @@ export default function ChatWidget() {
     const refMatch = trimmed.match(ARB_REGEX)
     if (refMatch) {
       const ref = refMatch[0].toUpperCase()
-      const itin = await fetch(`/api/voucher/${ref}`)
+      const itin = await fetch(`/api/voucher/${ref}`, { cache: 'no-store' })
         .then(r => r.ok ? r.json() : null)
         .then(body => body?.itinerary || null)
         .catch(() => null)

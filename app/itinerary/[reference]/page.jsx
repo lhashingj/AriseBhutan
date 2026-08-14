@@ -123,6 +123,7 @@ export default function ItineraryVoucherPage() {
       const { data: { session } } = await supabase.auth.getSession()
       const qs = requestedView === 'ops' ? '?view=ops' : ''
       const res = await window.fetch(`/api/voucher/${reference}${qs}`, {
+        cache: 'no-store',
         headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
       })
       const body = await res.json().catch(() => null)

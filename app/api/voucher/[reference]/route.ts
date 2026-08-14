@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+// This reads live pricing/payment data that admin edits constantly — never
+// let it be cached at the edge, in a CDN, or in the browser's HTTP cache.
+export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'
+export const revalidate = 0
+
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -72,5 +78,8 @@ export async function GET(req: NextRequest, { params }: { params: { reference: s
   const granted: Access = access !== 'ops' && requestedView === 'ops' ? 'ops' : access
 
   const payload = granted === 'ops' ? stripFinancials(itinerary) : itinerary
-  return NextResponse.json({ itinerary: payload, access: granted })
+  return NextResponse.json(
+    { itinerary: payload, access: granted },
+    { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' } },
+  )
 }
