@@ -75,6 +75,12 @@ const DEFAULT_CANCELLATION = [
   { period: 'Air Ticket — Within 4 days / No-show',       policy: 'Non-refundable' },
 ]
 
+const BALANCE_METHOD_LABEL = {
+  cash_on_arrival: 'Payable in Cash upon Arrival',
+  card_on_arrival: 'Payable by Card upon Arrival',
+  bank_transfer:   'Payable via Bank Transfer',
+}
+
 // ── Status config ─────────────────────────────────────────────
 const STATUS_CFG = {
   enquiry_pending: { label: 'Under Review', dot: '#F87171', bg: '#1C1917', border: '#F87171' },
@@ -274,6 +280,18 @@ export default function ItineraryVoucherPage() {
             <Briefcase className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0" />
             <p className="text-xs text-amber-800 dark:text-amber-300">
               <strong>Staff / Field Copy</strong> — operational details only. Pricing, taxes, and payment information are not shown on this version.
+            </p>
+          </div>
+        )}
+
+        {/* Cash-on-arrival collection reminder — the one deliberate exception to
+            "no financial info on the ops copy": the guide/coordinator still needs
+            to know they must collect a balance, just not the pricing that produced it. */}
+        {isOpsView && it.collection_note && (
+          <div className="max-w-[900px] mx-auto mb-4 flex items-center gap-2.5 px-4 py-3 rounded-xl border-2 border-red-300 dark:border-red-500/40 bg-red-50 dark:bg-red-500/10">
+            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0" />
+            <p className="text-sm text-red-800 dark:text-red-300">
+              <strong>COLLECTION NOTE:</strong> Collect balance payment of {it.collection_note.sym}{Number(it.collection_note.amount).toLocaleString()} in cash from client on Day 1.
             </p>
           </div>
         )}
@@ -827,7 +845,62 @@ export default function ItineraryVoucherPage() {
                             {currSym}{fmtMoney(px.grand_total, 0)}
                           </td>
                         </tr>
-                        {!px.is_saarc && px.equivalent_inr > 0 && (
+
+                        {/* Payment balance breakdown — only for vouchers with tracked
+                            payment data; older vouchers fall straight through to the
+                            plain INR-equivalent row below, unchanged. */}
+                        {px.payment_status && Number(px.amount_paid) > 0 && (
+                          <tr className="bg-emerald-50 dark:bg-emerald-500/10">
+                            <td className="px-4 py-2.5 text-emerald-800 dark:text-emerald-300 text-xs">
+                              Deposit Paid (Online)
+                            </td>
+                            <td className="px-4 py-2.5 text-right">
+                              <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-400 text-sm">
+                                − {currSym}{fmtMoney(px.amount_paid, 0)}
+                              </span>
+                              <span className="ml-2 inline-block align-middle text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-600 text-white">
+                                PAID
+                              </span>
+                            </td>
+                          </tr>
+                        )}
+
+                        {px.payment_status && (
+                          px.balance_due > 0 ? (
+                            <>
+                              <tr style={{ background: 'linear-gradient(90deg, #7C2D12, #9A3412)' }}>
+                                <td className="px-4 py-3 font-bold text-white text-xs uppercase tracking-wide">
+                                  Total Balance Due
+                                </td>
+                                <td className="px-4 py-3 text-right font-black text-lg text-white" style={{ fontFamily: 'monospace' }}>
+                                  {currSym}{fmtMoney(px.balance_due, 0)}
+                                </td>
+                              </tr>
+                              <tr className="bg-stone-50 dark:bg-stone-800/50">
+                                <td colSpan={2} className="px-4 py-1.5 text-[10px] text-stone-500 dark:text-stone-400 italic">
+                                  ({BALANCE_METHOD_LABEL[px.balance_collection_method] || 'Payable before departure'})
+                                </td>
+                              </tr>
+                            </>
+                          ) : (
+                            <tr className="bg-emerald-50 dark:bg-emerald-500/10">
+                              <td colSpan={2} className="px-4 py-2 text-center text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                                ✓ Fully Paid — Thank You!
+                              </td>
+                            </tr>
+                          )
+                        )}
+
+                        {!px.is_saarc && (px.payment_status && px.balance_due > 0 ? (
+                          <tr className="bg-stone-100 dark:bg-stone-700">
+                            <td className="px-4 py-2 text-stone-500 dark:text-stone-400 text-[10px]">
+                              Approx. equivalent (INR @ ₹{px.inr_rate || '83.5'}) — for balance
+                            </td>
+                            <td className="px-4 py-2 text-right font-mono text-stone-700 dark:text-stone-300 text-xs font-bold">
+                              ₹{(px.balance_due * (Number(px.inr_rate) || 83.5)).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                            </td>
+                          </tr>
+                        ) : px.equivalent_inr > 0 && (
                           <tr className="bg-stone-100 dark:bg-stone-700">
                             <td className="px-4 py-2 text-stone-500 dark:text-stone-400 text-[10px]">
                               Approx. equivalent (INR @ ₹{px.inr_rate || '83.5'})
@@ -836,13 +909,52 @@ export default function ItineraryVoucherPage() {
                               ₹{Number(px.equivalent_inr || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                             </td>
                           </tr>
-                        )}
+                        ))}
                       </tfoot>
                     </table>
                   </div>
 
                   {/* Right: payment schedule + pricing notes */}
                   <div className="space-y-4">
+                    {px.payment_status ? (
+                      /* Real tracked payment status — deposit received, balance due, etc. */
+                      <div className="rounded-xl border border-stone-200 dark:border-stone-700 overflow-hidden">
+                        <div className="px-4 py-2.5" style={{ background: 'linear-gradient(90deg, #92400E, #D97706)' }}>
+                          <p className="text-white text-[10px] font-bold uppercase tracking-widest">Payment Status</p>
+                        </div>
+                        <ul className="divide-y divide-stone-100 dark:divide-stone-700/60">
+                          <li className="flex items-center justify-between px-4 py-2.5 text-xs">
+                            <span className="text-stone-600 dark:text-stone-400">Total Tour Cost</span>
+                            <span className="font-mono font-semibold text-stone-800 dark:text-stone-100">{currSym}{fmtMoney(px.grand_total, 0)}</span>
+                          </li>
+                          {Number(px.amount_paid) > 0 && (
+                            <li className="flex items-center justify-between px-4 py-2.5 text-xs">
+                              <span className="text-stone-600 dark:text-stone-400">
+                                Amount Paid{px.payment_status === 'partial' ? ' (Deposit)' : ''}
+                              </span>
+                              <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                                {currSym}{fmtMoney(px.amount_paid, 0)}
+                              </span>
+                            </li>
+                          )}
+                          {px.balance_due > 0 ? (
+                            <li className="flex items-center justify-between gap-3 px-4 py-2.5 text-xs bg-amber-50 dark:bg-amber-500/10">
+                              <span className="font-semibold text-amber-800 dark:text-amber-300">Remaining Balance Due</span>
+                              <span className="text-right shrink-0">
+                                <span className="block font-mono font-bold text-amber-700 dark:text-amber-400">{currSym}{fmtMoney(px.balance_due, 0)}</span>
+                                <span className="block text-[9px] text-amber-700/70 dark:text-amber-400/70">
+                                  {BALANCE_METHOD_LABEL[px.balance_collection_method] || 'Payable before departure'}
+                                </span>
+                              </span>
+                            </li>
+                          ) : (
+                            <li className="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                              ✓ Fully Paid
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    ) : (
                     <div className="rounded-xl border border-stone-200 dark:border-stone-700 overflow-hidden">
                       <div className="px-4 py-2.5" style={{ background: 'linear-gradient(90deg, #92400E, #D97706)' }}>
                         <p className="text-white text-[10px] font-bold uppercase tracking-widest">Payment Schedule</p>
@@ -859,6 +971,7 @@ export default function ItineraryVoucherPage() {
                         ))}
                       </ul>
                     </div>
+                    )}
 
                     <div className="rounded-xl border border-stone-200 dark:border-stone-700 overflow-hidden">
                       <div className="bg-stone-800 dark:bg-stone-950 px-4 py-2.5">
@@ -898,103 +1011,143 @@ export default function ItineraryVoucherPage() {
                   <PaymentBadges />
                 </div>
 
-                {/* Credit / Debit Card — Bhutan Payments */}
-                {it.payment_link && (
-                  <div className="mt-3 rounded-xl border border-amber-200 dark:border-amber-500/30 bg-gradient-to-br from-amber-50 to-white dark:from-amber-500/10 dark:to-stone-900 overflow-hidden page-break-avoid">
-                    <div className="px-5 py-4 sm:flex sm:items-center sm:justify-between gap-4">
-                      <div>
-                        <p className="flex items-center gap-2 font-serif font-bold text-stone-900 dark:text-stone-50 text-sm sm:text-base">
-                          <CreditCard className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                          Pay via Credit / Debit Card
-                        </p>
-                        <p className="text-stone-500 dark:text-stone-400 text-xs mt-1 leading-relaxed max-w-md">
-                          Credit card payments are processed securely via Bhutan Payments / BNB. International
-                          processing fees may apply.
+                {(() => {
+                  const paymentTracked   = !!px.payment_status
+                  const hasBalance       = px.balance_due > 0
+                  const isFullyPaid      = paymentTracked && !hasBalance
+                  const isCashOnArrival  = px.balance_collection_method === 'cash_on_arrival'
+                  const payAmount        = hasBalance ? px.balance_due : px.grand_total
+
+                  // Fully paid — nothing left to collect, so no card/wire options at all.
+                  if (isFullyPaid) {
+                    return (
+                      <div className="mt-3 rounded-xl border border-emerald-300 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 px-5 py-4 flex items-center gap-3 page-break-avoid">
+                        <span className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold shrink-0">✓</span>
+                        <div>
+                          <p className="font-serif font-bold text-emerald-800 dark:text-emerald-300 text-sm sm:text-base">Fully Paid — Thank You!</p>
+                          <p className="text-emerald-700 dark:text-emerald-400 text-xs mt-0.5">No further payment is required for this booking.</p>
+                        </div>
+                      </div>
+                    )
+                  }
+
+                  // A balance remains and it's specifically cash-on-arrival — no online
+                  // action for the client to take, just a clear instruction.
+                  if (hasBalance && isCashOnArrival) {
+                    return (
+                      <div className="mt-3 rounded-xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-5 py-4 flex items-center gap-3 page-break-avoid">
+                        <CreditCard className="w-6 h-6 text-amber-700 dark:text-amber-400 shrink-0" />
+                        <p className="text-amber-800 dark:text-amber-300 text-sm">
+                          <strong>Remaining Balance of {currSym}{fmtMoney(px.balance_due, 0)}</strong> is payable in Cash upon arrival.
                         </p>
                       </div>
-                      <a
-                        href={it.payment_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="no-print mt-3 sm:mt-0 inline-flex items-center gap-2 shrink-0 px-5 py-2.5 rounded-xl text-white text-sm font-bold transition-all shadow-md"
-                        style={{ background: 'linear-gradient(135deg, #D97706, #B45309)' }}
-                      >
-                        <CreditCard className="w-4 h-4" /> Pay via Credit Card
-                      </a>
-                    </div>
-                  </div>
-                )}
+                    )
+                  }
 
-                <p className="mt-4 mb-1 text-[10px] font-bold uppercase tracking-widest text-stone-400 dark:text-stone-500">
-                  {it.payment_link ? 'Or pay by international wire transfer (SWIFT)' : 'International Wire Transfer (SWIFT)'}
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mt-2">
-                  {/* Local Currency (BTN) Account */}
-                  <div className="rounded-xl overflow-hidden border border-stone-200 dark:border-stone-700">
-                    <div className="bg-stone-800 dark:bg-stone-950 px-4 py-2.5">
-                      <p className="text-white text-[10px] font-bold uppercase tracking-widest">Local Currency Account (BTN)</p>
-                    </div>
-                    <div className="divide-y divide-stone-100 dark:divide-stone-700/60">
-                      {[
-                        ['Account Holder', 'ARISE TOURS AND TRAVELS'],
-                        ['Currency',       'BTN — Bhutanese Ngultrum'],
-                        ['Account No.',    '642075256'],
-                        ['Bank',           'Bhutan National Bank Ltd. (Paro Branch)'],
-                        ['SWIFT Code',     'BNBTBTBT'],
-                      ].map(([label, val]) => (
-                        <div key={label} className="flex flex-col gap-0.5 px-4 py-2 sm:flex-row sm:gap-0 sm:items-baseline">
-                          <span className="text-stone-400 dark:text-stone-500 text-[10px] sm:w-32 sm:flex-shrink-0 font-medium">{label}</span>
-                          <span className="text-stone-800 dark:text-stone-100 text-xs font-semibold leading-snug font-mono break-words">{val}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Foreign Currency (USD) Account */}
-                  <div className="rounded-xl overflow-hidden border border-stone-200 dark:border-stone-700">
-                    <div className="px-4 py-2.5" style={{ background: 'linear-gradient(90deg, #92400E, #D97706)' }}>
-                      <p className="text-white text-[10px] font-bold uppercase tracking-widest">Foreign Currency Account (USD)</p>
-                    </div>
-                    <div className="divide-y divide-stone-100 dark:divide-stone-700/60">
-                      {[
-                        ['Account Holder', 'ARISE TOURS AND TRAVELS'],
-                        ['Currency',       'USD — US Dollars'],
-                        ['Account No.',    '642075482'],
-                        ['Bank',           'Bhutan National Bank Ltd. (Paro Branch)'],
-                        ['SWIFT Code',     'BNBTBTBT'],
-                      ].map(([label, val]) => (
-                        <div key={label} className="flex flex-col gap-0.5 px-4 py-2 sm:flex-row sm:gap-0 sm:items-baseline">
-                          <span className="text-stone-400 dark:text-stone-500 text-[10px] sm:w-32 sm:flex-shrink-0 font-medium">{label}</span>
-                          <span className="text-stone-800 dark:text-stone-100 text-xs font-semibold leading-snug font-mono break-words">{val}</span>
-                        </div>
-                      ))}
-                      <div className="px-4 py-2.5 bg-stone-50 dark:bg-stone-800/50">
-                        <p className="text-stone-400 dark:text-stone-500 text-[10px] font-medium mb-1.5">Intermediary Bank (for USD SWIFT wires)</p>
-                        {[
-                          ['Bank',        'Standard Chartered Bank, New York'],
-                          ['SWIFT Code',  'SCBLUS33'],
-                          ['Account No.', '358-202-171-9001'],
-                        ].map(([label, val]) => (
-                          <div key={label} className="flex flex-col gap-0.5 py-1 sm:flex-row sm:gap-0 sm:items-baseline">
-                            <span className="text-stone-400 dark:text-stone-500 text-[10px] sm:w-24 sm:flex-shrink-0 font-medium">{label}</span>
-                            <span className="text-stone-700 dark:text-stone-200 text-xs font-semibold leading-snug font-mono break-words">{val}</span>
+                  // Default — full amount if nothing tracked yet, or the remaining balance
+                  // if a deposit's already on record (card_on_arrival / bank_transfer / untracked).
+                  return (
+                    <>
+                      {it.payment_link && (
+                        <div className="mt-3 rounded-xl border border-amber-200 dark:border-amber-500/30 bg-gradient-to-br from-amber-50 to-white dark:from-amber-500/10 dark:to-stone-900 overflow-hidden page-break-avoid">
+                          <div className="px-5 py-4 sm:flex sm:items-center sm:justify-between gap-4">
+                            <div>
+                              <p className="flex items-center gap-2 font-serif font-bold text-stone-900 dark:text-stone-50 text-sm sm:text-base">
+                                <CreditCard className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                                {hasBalance ? 'Pay Remaining Balance' : 'Pay via Credit / Debit Card'}
+                              </p>
+                              <p className="text-stone-500 dark:text-stone-400 text-xs mt-1 leading-relaxed max-w-md">
+                                Credit card payments are processed securely via Bhutan Payments / BNB. International
+                                processing fees may apply.
+                              </p>
+                            </div>
+                            <a
+                              href={it.payment_link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="no-print mt-3 sm:mt-0 inline-flex items-center gap-2 shrink-0 px-5 py-2.5 rounded-xl text-white text-sm font-bold transition-all shadow-md"
+                              style={{ background: 'linear-gradient(135deg, #D97706, #B45309)' }}
+                            >
+                              <CreditCard className="w-4 h-4" />
+                              {hasBalance ? `Pay Remaining Balance (${currSym}${fmtMoney(payAmount, 0)})` : 'Pay via Credit Card'}
+                            </a>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                        </div>
+                      )}
 
-                {/* OUR-fees instruction note */}
-                <div className="mt-4 rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-5 py-4 flex items-start gap-3 page-break-avoid">
-                  <div className="w-7 h-7 rounded-full bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center shrink-0 text-amber-700 dark:text-amber-400 font-bold text-xs">!</div>
-                  <p className="text-amber-800 dark:text-amber-300 text-xs leading-relaxed">
-                    <strong>Important:</strong> When initiating your wire transfer, SWIFT Field 71A must be selected as{' '}
-                    <strong>&ldquo;OUR&rdquo;</strong> (sender pays all transfer fees) — not SHA or BEN. This ensures the full
-                    quoted amount is received by Arise Bhutan without deduction. Transfers received short due to an
-                    incorrect fee designation may delay confirmation of your booking.
-                  </p>
-                </div>
+                      <p className="mt-4 mb-1 text-[10px] font-bold uppercase tracking-widest text-stone-400 dark:text-stone-500">
+                        {it.payment_link ? 'Or pay by international wire transfer (SWIFT)' : 'International Wire Transfer (SWIFT)'}
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mt-2">
+                        {/* Local Currency (BTN) Account */}
+                        <div className="rounded-xl overflow-hidden border border-stone-200 dark:border-stone-700">
+                          <div className="bg-stone-800 dark:bg-stone-950 px-4 py-2.5">
+                            <p className="text-white text-[10px] font-bold uppercase tracking-widest">Local Currency Account (BTN)</p>
+                          </div>
+                          <div className="divide-y divide-stone-100 dark:divide-stone-700/60">
+                            {[
+                              ['Account Holder', 'ARISE TOURS AND TRAVELS'],
+                              ['Currency',       'BTN — Bhutanese Ngultrum'],
+                              ['Account No.',    '642075256'],
+                              ['Bank',           'Bhutan National Bank Ltd. (Paro Branch)'],
+                              ['SWIFT Code',     'BNBTBTBT'],
+                            ].map(([label, val]) => (
+                              <div key={label} className="flex flex-col gap-0.5 px-4 py-2 sm:flex-row sm:gap-0 sm:items-baseline">
+                                <span className="text-stone-400 dark:text-stone-500 text-[10px] sm:w-32 sm:flex-shrink-0 font-medium">{label}</span>
+                                <span className="text-stone-800 dark:text-stone-100 text-xs font-semibold leading-snug font-mono break-words">{val}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Foreign Currency (USD) Account */}
+                        <div className="rounded-xl overflow-hidden border border-stone-200 dark:border-stone-700">
+                          <div className="px-4 py-2.5" style={{ background: 'linear-gradient(90deg, #92400E, #D97706)' }}>
+                            <p className="text-white text-[10px] font-bold uppercase tracking-widest">Foreign Currency Account (USD)</p>
+                          </div>
+                          <div className="divide-y divide-stone-100 dark:divide-stone-700/60">
+                            {[
+                              ['Account Holder', 'ARISE TOURS AND TRAVELS'],
+                              ['Currency',       'USD — US Dollars'],
+                              ['Account No.',    '642075482'],
+                              ['Bank',           'Bhutan National Bank Ltd. (Paro Branch)'],
+                              ['SWIFT Code',     'BNBTBTBT'],
+                            ].map(([label, val]) => (
+                              <div key={label} className="flex flex-col gap-0.5 px-4 py-2 sm:flex-row sm:gap-0 sm:items-baseline">
+                                <span className="text-stone-400 dark:text-stone-500 text-[10px] sm:w-32 sm:flex-shrink-0 font-medium">{label}</span>
+                                <span className="text-stone-800 dark:text-stone-100 text-xs font-semibold leading-snug font-mono break-words">{val}</span>
+                              </div>
+                            ))}
+                            <div className="px-4 py-2.5 bg-stone-50 dark:bg-stone-800/50">
+                              <p className="text-stone-400 dark:text-stone-500 text-[10px] font-medium mb-1.5">Intermediary Bank (for USD SWIFT wires)</p>
+                              {[
+                                ['Bank',        'Standard Chartered Bank, New York'],
+                                ['SWIFT Code',  'SCBLUS33'],
+                                ['Account No.', '358-202-171-9001'],
+                              ].map(([label, val]) => (
+                                <div key={label} className="flex flex-col gap-0.5 py-1 sm:flex-row sm:gap-0 sm:items-baseline">
+                                  <span className="text-stone-400 dark:text-stone-500 text-[10px] sm:w-24 sm:flex-shrink-0 font-medium">{label}</span>
+                                  <span className="text-stone-700 dark:text-stone-200 text-xs font-semibold leading-snug font-mono break-words">{val}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* OUR-fees instruction note */}
+                      <div className="mt-4 rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-5 py-4 flex items-start gap-3 page-break-avoid">
+                        <div className="w-7 h-7 rounded-full bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center shrink-0 text-amber-700 dark:text-amber-400 font-bold text-xs">!</div>
+                        <p className="text-amber-800 dark:text-amber-300 text-xs leading-relaxed">
+                          <strong>Important:</strong> When initiating your wire transfer, SWIFT Field 71A must be selected as{' '}
+                          <strong>&ldquo;OUR&rdquo;</strong> (sender pays all transfer fees) — not SHA or BEN. This ensures the full
+                          quoted amount is received by Arise Bhutan without deduction. Transfers received short due to an
+                          incorrect fee designation may delay confirmation of your booking.
+                        </p>
+                      </div>
+                    </>
+                  )
+                })()}
               </div>
             )}
 

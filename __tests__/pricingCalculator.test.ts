@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computePricingDetailed, computePricingV2 } from '@/utils/pricingCalculator'
+import { computePricingDetailed, computePricingV2, computeBalanceDue } from '@/utils/pricingCalculator'
 
 const base = {
   nationality: 'United States',
@@ -362,5 +362,24 @@ describe('computePricingV2 — new voucher schema', () => {
       + r.entrTotal + r.specTotal + r.fltTotal
     expect(r.pkgCost).toBeCloseTo(expectedPkgCost)
     expect(r.grandTotal).toBeCloseTo(r.pkgCost + r.gst)
+  })
+})
+
+describe('computeBalanceDue', () => {
+  it('subtracts amount paid from the grand total', () => {
+    expect(computeBalanceDue(1000, 300)).toBe(700)
+  })
+
+  it('never goes negative when overpaid', () => {
+    expect(computeBalanceDue(1000, 1500)).toBe(0)
+  })
+
+  it('treats missing/blank amountPaid as zero (nothing paid yet)', () => {
+    expect(computeBalanceDue(1000, '')).toBe(1000)
+    expect(computeBalanceDue(1000, undefined)).toBe(1000)
+  })
+
+  it('treats a missing/blank grandTotal as zero rather than throwing', () => {
+    expect(computeBalanceDue(undefined, 100)).toBe(0)
   })
 })

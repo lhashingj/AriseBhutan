@@ -15,7 +15,7 @@ import AdminTravelDocuments from '@/components/AdminTravelDocuments'
 import AdminBookingGuests from '@/components/AdminBookingGuests'
 import {
   computePricingDetailed, SAARC_INDIA_SET, DEFAULT_GST_APPLICABLE,
-  computePricingV2, DEFAULT_GST_APPLICABLE_V2,
+  computePricingV2, DEFAULT_GST_APPLICABLE_V2, computeBalanceDue,
 } from '@/utils/pricingCalculator'
 import {
   getSectors, getAirlinesForSector, getFlightsForSector, findFlight,
@@ -298,6 +298,13 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
   const [visaOverrideOn, setVisaOverrideOn] = useState(itinerary.pricing?.visa_override != null)
   const [visaOverride,   setVisaOverride]   = useState(itinerary.pricing?.visa_override ?? '')
 
+  // Payment tracking — split payments/deposits. Schema-agnostic (works the
+  // same for v1 and v2 pricing) since it's about receipts against whatever
+  // the grand total is, not about how that total was itemized.
+  const [paymentStatus, setPaymentStatus] = useState(itinerary.pricing?.payment_status || 'unpaid')
+  const [amountPaid,    setAmountPaid]    = useState(itinerary.pricing?.amount_paid    ?? '')
+  const [balanceMethod, setBalanceMethod] = useState(itinerary.pricing?.balance_collection_method || 'cash_on_arrival')
+
   const DEFAULT_INCLUSIONS = [
     'Accommodation as per itinerary',
     'Licensed English-speaking DOT-certified guide',
@@ -424,6 +431,7 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
   // Cost Summary that are identical in shape between v1 and v2 (SDF, visa,
   // package cost, GST, grand total).
   const activeCalc = isV2Pricing ? calcV2 : calc
+  const balanceDue  = computeBalanceDue(activeCalc.grandTotal, amountPaid)
 
   // ── flight helpers ─────────────────────────────────────────
   function addFlight() {
@@ -563,6 +571,11 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
       package_cost:            calcV2.pkgCost,
       grand_total:             calcV2.grandTotal,
       equivalent_inr:          !calcV2.isSaarc ? calcV2.grandTotal * (Number(inrRate) || 83.5) : 0,
+      // payment tracking
+      payment_status:            paymentStatus,
+      amount_paid:               Number(amountPaid) || 0,
+      balance_due:                computeBalanceDue(calcV2.grandTotal, amountPaid),
+      balance_collection_method: balanceMethod,
     } : {
       // inputs
       adult_pax:            Number(adultPax)          || 0,
@@ -597,6 +610,11 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
       package_cost:         calc.pkgCost,
       grand_total:          calc.grandTotal,
       equivalent_inr:       !calc.isSaarc ? calc.grandTotal * (Number(inrRate) || 83.5) : 0,
+      // payment tracking
+      payment_status:            paymentStatus,
+      amount_paid:               Number(amountPaid) || 0,
+      balance_due:                computeBalanceDue(calc.grandTotal, amountPaid),
+      balance_collection_method: balanceMethod,
     }
 
     // Sync group_size with total pax if all pax fields are set
@@ -2377,6 +2395,69 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
                 </div>
               </div>
               <p className="text-xs text-stone-600">Nights ({nights}) synced from Tour tab. GST (5%) applies per-line — toggle it on whichever items are taxable.</p>
+
+              {/* Payment Tracking — split payments / deposits */}
+              <div className="bg-stone-800/60 rounded-2xl border border-white/5 p-5 space-y-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-stone-500">Payment Tracking</p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] text-stone-400 uppercase tracking-wider block mb-1.5">Payment Status</label>
+                    <select
+                      value={paymentStatus}
+                      onChange={e => {
+                        const next = e.target.value
+                        setPaymentStatus(next)
+                        if (next === 'fully_paid') setAmountPaid(String(Math.round(activeCalc.grandTotal)))
+                        else if (next === 'unpaid') setAmountPaid('')
+                      }}
+                      className={inp}
+                    >
+                      <option value="unpaid">Unpaid</option>
+                      <option value="partial">Partially Paid / Deposit</option>
+                      <option value="fully_paid">Fully Paid</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] text-stone-400 uppercase tracking-wider block mb-1.5">Amount Received / Paid Online</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">{activeCalc.sym}</span>
+                      <input
+                        type="number" min="0" step="10"
+                        value={amountPaid}
+                        onChange={e => setAmountPaid(e.target.value)}
+                        disabled={paymentStatus === 'unpaid'}
+                        placeholder="0"
+                        className={`${inp} pl-7 disabled:opacity-50`}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-stone-900/60 rounded-xl border border-white/5 px-4 py-3 flex items-center justify-between">
+                  <span className="text-xs font-semibold text-stone-400 uppercase tracking-wider">Balance Due</span>
+                  <span className={`font-mono font-bold text-sm ${balanceDue > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                    {activeCalc.sym}{Math.round(balanceDue).toLocaleString()}
+                  </span>
+                </div>
+
+                {balanceDue > 0 && (
+                  <div>
+                    <label className="text-[10px] text-stone-400 uppercase tracking-wider block mb-1.5">Balance Due Collection Method</label>
+                    <select value={balanceMethod} onChange={e => setBalanceMethod(e.target.value)} className={inp}>
+                      <option value="cash_on_arrival">Cash on Arrival</option>
+                      <option value="card_on_arrival">Card on Arrival</option>
+                      <option value="bank_transfer">Bank Transfer</option>
+                    </select>
+                    {balanceMethod === 'cash_on_arrival' && (
+                      <p className="text-[10px] text-amber-500/80 mt-1.5">
+                        The guide/coordinator will see a cash-collection reminder on the Staff/Field voucher for this amount.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

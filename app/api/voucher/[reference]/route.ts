@@ -11,10 +11,21 @@ type Access = 'admin' | 'client' | 'ops'
 
 // Pricing/payment fields never reach a viewer who isn't a verified admin or
 // the itinerary's own client — including anonymous guide/driver links, and
-// anyone who edits the URL trying to request the client view.
+// anyone who edits the URL trying to request the client view. The one
+// exception is a minimal cash-collection reminder for the guide/driver —
+// just the amount and method, never the itemized breakdown that produced it.
 function stripFinancials(itinerary: Record<string, any>) {
   const { pricing, payment_link, ...rest } = itinerary
-  return rest
+
+  const collection_note =
+    pricing?.balance_collection_method === 'cash_on_arrival' && Number(pricing?.balance_due) > 0
+      ? {
+          amount: pricing.balance_due,
+          sym: pricing.is_saarc ? '₹' : '$',
+        }
+      : null
+
+  return { ...rest, collection_note }
 }
 
 async function resolveAccess(req: NextRequest, itinerary: Record<string, any>): Promise<Access> {

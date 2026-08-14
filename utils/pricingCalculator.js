@@ -276,3 +276,11 @@ export function computePricingV2({
     totalPax, adultsNum: base.adults, c611Num: base.c611, infantsNum: base.infants,
   }
 }
+
+// ── Payment tracking ──────────────────────────────────────────
+// Split payments / deposits — schema-agnostic, works the same regardless
+// of whether the itinerary's cost was computed with v1 or v2 pricing.
+// Never negative: an over-recorded payment just means nothing is owed.
+export function computeBalanceDue(grandTotal, amountPaid) {
+  return Math.max(0, (Number(grandTotal) || 0) - (Number(amountPaid) || 0))
+}
