@@ -13,7 +13,10 @@ import Link from 'next/link'
 import { supabase } from '@/utils/supabase/client'
 import AdminTravelDocuments from '@/components/AdminTravelDocuments'
 import AdminBookingGuests from '@/components/AdminBookingGuests'
-import { computePricingDetailed, SAARC_INDIA_SET } from '@/utils/pricingCalculator'
+import {
+  computePricingDetailed, SAARC_INDIA_SET, DEFAULT_GST_APPLICABLE,
+  computePricingV2, DEFAULT_GST_APPLICABLE_V2,
+} from '@/utils/pricingCalculator'
 import {
   getSectors, getAirlinesForSector, getFlightsForSector, findFlight,
   parseSector, daysLabel, ALL_AIRLINES, AIRPORTS, SCHEDULE_EFFECTIVE,
@@ -200,6 +203,13 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
     (itinerary.tour_summary?.travel_interests || []).map(ti => ({ ...ti }))
   )
 
+  // Pricing schema is decided once, at creation, and stored on the record —
+  // it never changes on save. This is what guarantees existing/confirmed
+  // vouchers keep rendering with their original v1 structure forever, while
+  // anything created after this feature shipped (schema: 'v2') gets the new
+  // itemized breakdown below.
+  const isV2Pricing = itinerary.pricing?.schema === 'v2'
+
   // ── Pricing state (itemized) ───────────────────────────────
   const [adultPax,    setAdultPax]    = useState(itinerary.pricing?.adult_pax    ?? (Number(itinerary.tour_summary?.group_size) || 1))
   const [child611Pax, setChild611Pax] = useState(itinerary.pricing?.child_611_pax ?? 0)
@@ -214,6 +224,72 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
   const [wireTransfer,      setWireTransfer]      = useState(itinerary.pricing?.wire_transfer        ?? '')
   const [inrRate,           setInrRate]           = useState(itinerary.pricing?.inr_rate             ?? 83.5)
   const [paymentLink,       setPaymentLink]       = useState(itinerary.payment_link                  ?? '')
+
+  // Editable display names for the 5 fixed cost categories — the underlying
+  // rate basis (per pax/night, per pax, flat) can't change, but admin can
+  // relabel what the client sees, e.g. "Service" → "Guide & Vehicle Fee".
+  const [serviceLabel,   setServiceLabel]   = useState(itinerary.pricing?.service_label   || 'Service (Guide / Vehicle / Meals)')
+  const [entranceLabel,  setEntranceLabel]  = useState(itinerary.pricing?.entrance_label  || 'Entrance Fees')
+  const [specialsLabel,  setSpecialsLabel]  = useState(itinerary.pricing?.specials_label  || 'Special Experiences & Meals')
+  const [flightLabel,    setFlightLabel]    = useState(itinerary.pricing?.flight_label    || 'International Flights')
+  const [wireLabel,      setWireLabel]      = useState(itinerary.pricing?.wire_label      || 'Wire / Bank Transfer Fee')
+
+  // Per-category GST toggle — defaults match historical behaviour (service only taxed).
+  const [gstApplicable, setGstApplicable] = useState({
+    ...DEFAULT_GST_APPLICABLE, ...(itinerary.pricing?.gst_applicable || {}),
+  })
+  function toggleGst(key) {
+    setGstApplicable(prev => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  // Ad-hoc extra cost line items — for anything that doesn't fit the fixed
+  // categories above (e.g. a permit fee, a rental, a one-off charge).
+  const [extraCosts, setExtraCosts] = useState(
+    (itinerary.pricing?.extra_costs || []).map(c => ({
+      label: c.label || '', amount: c.amount ?? '', perPax: !!c.perPax, gstApplicable: !!c.gstApplicable,
+    }))
+  )
+  function addExtraCost() {
+    setExtraCosts(prev => [...prev, { label: '', amount: '', perPax: true, gstApplicable: false }])
+  }
+  function updateExtraCost(idx, field, val) {
+    setExtraCosts(prev => prev.map((c, i) => i === idx ? { ...c, [field]: val } : c))
+  }
+  function removeExtraCost(idx) {
+    setExtraCosts(prev => prev.filter((_, i) => i !== idx))
+  }
+
+  // ── v2 pricing state (new-schema vouchers only) ─────────────
+  // Fully separate from the v1 state above — nothing here is read by v1
+  // rendering/save logic, so it can't affect existing/confirmed vouchers.
+  const [guideRate,       setGuideRate]       = useState(itinerary.pricing?.guide_rate       ?? '') // per day
+  const [guideLabel,      setGuideLabel]      = useState(itinerary.pricing?.guide_label      || 'Guide Charge')
+  const [vehicleRate,     setVehicleRate]     = useState(itinerary.pricing?.vehicle_rate     ?? '') // per day
+  const [vehicleLabel,    setVehicleLabel]    = useState(itinerary.pricing?.vehicle_label    || 'Vehicle & Transportation')
+  const [serviceFeeAmount, setServiceFeeAmount] = useState(itinerary.pricing?.service_fee_amount ?? '') // flat
+  const [serviceFeeLabel,  setServiceFeeLabel]  = useState(itinerary.pricing?.service_fee_label  || 'Service Charge / Agency Fee')
+  const [mealsAmount,     setMealsAmount]     = useState(itinerary.pricing?.meals_amount     ?? '') // flat
+  const [mealsLabel,      setMealsLabel]      = useState(itinerary.pricing?.meals_label      || 'Meals')
+  const [hotelRoomRate,   setHotelRoomRate]   = useState(itinerary.pricing?.hotel_room_rate  ?? '') // per room/night
+  const [hotelRooms,      setHotelRooms]      = useState(itinerary.pricing?.hotel_rooms      ?? 1)
+  const [hotelLabel,      setHotelLabel]      = useState(itinerary.pricing?.hotel_label      || 'Hotel / Accommodation')
+
+  const [entranceFeePerPaxV2, setEntranceFeePerPaxV2] = useState(itinerary.pricing?.entrance_fee_per_pax ?? '')
+  const [entranceLabelV2,     setEntranceLabelV2]     = useState(itinerary.pricing?.entrance_label || 'Entrance & Monument Fees')
+  const [specialsPerPaxV2,    setSpecialsPerPaxV2]    = useState(itinerary.pricing?.specials_per_pax ?? '')
+  const [specialsLabelV2,     setSpecialsLabelV2]     = useState(itinerary.pricing?.specials_label || 'Special Experiences')
+
+  const [includeFlightsV2, setIncludeFlightsV2] = useState(itinerary.pricing?.include_flights ?? false)
+  const [flightPerPaxV2,   setFlightPerPaxV2]   = useState(itinerary.pricing?.flight_per_pax ?? '')
+  const [flightLabelV2,    setFlightLabelV2]    = useState(itinerary.pricing?.flight_label || 'International Flights')
+  const [flightDetails,    setFlightDetails]    = useState(itinerary.pricing?.flight_details || '')
+
+  const [gstApplicableV2, setGstApplicableV2] = useState({
+    ...DEFAULT_GST_APPLICABLE_V2, ...(itinerary.pricing?.gst_applicable || {}),
+  })
+  function toggleGstV2(key) {
+    setGstApplicableV2(prev => ({ ...prev, [key]: !prev[key] }))
+  }
 
   // SDF/visa manual overrides — e.g. a client who already paid these
   // themselves outside the package. Empty string = auto-calculated.
@@ -317,11 +393,37 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
       flightPerPax, includeFlights, wireTransfer,
       sdfOverride:  sdfOverrideOn  ? (sdfOverride  === '' ? 0 : Number(sdfOverride))  : null,
       visaOverride: visaOverrideOn ? (visaOverride === '' ? 0 : Number(visaOverride)) : null,
+      extraCosts,
+      gstApplicable,
     }),
     [primaryNationality, nights, adultPax, child611Pax, infantPax,
      serviceRate, entranceFeePerPax, specialsPerPax, flightPerPax, includeFlights, wireTransfer,
-     sdfOverrideOn, sdfOverride, visaOverrideOn, visaOverride]
+     sdfOverrideOn, sdfOverride, visaOverrideOn, visaOverride, extraCosts, gstApplicable]
   )
+
+  const calcV2 = useMemo(
+    () => computePricingV2({
+      nationality: primaryNationality,
+      nights,
+      adultPax, child611Pax, infantPax,
+      guideRate, vehicleRate, serviceFeeAmount, mealsAmount, hotelRoomRate, hotelRooms,
+      entranceFeePerPax: entranceFeePerPaxV2, specialsPerPax: specialsPerPaxV2,
+      includeFlights: includeFlightsV2, flightPerPax: flightPerPaxV2,
+      sdfOverride:  sdfOverrideOn  ? (sdfOverride  === '' ? 0 : Number(sdfOverride))  : null,
+      visaOverride: visaOverrideOn ? (visaOverride === '' ? 0 : Number(visaOverride)) : null,
+      extraCosts,
+      gstApplicable: gstApplicableV2,
+    }),
+    [primaryNationality, nights, adultPax, child611Pax, infantPax,
+     guideRate, vehicleRate, serviceFeeAmount, mealsAmount, hotelRoomRate, hotelRooms,
+     entranceFeePerPaxV2, specialsPerPaxV2, includeFlightsV2, flightPerPaxV2,
+     sdfOverrideOn, sdfOverride, visaOverrideOn, visaOverride, extraCosts, gstApplicableV2]
+  )
+
+  // Whichever schema applies to this itinerary — used for the parts of the
+  // Cost Summary that are identical in shape between v1 and v2 (SDF, visa,
+  // package cost, GST, grand total).
+  const activeCalc = isV2Pricing ? calcV2 : calc
 
   // ── flight helpers ─────────────────────────────────────────
   function addFlight() {
@@ -411,7 +513,57 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
     setSaving(true)
     setSaveErr('')
 
-    const pricingPayload = {
+    // Pricing payload shape depends on the itinerary's fixed schema (see
+    // isV2Pricing above). v1's shape is preserved byte-for-byte so
+    // existing/confirmed vouchers never see their saved structure change.
+    const pricingPayload = isV2Pricing ? {
+      // inputs
+      schema:                'v2',
+      adult_pax:              Number(adultPax)     || 0,
+      child_611_pax:          Number(child611Pax)  || 0,
+      infant_pax:             Number(infantPax)    || 0,
+      guide_rate:              Number(guideRate)              || 0,
+      guide_label:             guideLabel.trim()              || 'Guide Charge',
+      vehicle_rate:            Number(vehicleRate)            || 0,
+      vehicle_label:           vehicleLabel.trim()            || 'Vehicle & Transportation',
+      service_fee_amount:      Number(serviceFeeAmount)       || 0,
+      service_fee_label:       serviceFeeLabel.trim()         || 'Service Charge / Agency Fee',
+      meals_amount:            Number(mealsAmount)            || 0,
+      meals_label:             mealsLabel.trim()              || 'Meals',
+      hotel_room_rate:         Number(hotelRoomRate)          || 0,
+      hotel_rooms:             Number(hotelRooms)             || 0,
+      hotel_label:             hotelLabel.trim()               || 'Hotel / Accommodation',
+      entrance_fee_per_pax:    Number(entranceFeePerPaxV2)    || 0,
+      entrance_label:          entranceLabelV2.trim()         || 'Entrance & Monument Fees',
+      specials_per_pax:        Number(specialsPerPaxV2)       || 0,
+      specials_label:          specialsLabelV2.trim()         || 'Special Experiences',
+      include_flights:         includeFlightsV2,
+      flight_per_pax:          Number(flightPerPaxV2)         || 0,
+      flight_label:            flightLabelV2.trim()           || 'International Flights',
+      flight_details:          flightDetails.trim(),
+      inr_rate:                Number(inrRate)                || 83.5,
+      extra_costs:             calcV2.extrasBreakdown,
+      sdf_override:            sdfOverrideOn  ? (Number(sdfOverride)  || 0) : null,
+      visa_override:           visaOverrideOn ? (Number(visaOverride) || 0) : null,
+      gst_applicable:          gstApplicableV2,
+      // computed
+      is_saarc:                calcV2.isSaarc,
+      currency:                calcV2.currency,
+      sdf_total:               calcV2.sdfTotal,
+      visa_total:              calcV2.visaTotal,
+      guide_total:             calcV2.guideTotal,
+      vehicle_total:           calcV2.vehicleTotal,
+      service_fee_total:       calcV2.serviceFeeTotal,
+      meals_total:             calcV2.mealsTotal,
+      hotel_total:             calcV2.hotelTotal,
+      entrance_total:          calcV2.entrTotal,
+      specials_total:          calcV2.specTotal,
+      flights_total:           calcV2.fltTotal,
+      gst:                     calcV2.gst,
+      package_cost:            calcV2.pkgCost,
+      grand_total:             calcV2.grandTotal,
+      equivalent_inr:          !calcV2.isSaarc ? calcV2.grandTotal * (Number(inrRate) || 83.5) : 0,
+    } : {
       // inputs
       adult_pax:            Number(adultPax)          || 0,
       child_611_pax:        Number(child611Pax)        || 0,
@@ -423,8 +575,15 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
       include_flights:      includeFlights,
       wire_transfer:        Number(wireTransfer)       || 0,
       inr_rate:             Number(inrRate)            || 83.5,
+      extra_costs:          calc.extrasBreakdown,
       sdf_override:         sdfOverrideOn  ? (Number(sdfOverride)  || 0) : null,
       visa_override:        visaOverrideOn ? (Number(visaOverride) || 0) : null,
+      service_label:        serviceLabel.trim()  || 'Service (Guide / Vehicle / Meals)',
+      entrance_label:       entranceLabel.trim() || 'Entrance Fees',
+      specials_label:       specialsLabel.trim() || 'Special Experiences & Meals',
+      flight_label:         flightLabel.trim()   || 'International Flights',
+      wire_label:           wireLabel.trim()     || 'Wire / Bank Transfer Fee',
+      gst_applicable:       gstApplicable,
       // computed
       is_saarc:             calc.isSaarc,
       currency:             calc.currency,
@@ -1510,33 +1669,33 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
 
               {/* Rate type banner */}
               <div className={`rounded-xl p-3.5 border flex items-center justify-between gap-3 ${
-                calc.isSaarc ? 'bg-blue-500/10 border-blue-500/20' : 'bg-stone-800 border-white/10'
+                activeCalc.isSaarc ? 'bg-blue-500/10 border-blue-500/20' : 'bg-stone-800 border-white/10'
               }`}>
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-stone-500 mb-0.5">Rate Type — auto from Nationality</p>
-                  <p className={`text-sm font-bold ${calc.isSaarc ? 'text-blue-300' : 'text-stone-200'}`}>
-                    {calc.isSaarcIndia
+                  <p className={`text-sm font-bold ${activeCalc.isSaarc ? 'text-blue-300' : 'text-stone-200'}`}>
+                    {activeCalc.isSaarcIndia
                       ? 'India — Entry Permit · INR / Nu.'
-                      : calc.isSaarcBdMv
+                      : activeCalc.isSaarcBdMv
                       ? 'Bangladesh / Maldives — Visa on Arrival · INR / Nu.'
                       : primaryNationality
                       ? `${primaryNationality} — International · USD ($)`
                       : 'Set Nationality in Client tab'}
                   </p>
                   <p className="text-[11px] text-stone-500 mt-0.5">
-                    {calc.isSaarcIndia
+                    {activeCalc.isSaarcIndia
                       ? 'SDF: ₹1,200/adult/night · ₹600/child(6–11)/night · Infants free · No visa fee'
-                      : calc.isSaarcBdMv
+                      : activeCalc.isSaarcBdMv
                       ? 'SDF: ₹1,200/person/night · No advance visa fee'
                       : 'SDF: $100/person/night · Visa: $40/person'}
                   </p>
                 </div>
                 <div className={`shrink-0 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1.5 rounded-lg border ${
-                  calc.isSaarc
+                  activeCalc.isSaarc
                     ? 'bg-blue-500/15 text-blue-400 border-blue-500/30'
                     : 'bg-stone-700 text-stone-400 border-white/10'
                 }`}>
-                  {calc.isSaarc ? 'INR' : 'USD'}
+                  {activeCalc.isSaarc ? 'INR' : 'USD'}
                 </div>
               </div>
 
@@ -1551,22 +1710,22 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
                   </div>
                   <div>
                     <label className="text-[10px] text-stone-500 block mb-1">
-                      {calc.isSaarcIndia ? 'Children 6–11 (₹600)' : 'Children 6–11'}
+                      {activeCalc.isSaarcIndia ? 'Children 6–11 (₹600)' : 'Children 6–11'}
                     </label>
                     <input type="number" min="0" value={child611Pax}
                       onChange={e => setChild611Pax(e.target.value)} className={inp} />
                   </div>
                   <div>
                     <label className="text-[10px] text-stone-500 block mb-1">
-                      {calc.isSaarcIndia ? 'Infants ≤5 (free)' : 'Infants / ≤5'}
+                      {activeCalc.isSaarcIndia ? 'Infants ≤5 (free)' : 'Infants / ≤5'}
                     </label>
                     <input type="number" min="0" value={infantPax}
                       onChange={e => setInfantPax(e.target.value)} className={inp} />
                   </div>
                 </div>
                 <p className="text-[10px] text-stone-600 mt-2">
-                  Total: {calc.totalPax} pax · {nights} nights
-                  {calc.isSaarcIndia && calc.infantsNum > 0 ? ` · ${calc.infantsNum} infant(s) exempt from SDF` : ''}
+                  Total: {activeCalc.totalPax} pax · {nights} nights
+                  {activeCalc.isSaarcIndia && activeCalc.infantsNum > 0 ? ` · ${activeCalc.infantsNum} infant(s) exempt from SDF` : ''}
                 </p>
               </div>
 
@@ -1574,11 +1733,13 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
               <div className="space-y-2">
                 <p className={lbl}>Itemized Costs</p>
 
+                {!isV2Pricing && (
+                <>
                 {/* Service Rate */}
                 <div className="bg-stone-800/60 rounded-xl border border-white/5 p-3">
-                  <label className="text-[10px] text-stone-400 uppercase tracking-wider block mb-1.5">
-                    Service (Guide / Vehicle / Meals) — per pax / night
-                  </label>
+                  <input type="text" value={serviceLabel} onChange={e => setServiceLabel(e.target.value)}
+                    className="w-full bg-transparent text-[10px] text-stone-400 uppercase tracking-wider mb-1.5 focus:outline-none focus:text-stone-200 border-b border-transparent focus:border-white/10 pb-0.5" />
+                  <p className="text-[9px] text-stone-600 mb-1.5">Per pax / night</p>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">{calc.sym}</span>
                     <input type="number" min="0" step="100" value={serviceRate}
@@ -1590,12 +1751,18 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
                       {calc.sym}{Number(serviceRate).toLocaleString()} × {calc.adultsNum + calc.c611Num} pax × {nights} nights = {calc.sym}{calc.svcTotal.toLocaleString()}
                     </p>
                   )}
-                  <p className="text-[10px] text-amber-600/70 mt-0.5">GST (5%) applies to this amount only</p>
+                  <label className="flex items-center gap-1.5 text-[10px] text-amber-600/70 mt-1.5 cursor-pointer">
+                    <input type="checkbox" checked={gstApplicable.service} onChange={() => toggleGst('service')}
+                      className="rounded accent-amber-500 w-3 h-3 cursor-pointer" />
+                    GST (5%) applies to this amount
+                  </label>
                 </div>
 
                 {/* Entrance Fees */}
                 <div className="bg-stone-800/60 rounded-xl border border-white/5 p-3">
-                  <label className="text-[10px] text-stone-400 uppercase tracking-wider block mb-1.5">Entrance Fees — per pax</label>
+                  <input type="text" value={entranceLabel} onChange={e => setEntranceLabel(e.target.value)}
+                    className="w-full bg-transparent text-[10px] text-stone-400 uppercase tracking-wider mb-1.5 focus:outline-none focus:text-stone-200 border-b border-transparent focus:border-white/10 pb-0.5" />
+                  <p className="text-[9px] text-stone-600 mb-1.5">Per pax</p>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">{calc.sym}</span>
                     <input type="number" min="0" step="100" value={entranceFeePerPax}
@@ -1607,11 +1774,18 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
                       {calc.sym}{Number(entranceFeePerPax).toLocaleString()} × {calc.totalPax} pax = {calc.sym}{calc.entrTotal.toLocaleString()}
                     </p>
                   )}
+                  <label className="flex items-center gap-1.5 text-[10px] text-amber-600/70 mt-1.5 cursor-pointer">
+                    <input type="checkbox" checked={gstApplicable.entrance} onChange={() => toggleGst('entrance')}
+                      className="rounded accent-amber-500 w-3 h-3 cursor-pointer" />
+                    GST (5%) applies to this amount
+                  </label>
                 </div>
 
                 {/* Special Experiences */}
                 <div className="bg-stone-800/60 rounded-xl border border-white/5 p-3">
-                  <label className="text-[10px] text-stone-400 uppercase tracking-wider block mb-1.5">Special Experiences &amp; Meals — per pax</label>
+                  <input type="text" value={specialsLabel} onChange={e => setSpecialsLabel(e.target.value)}
+                    className="w-full bg-transparent text-[10px] text-stone-400 uppercase tracking-wider mb-1.5 focus:outline-none focus:text-stone-200 border-b border-transparent focus:border-white/10 pb-0.5" />
+                  <p className="text-[9px] text-stone-600 mb-1.5">Per pax</p>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">{calc.sym}</span>
                     <input type="number" min="0" step="100" value={specialsPerPax}
@@ -1623,6 +1797,11 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
                       {calc.sym}{Number(specialsPerPax).toLocaleString()} × {calc.totalPax} pax = {calc.sym}{calc.specTotal.toLocaleString()}
                     </p>
                   )}
+                  <label className="flex items-center gap-1.5 text-[10px] text-amber-600/70 mt-1.5 cursor-pointer">
+                    <input type="checkbox" checked={gstApplicable.specials} onChange={() => toggleGst('specials')}
+                      className="rounded accent-amber-500 w-3 h-3 cursor-pointer" />
+                    GST (5%) applies to this amount
+                  </label>
                 </div>
 
                 {/* Flights */}
@@ -1630,13 +1809,13 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
                   <div className="flex items-center gap-2 mb-2">
                     <input type="checkbox" id="incl-flights" checked={includeFlights}
                       onChange={e => setIncludeFlights(e.target.checked)}
-                      className="rounded accent-amber-500 w-3.5 h-3.5 cursor-pointer" />
-                    <label htmlFor="incl-flights" className="text-[10px] text-stone-400 uppercase tracking-wider cursor-pointer">
-                      Include Flights in Package — per pax
-                    </label>
+                      className="rounded accent-amber-500 w-3.5 h-3.5 cursor-pointer shrink-0" />
+                    <input type="text" value={flightLabel} onChange={e => setFlightLabel(e.target.value)}
+                      className="flex-1 bg-transparent text-[10px] text-stone-400 uppercase tracking-wider focus:outline-none focus:text-stone-200 border-b border-transparent focus:border-white/10 pb-0.5" />
                   </div>
                   {includeFlights && (
                     <>
+                      <p className="text-[9px] text-stone-600 mb-1.5">Per pax</p>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">{calc.sym}</span>
                         <input type="number" min="0" step="100" value={flightPerPax}
@@ -1648,20 +1827,270 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
                           {calc.sym}{Number(flightPerPax).toLocaleString()} × {calc.totalPax} pax = {calc.sym}{calc.fltTotal.toLocaleString()}
                         </p>
                       )}
+                      <label className="flex items-center gap-1.5 text-[10px] text-amber-600/70 mt-1.5 cursor-pointer">
+                        <input type="checkbox" checked={gstApplicable.flights} onChange={() => toggleGst('flights')}
+                          className="rounded accent-amber-500 w-3 h-3 cursor-pointer" />
+                        GST (5%) applies to this amount
+                      </label>
                     </>
                   )}
                 </div>
 
                 {/* Wire Transfer */}
                 <div className="bg-stone-800/60 rounded-xl border border-white/5 p-3">
-                  <label className="text-[10px] text-stone-400 uppercase tracking-wider block mb-1.5">Wire / Bank Transfer Fee (flat)</label>
+                  <input type="text" value={wireLabel} onChange={e => setWireLabel(e.target.value)}
+                    className="w-full bg-transparent text-[10px] text-stone-400 uppercase tracking-wider mb-1.5 focus:outline-none focus:text-stone-200 border-b border-transparent focus:border-white/10 pb-0.5" />
+                  <p className="text-[9px] text-stone-600 mb-1.5">Flat fee</p>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">{calc.sym}</span>
                     <input type="number" min="0" step="10" value={wireTransfer}
                       onChange={e => setWireTransfer(e.target.value)}
                       placeholder="0" className={`${inp} pl-7`} />
                   </div>
+                  <label className="flex items-center gap-1.5 text-[10px] text-amber-600/70 mt-1.5 cursor-pointer">
+                    <input type="checkbox" checked={gstApplicable.wire} onChange={() => toggleGst('wire')}
+                      className="rounded accent-amber-500 w-3 h-3 cursor-pointer" />
+                    GST (5%) applies to this amount
+                  </label>
                 </div>
+                </>
+                )}
+
+                {isV2Pricing && (
+                <>
+                {/* Guide & Vehicle — per day (rate × days, where days = nights + 1) */}
+                {[
+                  { label: guideLabel,   setLabel: setGuideLabel,   rate: guideRate,   setRate: setGuideRate,   total: calcV2.guideTotal,   gstKey: 'guide' },
+                  { label: vehicleLabel, setLabel: setVehicleLabel, rate: vehicleRate, setRate: setVehicleRate, total: calcV2.vehicleTotal, gstKey: 'vehicle' },
+                ].map((f, i) => (
+                  <div key={i} className="bg-stone-800/60 rounded-xl border border-white/5 p-3">
+                    <input type="text" value={f.label} onChange={e => f.setLabel(e.target.value)}
+                      className="w-full bg-transparent text-[10px] text-stone-400 uppercase tracking-wider mb-1.5 focus:outline-none focus:text-stone-200 border-b border-transparent focus:border-white/10 pb-0.5" />
+                    <p className="text-[9px] text-stone-600 mb-1.5">Per day</p>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">{calcV2.sym}</span>
+                      <input type="number" min="0" step="100" value={f.rate}
+                        onChange={e => f.setRate(e.target.value)}
+                        placeholder="0" className={`${inp} pl-7`} />
+                    </div>
+                    {f.rate > 0 && (
+                      <p className="text-[10px] text-stone-500 mt-1.5">
+                        {calcV2.sym}{Number(f.rate).toLocaleString()} × {calcV2.days} days = {calcV2.sym}{f.total.toLocaleString()}
+                      </p>
+                    )}
+                    <label className="flex items-center gap-1.5 text-[10px] text-amber-600/70 mt-1.5 cursor-pointer">
+                      <input type="checkbox" checked={gstApplicableV2[f.gstKey]} onChange={() => toggleGstV2(f.gstKey)}
+                        className="rounded accent-amber-500 w-3 h-3 cursor-pointer" />
+                      GST (5%) applies to this amount
+                    </label>
+                  </div>
+                ))}
+
+                {/* Service Charge / Agency Fee — flat lump sum */}
+                <div className="bg-stone-800/60 rounded-xl border border-white/5 p-3">
+                  <input type="text" value={serviceFeeLabel} onChange={e => setServiceFeeLabel(e.target.value)}
+                    className="w-full bg-transparent text-[10px] text-stone-400 uppercase tracking-wider mb-1.5 focus:outline-none focus:text-stone-200 border-b border-transparent focus:border-white/10 pb-0.5" />
+                  <p className="text-[9px] text-stone-600 mb-1.5">Flat total</p>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">{calcV2.sym}</span>
+                    <input type="number" min="0" step="10" value={serviceFeeAmount}
+                      onChange={e => setServiceFeeAmount(e.target.value)}
+                      placeholder="0" className={`${inp} pl-7`} />
+                  </div>
+                  <label className="flex items-center gap-1.5 text-[10px] text-amber-600/70 mt-1.5 cursor-pointer">
+                    <input type="checkbox" checked={gstApplicableV2.serviceFee} onChange={() => toggleGstV2('serviceFee')}
+                      className="rounded accent-amber-500 w-3 h-3 cursor-pointer" />
+                    GST (5%) applies to this amount
+                  </label>
+                </div>
+
+                {/* Meals — direct/flat total for all meals */}
+                <div className="bg-stone-800/60 rounded-xl border border-white/5 p-3">
+                  <input type="text" value={mealsLabel} onChange={e => setMealsLabel(e.target.value)}
+                    className="w-full bg-transparent text-[10px] text-stone-400 uppercase tracking-wider mb-1.5 focus:outline-none focus:text-stone-200 border-b border-transparent focus:border-white/10 pb-0.5" />
+                  <p className="text-[9px] text-stone-600 mb-1.5">Total direct amount</p>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">{calcV2.sym}</span>
+                    <input type="number" min="0" step="10" value={mealsAmount}
+                      onChange={e => setMealsAmount(e.target.value)}
+                      placeholder="0" className={`${inp} pl-7`} />
+                  </div>
+                  <label className="flex items-center gap-1.5 text-[10px] text-amber-600/70 mt-1.5 cursor-pointer">
+                    <input type="checkbox" checked={gstApplicableV2.meals} onChange={() => toggleGstV2('meals')}
+                      className="rounded accent-amber-500 w-3 h-3 cursor-pointer" />
+                    GST (5%) applies to this amount
+                  </label>
+                </div>
+
+                {/* Hotel / Accommodation — per room / night */}
+                <div className="bg-stone-800/60 rounded-xl border border-white/5 p-3">
+                  <input type="text" value={hotelLabel} onChange={e => setHotelLabel(e.target.value)}
+                    className="w-full bg-transparent text-[10px] text-stone-400 uppercase tracking-wider mb-1.5 focus:outline-none focus:text-stone-200 border-b border-transparent focus:border-white/10 pb-0.5" />
+                  <p className="text-[9px] text-stone-600 mb-1.5">Per room / night</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[9px] text-stone-600 block mb-1">Rooms</label>
+                      <input type="number" min="0" step="1" value={hotelRooms}
+                        onChange={e => setHotelRooms(e.target.value)}
+                        placeholder="1" className={inp} />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-stone-600 block mb-1">Rate / room / night</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">{calcV2.sym}</span>
+                        <input type="number" min="0" step="10" value={hotelRoomRate}
+                          onChange={e => setHotelRoomRate(e.target.value)}
+                          placeholder="0" className={`${inp} pl-7`} />
+                      </div>
+                    </div>
+                  </div>
+                  {hotelRoomRate > 0 && (
+                    <p className="text-[10px] text-stone-500 mt-1.5">
+                      {calcV2.sym}{Number(hotelRoomRate).toLocaleString()} × {calcV2.rooms} room{calcV2.rooms === 1 ? '' : 's'} × {nights} nights = {calcV2.sym}{calcV2.hotelTotal.toLocaleString()}
+                    </p>
+                  )}
+                  <label className="flex items-center gap-1.5 text-[10px] text-amber-600/70 mt-1.5 cursor-pointer">
+                    <input type="checkbox" checked={gstApplicableV2.hotel} onChange={() => toggleGstV2('hotel')}
+                      className="rounded accent-amber-500 w-3 h-3 cursor-pointer" />
+                    GST (5%) applies to this amount
+                  </label>
+                </div>
+
+                {/* Entrance & Monument Fees */}
+                <div className="bg-stone-800/60 rounded-xl border border-white/5 p-3">
+                  <input type="text" value={entranceLabelV2} onChange={e => setEntranceLabelV2(e.target.value)}
+                    className="w-full bg-transparent text-[10px] text-stone-400 uppercase tracking-wider mb-1.5 focus:outline-none focus:text-stone-200 border-b border-transparent focus:border-white/10 pb-0.5" />
+                  <p className="text-[9px] text-stone-600 mb-1.5">Per pax</p>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">{calcV2.sym}</span>
+                    <input type="number" min="0" step="100" value={entranceFeePerPaxV2}
+                      onChange={e => setEntranceFeePerPaxV2(e.target.value)}
+                      placeholder="0" className={`${inp} pl-7`} />
+                  </div>
+                  {entranceFeePerPaxV2 > 0 && (
+                    <p className="text-[10px] text-stone-500 mt-1.5">
+                      {calcV2.sym}{Number(entranceFeePerPaxV2).toLocaleString()} × {calcV2.totalPax} pax = {calcV2.sym}{calcV2.entrTotal.toLocaleString()}
+                    </p>
+                  )}
+                  <label className="flex items-center gap-1.5 text-[10px] text-amber-600/70 mt-1.5 cursor-pointer">
+                    <input type="checkbox" checked={gstApplicableV2.entrance} onChange={() => toggleGstV2('entrance')}
+                      className="rounded accent-amber-500 w-3 h-3 cursor-pointer" />
+                    GST (5%) applies to this amount
+                  </label>
+                </div>
+
+                {/* Special Experiences */}
+                <div className="bg-stone-800/60 rounded-xl border border-white/5 p-3">
+                  <input type="text" value={specialsLabelV2} onChange={e => setSpecialsLabelV2(e.target.value)}
+                    className="w-full bg-transparent text-[10px] text-stone-400 uppercase tracking-wider mb-1.5 focus:outline-none focus:text-stone-200 border-b border-transparent focus:border-white/10 pb-0.5" />
+                  <p className="text-[9px] text-stone-600 mb-1.5">Per pax</p>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">{calcV2.sym}</span>
+                    <input type="number" min="0" step="100" value={specialsPerPaxV2}
+                      onChange={e => setSpecialsPerPaxV2(e.target.value)}
+                      placeholder="0" className={`${inp} pl-7`} />
+                  </div>
+                  {specialsPerPaxV2 > 0 && (
+                    <p className="text-[10px] text-stone-500 mt-1.5">
+                      {calcV2.sym}{Number(specialsPerPaxV2).toLocaleString()} × {calcV2.totalPax} pax = {calcV2.sym}{calcV2.specTotal.toLocaleString()}
+                    </p>
+                  )}
+                  <label className="flex items-center gap-1.5 text-[10px] text-amber-600/70 mt-1.5 cursor-pointer">
+                    <input type="checkbox" checked={gstApplicableV2.specials} onChange={() => toggleGstV2('specials')}
+                      className="rounded accent-amber-500 w-3 h-3 cursor-pointer" />
+                    GST (5%) applies to this amount
+                  </label>
+                </div>
+
+                {/* International Flights */}
+                <div className="bg-stone-800/60 rounded-xl border border-white/5 p-3">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <input type="text" value={flightLabelV2} onChange={e => setFlightLabelV2(e.target.value)}
+                      className="flex-1 bg-transparent text-[10px] text-stone-400 uppercase tracking-wider focus:outline-none focus:text-stone-200 border-b border-transparent focus:border-white/10 pb-0.5" />
+                    <button type="button" role="switch" aria-checked={includeFlightsV2}
+                      onClick={() => setIncludeFlightsV2(v => !v)}
+                      className={`relative shrink-0 w-9 h-5 rounded-full transition-colors ${includeFlightsV2 ? 'bg-amber-500' : 'bg-stone-700'}`}
+                    >
+                      <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${includeFlightsV2 ? 'translate-x-4' : ''}`} />
+                    </button>
+                  </div>
+                  {includeFlightsV2 && (
+                    <>
+                      <p className="text-[9px] text-stone-600 mb-1.5">Airfare — per pax</p>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">{calcV2.sym}</span>
+                        <input type="number" min="0" step="100" value={flightPerPaxV2}
+                          onChange={e => setFlightPerPaxV2(e.target.value)}
+                          placeholder="0" className={`${inp} pl-7`} />
+                      </div>
+                      {flightPerPaxV2 > 0 && (
+                        <p className="text-[10px] text-stone-500 mt-1.5">
+                          {calcV2.sym}{Number(flightPerPaxV2).toLocaleString()} × {calcV2.totalPax} pax = {calcV2.sym}{calcV2.fltTotal.toLocaleString()}
+                        </p>
+                      )}
+                      <label className="text-[10px] text-stone-400 uppercase tracking-wider block mt-2 mb-1">Flight Details</label>
+                      <textarea value={flightDetails} onChange={e => setFlightDetails(e.target.value)}
+                        rows={2} placeholder="e.g. Druk Air KB120 Bangkok–Paro, economy class, returning KB121"
+                        className={`${inp} resize-none`} />
+                      <label className="flex items-center gap-1.5 text-[10px] text-amber-600/70 mt-1.5 cursor-pointer">
+                        <input type="checkbox" checked={gstApplicableV2.flights} onChange={() => toggleGstV2('flights')}
+                          className="rounded accent-amber-500 w-3 h-3 cursor-pointer" />
+                        GST (5%) applies to this amount
+                      </label>
+                    </>
+                  )}
+                </div>
+                </>
+                )}
+
+                {/* Extra cost line items — freeform, admin add/remove */}
+                {extraCosts.map((c, idx) => (
+                  <div key={idx} className="bg-stone-800/60 rounded-xl border border-white/5 p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <input type="text" value={c.label}
+                        onChange={e => updateExtraCost(idx, 'label', e.target.value)}
+                        placeholder="e.g. Camera / photography permit"
+                        className={`${inp} flex-1`} />
+                      <button onClick={() => removeExtraCost(idx)}
+                        className="p-2 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors shrink-0">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">{activeCalc.sym}</span>
+                        <input type="number" min="0" step="10" value={c.amount}
+                          onChange={e => updateExtraCost(idx, 'amount', e.target.value)}
+                          placeholder="0" className={`${inp} pl-7`} />
+                      </div>
+                      <label className="flex items-center gap-1.5 text-[10px] text-stone-400 uppercase tracking-wider cursor-pointer shrink-0">
+                        <input type="checkbox" checked={c.perPax}
+                          onChange={e => updateExtraCost(idx, 'perPax', e.target.checked)}
+                          className="rounded accent-amber-500 w-3.5 h-3.5 cursor-pointer" />
+                        Per pax
+                      </label>
+                    </div>
+                    {Number(c.amount) > 0 && (
+                      <p className="text-[10px] text-stone-500 mt-1.5">
+                        {c.perPax
+                          ? `${activeCalc.sym}${Number(c.amount).toLocaleString()} × ${activeCalc.totalPax} pax = ${activeCalc.sym}${(Number(c.amount) * activeCalc.totalPax).toLocaleString()}`
+                          : `Flat fee = ${activeCalc.sym}${Number(c.amount).toLocaleString()}`}
+                      </p>
+                    )}
+                    <label className="flex items-center gap-1.5 text-[10px] text-amber-600/70 mt-1.5 cursor-pointer">
+                      <input type="checkbox" checked={c.gstApplicable}
+                        onChange={e => updateExtraCost(idx, 'gstApplicable', e.target.checked)}
+                        className="rounded accent-amber-500 w-3 h-3 cursor-pointer" />
+                      GST (5%) applies to this amount
+                    </label>
+                  </div>
+                ))}
+                <button
+                  onClick={addExtraCost}
+                  className="w-full py-2.5 rounded-xl border border-dashed border-white/20 text-stone-500 hover:text-stone-300 hover:border-white/40 text-xs font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add Extra Cost Line
+                </button>
               </div>
 
               {/* Client Payment Checkout — Bhutan Payments */}
@@ -1727,7 +2156,7 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
                     <span>SDF (manual override)</span>
                     <div className="flex items-center gap-2">
                       <div className="relative">
-                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-500 text-xs">{calc.sym}</span>
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-500 text-xs">{activeCalc.sym}</span>
                         <input
                           type="number"
                           value={sdfOverride}
@@ -1740,41 +2169,41 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
                         onClick={() => { setSdfOverrideOn(false); setSdfOverride('') }}
                         className="text-[11px] text-stone-500 hover:text-stone-300 underline whitespace-nowrap"
                       >
-                        Reset to auto ({calc.sym}{calc.sdfAuto.toLocaleString()})
+                        Reset to auto ({activeCalc.sym}{activeCalc.sdfAuto.toLocaleString()})
                       </button>
                     </div>
                   </div>
                 ) : (
                   <>
-                    {calc.isSaarcIndia ? (
+                    {activeCalc.isSaarcIndia ? (
                       <>
-                        {calc.adultsNum > 0 && (
+                        {activeCalc.adultsNum > 0 && (
                           <div className="flex justify-between text-stone-400 text-sm">
-                            <span>SDF ₹1,200 × {calc.adultsNum} adult{calc.adultsNum > 1 ? 's' : ''} × {nights} nights</span>
-                            <span className="font-mono text-stone-200">₹{calc.sdfAdult.toLocaleString()}</span>
+                            <span>SDF ₹1,200 × {activeCalc.adultsNum} adult{activeCalc.adultsNum > 1 ? 's' : ''} × {nights} nights</span>
+                            <span className="font-mono text-stone-200">₹{activeCalc.sdfAdult.toLocaleString()}</span>
                           </div>
                         )}
-                        {calc.c611Num > 0 && (
+                        {activeCalc.c611Num > 0 && (
                           <div className="flex justify-between text-stone-400 text-sm">
-                            <span>SDF ₹600 × {calc.c611Num} child(6–11) × {nights} nights</span>
-                            <span className="font-mono text-stone-200">₹{calc.sdfChild.toLocaleString()}</span>
+                            <span>SDF ₹600 × {activeCalc.c611Num} child(6–11) × {nights} nights</span>
+                            <span className="font-mono text-stone-200">₹{activeCalc.sdfChild.toLocaleString()}</span>
                           </div>
                         )}
-                        {calc.infantsNum > 0 && (
+                        {activeCalc.infantsNum > 0 && (
                           <div className="flex justify-between text-stone-400 text-sm">
-                            <span>SDF — {calc.infantsNum} infant(s) / ≤5</span>
+                            <span>SDF — {activeCalc.infantsNum} infant(s) / ≤5</span>
                             <span className="font-mono text-emerald-400 text-xs">Exempt</span>
                           </div>
                         )}
                       </>
                     ) : (
                       <div className="flex justify-between text-stone-400 text-sm">
-                        <span>SDF ({calc.isSaarc ? '₹1,200' : '$100'} × {calc.isSaarc ? calc.adultsNum + calc.c611Num : calc.totalPax} pax × {nights} nights)</span>
-                        <span className="font-mono text-stone-200">{calc.sym}{calc.sdfTotal.toLocaleString()}</span>
+                        <span>SDF ({activeCalc.isSaarc ? '₹1,200' : '$100'} × {activeCalc.isSaarc ? activeCalc.adultsNum + activeCalc.c611Num : activeCalc.totalPax} pax × {nights} nights)</span>
+                        <span className="font-mono text-stone-200">{activeCalc.sym}{activeCalc.sdfTotal.toLocaleString()}</span>
                       </div>
                     )}
                     <button
-                      onClick={() => { setSdfOverrideOn(true); setSdfOverride(String(calc.sdfAuto)) }}
+                      onClick={() => { setSdfOverrideOn(true); setSdfOverride(String(activeCalc.sdfAuto)) }}
                       className="text-[11px] text-amber-500/80 hover:text-amber-400 underline"
                     >
                       Client already paid SDF — override
@@ -1801,26 +2230,26 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
                         onClick={() => { setVisaOverrideOn(false); setVisaOverride('') }}
                         className="text-[11px] text-stone-500 hover:text-stone-300 underline whitespace-nowrap"
                       >
-                        Reset to auto (${calc.visaAuto.toLocaleString()})
+                        Reset to auto (${activeCalc.visaAuto.toLocaleString()})
                       </button>
                     </div>
                   </div>
                 ) : (
                   <>
-                    {calc.isSaarc ? (
+                    {activeCalc.isSaarc ? (
                       <div className="flex justify-between text-stone-400 text-sm">
-                        <span>{calc.isSaarcIndia ? 'Entry Permit (Visa)' : 'Visa on Arrival'}</span>
+                        <span>{activeCalc.isSaarcIndia ? 'Entry Permit (Visa)' : 'Visa on Arrival'}</span>
                         <span className="font-mono text-emerald-400 text-xs">Exempt</span>
                       </div>
-                    ) : calc.totalPax > 0 && (
+                    ) : activeCalc.totalPax > 0 && (
                       <div className="flex justify-between text-stone-400 text-sm">
-                        <span>Visa Processing ($40 × {calc.totalPax} pax)</span>
-                        <span className="font-mono text-stone-200">${calc.visaTotal.toLocaleString()}</span>
+                        <span>Visa Processing ($40 × {activeCalc.totalPax} pax)</span>
+                        <span className="font-mono text-stone-200">${activeCalc.visaTotal.toLocaleString()}</span>
                       </div>
                     )}
-                    {!calc.isSaarc && (
+                    {!activeCalc.isSaarc && (
                       <button
-                        onClick={() => { setVisaOverrideOn(true); setVisaOverride(String(calc.visaAuto)) }}
+                        onClick={() => { setVisaOverrideOn(true); setVisaOverride(String(activeCalc.visaAuto)) }}
                         className="text-[11px] text-amber-500/80 hover:text-amber-400 underline"
                       >
                         Client already paid visa — override
@@ -1829,10 +2258,12 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
                   </>
                 )}
 
+                {!isV2Pricing && (
+                <>
                 {/* Service */}
                 {calc.svcTotal > 0 && (
                   <div className="flex justify-between text-stone-400 text-sm">
-                    <span>Guide / Vehicle / Meals</span>
+                    <span>{serviceLabel}{gstApplicable.service && <span className="text-[9px] text-amber-500/80 ml-1">+GST</span>}</span>
                     <span className="font-mono text-stone-200">{calc.sym}{calc.svcTotal.toLocaleString()}</span>
                   </div>
                 )}
@@ -1840,7 +2271,7 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
                 {/* Entrance */}
                 {calc.entrTotal > 0 && (
                   <div className="flex justify-between text-stone-400 text-sm">
-                    <span>Entrance Fees</span>
+                    <span>{entranceLabel}{gstApplicable.entrance && <span className="text-[9px] text-amber-500/80 ml-1">+GST</span>}</span>
                     <span className="font-mono text-stone-200">{calc.sym}{calc.entrTotal.toLocaleString()}</span>
                   </div>
                 )}
@@ -1848,7 +2279,7 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
                 {/* Specials */}
                 {calc.specTotal > 0 && (
                   <div className="flex justify-between text-stone-400 text-sm">
-                    <span>Special Experiences &amp; Meals</span>
+                    <span>{specialsLabel}{gstApplicable.specials && <span className="text-[9px] text-amber-500/80 ml-1">+GST</span>}</span>
                     <span className="font-mono text-stone-200">{calc.sym}{calc.specTotal.toLocaleString()}</span>
                   </div>
                 )}
@@ -1856,7 +2287,7 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
                 {/* Flights */}
                 {includeFlights && calc.fltTotal > 0 && (
                   <div className="flex justify-between text-stone-400 text-sm">
-                    <span>International Flights</span>
+                    <span>{flightLabel}{gstApplicable.flights && <span className="text-[9px] text-amber-500/80 ml-1">+GST</span>}</span>
                     <span className="font-mono text-stone-200">{calc.sym}{calc.fltTotal.toLocaleString()}</span>
                   </div>
                 )}
@@ -1864,20 +2295,53 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
                 {/* Wire */}
                 {calc.wire > 0 && (
                   <div className="flex justify-between text-stone-400 text-sm">
-                    <span>Wire / Bank Transfer</span>
+                    <span>{wireLabel}{gstApplicable.wire && <span className="text-[9px] text-amber-500/80 ml-1">+GST</span>}</span>
                     <span className="font-mono text-stone-200">{calc.sym}{calc.wire.toLocaleString()}</span>
                   </div>
                 )}
+                </>
+                )}
+
+                {isV2Pricing && (
+                <>
+                {[
+                  { label: guideLabel,      total: calcV2.guideTotal,      taxed: gstApplicableV2.guide },
+                  { label: vehicleLabel,    total: calcV2.vehicleTotal,    taxed: gstApplicableV2.vehicle },
+                  { label: serviceFeeLabel, total: calcV2.serviceFeeTotal, taxed: gstApplicableV2.serviceFee },
+                  { label: mealsLabel,      total: calcV2.mealsTotal,      taxed: gstApplicableV2.meals },
+                  { label: hotelLabel,      total: calcV2.hotelTotal,      taxed: gstApplicableV2.hotel },
+                  { label: entranceLabelV2, total: calcV2.entrTotal,       taxed: gstApplicableV2.entrance },
+                  { label: specialsLabelV2, total: calcV2.specTotal,       taxed: gstApplicableV2.specials },
+                  ...(includeFlightsV2 ? [{ label: flightLabelV2, total: calcV2.fltTotal, taxed: gstApplicableV2.flights }] : []),
+                ].filter(f => f.total > 0).map((f, i) => (
+                  <div key={i} className="flex justify-between text-stone-400 text-sm">
+                    <span>{f.label}{f.taxed && <span className="text-[9px] text-amber-500/80 ml-1">+GST</span>}</span>
+                    <span className="font-mono text-stone-200">{calcV2.sym}{f.total.toLocaleString()}</span>
+                  </div>
+                ))}
+                {includeFlightsV2 && flightDetails.trim() && (
+                  <p className="text-[10px] text-stone-600 -mt-1.5">{flightDetails.trim()}</p>
+                )}
+                </>
+                )}
+
+                {/* Extra cost lines */}
+                {activeCalc.extrasBreakdown.filter(c => c.total > 0).map((c, i) => (
+                  <div key={i} className="flex justify-between text-stone-400 text-sm">
+                    <span>{c.label || 'Extra cost'}{c.gstApplicable && <span className="text-[9px] text-amber-500/80 ml-1">+GST</span>}</span>
+                    <span className="font-mono text-stone-200">{activeCalc.sym}{c.total.toLocaleString()}</span>
+                  </div>
+                ))}
 
                 <div className="border-t border-white/10 pt-3 flex justify-between text-white font-semibold text-sm">
                   <span>Package Cost</span>
-                  <span className="font-mono">{calc.sym}{Math.round(calc.pkgCost).toLocaleString()}</span>
+                  <span className="font-mono">{activeCalc.sym}{Math.round(activeCalc.pkgCost).toLocaleString()}</span>
                 </div>
 
-                {calc.gst > 0 && (
+                {activeCalc.gst > 0 && (
                   <div className="flex justify-between text-stone-400 text-sm">
-                    <span>GST (5%) — on service charge only</span>
-                    <span className="font-mono text-stone-200">{calc.sym}{Math.round(calc.gst).toLocaleString()}</span>
+                    <span>GST (5%)</span>
+                    <span className="font-mono text-stone-200">{activeCalc.sym}{Math.round(activeCalc.gst).toLocaleString()}</span>
                   </div>
                 )}
 
@@ -1887,15 +2351,15 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
                   <div className="flex items-center justify-between px-4 py-3.5">
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600/70">Grand Total</p>
-                      <p className="text-white text-sm font-bold mt-0.5">{calc.currency} · All inclusive</p>
+                      <p className="text-white text-sm font-bold mt-0.5">{activeCalc.currency} · All inclusive</p>
                     </div>
                     <p className="font-black text-2xl tracking-tight"
                       style={{ color: '#F59E0B', fontFamily: 'monospace', textShadow: '0 0 24px rgba(245,158,11,0.6)' }}>
-                      {calc.sym}{Math.round(calc.grandTotal).toLocaleString()}
+                      {activeCalc.sym}{Math.round(activeCalc.grandTotal).toLocaleString()}
                     </p>
                   </div>
                   {/* Show INR equivalent for USD bookings */}
-                  {!calc.isSaarc && (
+                  {!activeCalc.isSaarc && (
                     <div className="border-t border-amber-900/40 px-4 py-2 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-1.5">
                         <span className="text-[10px] text-amber-700/60 whitespace-nowrap">INR Rate ₹</span>
@@ -1906,13 +2370,13 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
                         />
                       </div>
                       <span className="font-mono text-amber-600 text-xs font-semibold">
-                        ₹{(calc.grandTotal * (Number(inrRate) || 83.5)).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                        ₹{(activeCalc.grandTotal * (Number(inrRate) || 83.5)).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                       </span>
                     </div>
                   )}
                 </div>
               </div>
-              <p className="text-xs text-stone-600">Nights ({nights}) synced from Tour tab. GST applies only to service/guide/meals charge.</p>
+              <p className="text-xs text-stone-600">Nights ({nights}) synced from Tour tab. GST (5%) applies per-line — toggle it on whichever items are taxable.</p>
             </div>
           )}
 
@@ -2086,14 +2550,33 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
 
           <div className="flex-1" />
 
-          <Link
-            href={`/itinerary/${itinerary.booking_reference}`}
-            target="_blank"
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-blue-500/30 text-blue-400 hover:bg-blue-500/10 text-sm font-semibold transition-colors"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-            View Voucher
-          </Link>
+          <details className="relative list-none marker:content-none [&::-webkit-details-marker]:hidden">
+            <summary
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-blue-500/30 text-blue-400 hover:bg-blue-500/10 text-sm font-semibold transition-colors cursor-pointer"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              View Voucher
+              <ChevronDown className="w-3.5 h-3.5" />
+            </summary>
+            <div className="absolute bottom-full mb-2 right-0 w-60 bg-stone-900 border border-white/10 rounded-xl shadow-xl overflow-hidden z-10">
+              <Link
+                href={`/itinerary/${itinerary.booking_reference}`}
+                target="_blank"
+                className="block px-4 py-2.5 hover:bg-white/5 transition-colors"
+              >
+                <span className="block text-sm font-semibold text-stone-100">Client Copy</span>
+                <span className="block text-[10px] text-stone-500">Full pricing &amp; payment details</span>
+              </Link>
+              <Link
+                href={`/itinerary/${itinerary.booking_reference}?view=ops`}
+                target="_blank"
+                className="block px-4 py-2.5 hover:bg-white/5 transition-colors border-t border-white/5"
+              >
+                <span className="block text-sm font-semibold text-stone-100">Operations Copy</span>
+                <span className="block text-[10px] text-stone-500">For guide &amp; driver — no pricing shown</span>
+              </Link>
+            </div>
+          </details>
 
           <button
             onClick={() => handleSave(itinerary.status)}
@@ -2106,7 +2589,7 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
 
           <button
             onClick={() => handleSave('quoted')}
-            disabled={saving || calc.grandTotal === 0}
+            disabled={saving || activeCalc.grandTotal === 0}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white text-sm font-semibold transition-colors"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
@@ -2171,7 +2654,7 @@ function NewVoucherModal({ onClose, onCreated }) {
         },
         flights:    [],
         day_by_day: chosenTour ? buildDayByDayFromTour(chosenTour) : [],
-        pricing:    {},
+        pricing:    { schema: 'v2' },
       })
       .select()
       .single()

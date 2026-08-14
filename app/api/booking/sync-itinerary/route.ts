@@ -81,15 +81,7 @@ export async function POST(req: NextRequest) {
       },
       flights,
       day_by_day,
-      pricing: {
-        package_rate_per_pax: 0,
-        sdf_total:            0,
-        service_fee:          0,
-        subtotal:             0,
-        gst:                  0,
-        grand_total:          0,
-        equivalent_inr:       0,
-      },
+      pricing: { schema: 'v2' },
     })
 
     if (error) {

@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useSearchParams } from 'next/navigation'
+import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { Loader2, AlertCircle, Download, ArrowLeft, Settings, CreditCard, MapPin } from 'lucide-react'
+import { Loader2, AlertCircle, Download, ArrowLeft, Settings, CreditCard, MapPin, Users, Briefcase } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/utils/supabase/client'
 import { generateVoucherPDF } from '@/utils/pdfGenerator'
@@ -86,26 +86,50 @@ const STATUS_CFG = {
 // ── Main page ─────────────────────────────────────────────────
 export default function ItineraryVoucherPage() {
   const { reference }            = useParams()
+  const router                   = useRouter()
   const searchParams             = useSearchParams()
   const isAdminView              = searchParams.get('admin') === '1'
+  const requestedView            = searchParams.get('view')
+  function voucherUrl(view) {
+    const params = new URLSearchParams()
+    if (isAdminView) params.set('admin', '1')
+    if (view === 'ops') params.set('view', 'ops')
+    const qs = params.toString()
+    return `/itinerary/${reference}${qs ? `?${qs}` : ''}`
+  }
   const [it, setIt]              = useState(null)
+  // Server-verified access tier for THIS viewer — 'admin' | 'client' | 'ops'.
+  // Determines both whether pricing is even present in `it` (the API route
+  // strips it server-side for anyone who isn't the owning client or an
+  // admin) and whether the Client/Staff toggle is shown at all. Never
+  // derived from the URL directly — the `?view=` param only expresses a
+  // preference the API route is free to downgrade.
+  const [access, setAccess]      = useState('ops')
+  const isOpsView                = access === 'ops'
+  const isRealAdmin              = access === 'admin'
   const [loading, setLoading]    = useState(true)
   const [error, setError]        = useState('')
   const [pdfLoading, setPdfLoading] = useState(false)
 
   useEffect(() => {
     async function fetch() {
-      const { data, error: err } = await supabase
-        .from('itineraries')
-        .select('*')
-        .eq('booking_reference', reference)
-        .single()
-      if (err || !data) setError('Itinerary not found. Please check your booking reference.')
-      else setIt(data)
+      setLoading(true)
+      const { data: { session } } = await supabase.auth.getSession()
+      const qs = requestedView === 'ops' ? '?view=ops' : ''
+      const res = await window.fetch(`/api/voucher/${reference}${qs}`, {
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+      })
+      const body = await res.json().catch(() => null)
+      if (!res.ok || !body?.itinerary) {
+        setError('Itinerary not found. Please check your booking reference.')
+      } else {
+        setIt(body.itinerary)
+        setAccess(body.access)
+      }
       setLoading(false)
     }
     if (reference) fetch()
-  }, [reference])
+  }, [reference, requestedView])
 
   // Browser print (Ctrl+P / Save as PDF) must always output the light voucher
   useEffect(() => {
@@ -188,35 +212,71 @@ export default function ItineraryVoucherPage() {
           ) : (
             <a href="/client/dashboard" className="text-xs text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors">← Back to dashboard</a>
           )}
-          {/* PDF export only available once the itinerary carries a confirmed price — an
-              enquiry/under-review voucher has no bank details or cost breakdown to export. */}
+          {/* Voucher Type + PDF export — only once the itinerary carries a confirmed
+              price; an enquiry/under-review voucher has no cost breakdown to toggle.
+              The Client/Staff toggle itself is admin-only (server-verified via
+              `access`, not the spoofable `?admin=1` nav flag) — a client or a
+              guide/driver with the ops link just sees whichever copy they were sent. */}
           {showPricing && (
-            <button
-              onClick={async () => {
-                setPdfLoading(true)
-                const wasDark = stripDarkTheme()
-                // one settle frame so html2canvas captures the light styles
-                await new Promise(r => setTimeout(r, 60))
-                try {
-                  await generateVoucherPDF('voucher-doc', `Arise-Bhutan-${it.booking_reference}.pdf`)
-                } catch (e) {
-                  console.error('PDF error:', e)
-                } finally {
-                  restoreDarkTheme(wasDark)
-                  setPdfLoading(false)
+            <div className="flex items-center gap-2.5">
+              {isRealAdmin && (
+                <div className="flex items-center bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl p-1 shadow-sm">
+                  <button
+                    onClick={() => router.push(voucherUrl('client'))}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                      !isOpsView ? 'bg-amber-600 text-white shadow-sm' : 'text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200'
+                    }`}
+                  >
+                    <Users className="w-3.5 h-3.5" /> Client Voucher
+                  </button>
+                  <button
+                    onClick={() => router.push(voucherUrl('ops'))}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                      isOpsView ? 'bg-amber-600 text-white shadow-sm' : 'text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200'
+                    }`}
+                  >
+                    <Briefcase className="w-3.5 h-3.5" /> Staff / Field Voucher
+                  </button>
+                </div>
+              )}
+              <button
+                onClick={async () => {
+                  setPdfLoading(true)
+                  const wasDark = stripDarkTheme()
+                  // one settle frame so html2canvas captures the light styles
+                  await new Promise(r => setTimeout(r, 60))
+                  try {
+                    const suffix = isOpsView ? 'Ops-Copy' : 'Client-Copy'
+                    await generateVoucherPDF('voucher-doc', `Arise-Bhutan-${it.booking_reference}-${suffix}.pdf`)
+                  } catch (e) {
+                    console.error('PDF error:', e)
+                  } finally {
+                    restoreDarkTheme(wasDark)
+                    setPdfLoading(false)
+                  }
+                }}
+                disabled={pdfLoading}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold transition-all shadow-lg disabled:opacity-70"
+                style={{ background: 'linear-gradient(135deg, #D97706, #B45309)' }}
+              >
+                {pdfLoading
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
+                  : <><Download className="w-4 h-4" /> Download PDF</>
                 }
-              }}
-              disabled={pdfLoading}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold transition-all shadow-lg disabled:opacity-70"
-              style={{ background: 'linear-gradient(135deg, #D97706, #B45309)' }}
-            >
-              {pdfLoading
-                ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
-                : <><Download className="w-4 h-4" /> Download PDF</>
-              }
-            </button>
+              </button>
+            </div>
           )}
         </div>
+
+        {/* Staff/Field copy banner — visible on-screen, in print, and in the PDF export */}
+        {showPricing && isOpsView && (
+          <div className="max-w-[900px] mx-auto mb-4 flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10">
+            <Briefcase className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0" />
+            <p className="text-xs text-amber-800 dark:text-amber-300">
+              <strong>Staff / Field Copy</strong> — operational details only. Pricing, taxes, and payment information are not shown on this version.
+            </p>
+          </div>
+        )}
 
         {/* ── Voucher document ─────────────────────────────────── */}
         <div className="max-w-[900px] mx-auto bg-white dark:bg-stone-900 shadow-2xl print:shadow-none" id="voucher-doc">
@@ -498,7 +558,7 @@ export default function ItineraryVoucherPage() {
                       <tr className="text-white text-[10px] uppercase tracking-wider" style={{ background: 'linear-gradient(90deg, #92400E, #D97706)' }}>
                         <th className="px-3 py-2.5 text-left font-semibold">Experience</th>
                         <th className="px-3 py-2.5 text-left font-semibold w-32">Category</th>
-                        <th className="px-3 py-2.5 text-right font-semibold w-40">Price Indication</th>
+                        {!isOpsView && <th className="px-3 py-2.5 text-right font-semibold w-40">Price Indication</th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -517,20 +577,24 @@ export default function ItineraryVoucherPage() {
                                 {ti.category || '—'}
                               </span>
                             </td>
-                            <td className="px-3 py-2.5 text-right border border-stone-100 dark:border-stone-700/60">
-                              <span className={`font-bold text-[11px] ${isFree ? 'text-green-600 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}`}>
-                                {ti.price_label || ti.priceLabel || '—'}
-                              </span>
-                            </td>
+                            {!isOpsView && (
+                              <td className="px-3 py-2.5 text-right border border-stone-100 dark:border-stone-700/60">
+                                <span className={`font-bold text-[11px] ${isFree ? 'text-green-600 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}`}>
+                                  {ti.price_label || ti.priceLabel || '—'}
+                                </span>
+                              </td>
+                            )}
                           </tr>
                         )
                       })}
                     </tbody>
                   </table>
                 </div>
-                <p className="text-[9px] text-stone-400 dark:text-stone-500 mt-1.5 italic">
-                  * Prices are indicative — your Arise Bhutan specialist will confirm exact costs and incorporate these experiences into your itinerary.
-                </p>
+                {!isOpsView && (
+                  <p className="text-[9px] text-stone-400 dark:text-stone-500 mt-1.5 italic">
+                    * Prices are indicative — your Arise Bhutan specialist will confirm exact costs and incorporate these experiences into your itinerary.
+                  </p>
+                )}
               </div>
             )}
 
@@ -568,8 +632,8 @@ export default function ItineraryVoucherPage() {
               </div>
             )}
 
-            {/* ── COST BREAKDOWN ── */}
-            {showPricing && px.grand_total > 0 && (
+            {/* ── COST BREAKDOWN ── (hidden entirely on the Staff/Field copy) */}
+            {showPricing && !isOpsView && px.grand_total > 0 && (
               <div className="page-break-avoid">
                 <SectionHead>Package Cost &amp; Pricing Summary</SectionHead>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mt-3">
@@ -622,11 +686,15 @@ export default function ItineraryVoucherPage() {
                           </tr>
                         )}
 
+                        {/* v1 / legacy pricing schema — unchanged, still renders exactly as before for every
+                            existing/confirmed voucher. New vouchers (px.schema === 'v2') use the block below. */}
+                        {px.schema !== 'v2' && (
+                        <>
                         {/* Service */}
                         {isNewPricingFormat && px.service_total > 0 && (
                           <tr className="bg-white dark:bg-stone-900">
                             <td className="px-4 py-2.5 text-stone-700 dark:text-stone-300">
-                              Guide, Vehicle, Meals &amp; Service
+                              {px.service_label || 'Guide, Vehicle, Meals & Service'}
                               <p className="text-[9px] text-stone-400 dark:text-stone-500">{currSym}{fmtMoney(px.service_rate, 0)}/pax/night × {nights} nights</p>
                             </td>
                             <td className="px-4 py-2.5 text-right font-semibold text-stone-800 dark:text-stone-100">
@@ -648,7 +716,7 @@ export default function ItineraryVoucherPage() {
                         {/* Entrance Fees */}
                         {px.entrance_total > 0 && (
                           <tr className="bg-stone-50 dark:bg-stone-800/50">
-                            <td className="px-4 py-2.5 text-stone-700 dark:text-stone-300">Entrance Fees</td>
+                            <td className="px-4 py-2.5 text-stone-700 dark:text-stone-300">{px.entrance_label || 'Entrance Fees'}</td>
                             <td className="px-4 py-2.5 text-right font-semibold text-stone-800 dark:text-stone-100">
                               {currSym}{fmtMoney(px.entrance_total, 0)}
                             </td>
@@ -658,7 +726,7 @@ export default function ItineraryVoucherPage() {
                         {/* Special Experiences */}
                         {px.specials_total > 0 && (
                           <tr className="bg-white dark:bg-stone-900">
-                            <td className="px-4 py-2.5 text-stone-700 dark:text-stone-300">Signature Experiences &amp; Special Meals</td>
+                            <td className="px-4 py-2.5 text-stone-700 dark:text-stone-300">{px.specials_label || 'Signature Experiences & Special Meals'}</td>
                             <td className="px-4 py-2.5 text-right font-semibold text-stone-800 dark:text-stone-100">
                               {currSym}{fmtMoney(px.specials_total, 0)}
                             </td>
@@ -668,7 +736,7 @@ export default function ItineraryVoucherPage() {
                         {/* Flights */}
                         {px.flights_total > 0 && (
                           <tr className="bg-stone-50 dark:bg-stone-800/50">
-                            <td className="px-4 py-2.5 text-stone-700 dark:text-stone-300">International Flights</td>
+                            <td className="px-4 py-2.5 text-stone-700 dark:text-stone-300">{px.flight_label || 'International Flights'}</td>
                             <td className="px-4 py-2.5 text-right font-semibold text-stone-800 dark:text-stone-100">
                               {currSym}{fmtMoney(px.flights_total, 0)}
                             </td>
@@ -678,12 +746,54 @@ export default function ItineraryVoucherPage() {
                         {/* Wire transfer */}
                         {px.wire_transfer > 0 && (
                           <tr className="bg-white dark:bg-stone-900">
-                            <td className="px-4 py-2.5 text-stone-700 dark:text-stone-300">Wire / Bank Transfer Fee</td>
+                            <td className="px-4 py-2.5 text-stone-700 dark:text-stone-300">{px.wire_label || 'Wire / Bank Transfer Fee'}</td>
                             <td className="px-4 py-2.5 text-right font-semibold text-stone-800 dark:text-stone-100">
                               {currSym}{fmtMoney(px.wire_transfer, 0)}
                             </td>
                           </tr>
                         )}
+                        </>
+                        )}
+
+                        {/* v2 pricing schema — new vouchers only */}
+                        {px.schema === 'v2' && (
+                        <>
+                          {[
+                            { label: px.guide_label       || 'Guide Charge',                 total: px.guide_total },
+                            { label: px.vehicle_label     || 'Vehicle & Transportation',      total: px.vehicle_total },
+                            { label: px.service_fee_label || 'Service Charge / Agency Fee',    total: px.service_fee_total },
+                            { label: px.meals_label       || 'Meals',                          total: px.meals_total },
+                            { label: px.hotel_label       || 'Hotel / Accommodation',          total: px.hotel_total },
+                            { label: px.entrance_label    || 'Entrance & Monument Fees',        total: px.entrance_total },
+                            { label: px.specials_label    || 'Special Experiences',             total: px.specials_total },
+                            { label: px.flight_label      || 'International Flights',           total: px.flights_total },
+                          ].filter(f => f.total > 0).map((f, i) => (
+                            <tr key={i} className={i % 2 === 0 ? 'bg-white dark:bg-stone-900' : 'bg-stone-50 dark:bg-stone-800/50'}>
+                              <td className="px-4 py-2.5 text-stone-700 dark:text-stone-300">{f.label}</td>
+                              <td className="px-4 py-2.5 text-right font-semibold text-stone-800 dark:text-stone-100">
+                                {currSym}{fmtMoney(f.total, 0)}
+                              </td>
+                            </tr>
+                          ))}
+                          {px.flights_total > 0 && px.flight_details && (
+                            <tr className="bg-white dark:bg-stone-900">
+                              <td colSpan={2} className="px-4 py-2 text-[9px] text-stone-400 dark:text-stone-500 italic">
+                                {px.flight_details}
+                              </td>
+                            </tr>
+                          )}
+                        </>
+                        )}
+
+                        {/* Extra cost lines */}
+                        {(px.extra_costs || []).filter(c => c.total > 0).map((c, i) => (
+                          <tr key={i} className={i % 2 === 0 ? 'bg-stone-50 dark:bg-stone-800/50' : 'bg-white dark:bg-stone-900'}>
+                            <td className="px-4 py-2.5 text-stone-700 dark:text-stone-300">{c.label || 'Extra Cost'}</td>
+                            <td className="px-4 py-2.5 text-right font-semibold text-stone-800 dark:text-stone-100">
+                              {currSym}{fmtMoney(c.total, 0)}
+                            </td>
+                          </tr>
+                        ))}
 
                         {/* Package Cost */}
                         <tr className="bg-amber-50 dark:bg-amber-500/10">
@@ -695,12 +805,12 @@ export default function ItineraryVoucherPage() {
                           </td>
                         </tr>
 
-                        {/* GST — only on service charge */}
+                        {/* GST */}
                         {px.gst > 0 && (
                           <tr className="bg-white dark:bg-stone-900">
                             <td className="px-4 py-2.5 text-stone-600 dark:text-stone-400">
                               GST (5%)
-                              <p className="text-[9px] text-stone-400 dark:text-stone-500">Applicable on service charge only</p>
+                              <p className="text-[9px] text-stone-400 dark:text-stone-500">Applicable on designated taxable items only</p>
                             </td>
                             <td className="px-4 py-2.5 text-right text-stone-700 dark:text-stone-300 font-semibold">
                               {currSym}{fmtMoney(px.gst, 0)}
@@ -762,7 +872,7 @@ export default function ItineraryVoucherPage() {
                                 ? 'Indian nationals: SDF ₹1,200/adult/night, ₹600/child(6–11)/night. Children ≤5 exempt.'
                                 : 'Regional rate applies: SDF ₹1,200/pax/night.')
                             : 'International SDF: $100/pax/night.',
-                          'GST (5%) applies on guide, vehicle & meals charge only.',
+                          'GST (5%) applies only to designated taxable items, itemized above.',
                           'Quote valid 14 days from issue date.',
                           'Group discounts available for 10+ pax.',
                         ].map((n, i) => (
@@ -779,8 +889,9 @@ export default function ItineraryVoucherPage() {
 
             {/* ── PAYMENT OPTIONS (Credit Card + Bank Transfer) ── */}
             {/* Only shown once the itinerary is Quoted or Confirmed — enquiries
-                and under-review itineraries have no confirmed price to pay against. */}
-            {showPricing && (
+                and under-review itineraries have no confirmed price to pay against.
+                Also hidden entirely on the Staff/Field copy. */}
+            {showPricing && !isOpsView && (
               <div className="page-break-avoid">
                 <SectionHead>Payment Options</SectionHead>
                 <div className="no-print mt-2">
@@ -935,7 +1046,8 @@ export default function ItineraryVoucherPage() {
               </div>
             </div>
 
-            {/* ── CANCELLATION POLICY ── */}
+            {/* ── CANCELLATION POLICY ── (financial terms — hidden on the Staff/Field copy) */}
+            {!isOpsView && (
             <div className="page-break-avoid">
               <SectionHead>Cancellation &amp; Refund Policy</SectionHead>
               <div className="overflow-x-auto mt-3">
@@ -960,6 +1072,7 @@ export default function ItineraryVoucherPage() {
                 Flight reschedules requested less than 72 hours before departure incur a USD $50 fee per change (waived for Business Class tickets). Force majeure events (natural disasters, civil unrest, airline cancellations) handled on a case-by-case basis. Travel insurance strongly recommended.
               </p>
             </div>
+            )}
 
             {/* ── ARISE BRAND FOOTER BLOCK ── */}
             <div className="rounded-2xl overflow-hidden page-break-avoid" style={{ background: 'linear-gradient(135deg, #1C1007, #2D1A08)' }}>

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { supabase } from '@/utils/supabase/client'
 import { MessageCircle, X, Send, ArrowRight, ExternalLink, Menu } from 'lucide-react'
 
 // ── FAQ Knowledge Base ───────────────────────────────────────────────────────
@@ -522,14 +521,17 @@ export default function ChatWidget() {
     await new Promise(r => setTimeout(r, 500 + Math.random() * 400))
 
     // ── Booking reference lookup ──────────────────────────────────────────
+    // Goes through the /api/voucher route (service-role, no direct table read)
+    // since anonymous visitors have no session and itineraries RLS no longer
+    // grants anon SELECT. The route already strips pricing for unauthenticated
+    // requests, which is fine here — this lookup only ever displays name/tour/status.
     const refMatch = trimmed.match(ARB_REGEX)
     if (refMatch) {
       const ref = refMatch[0].toUpperCase()
-      const { data: itin } = await supabase
-        .from('itineraries')
-        .select('id, booking_reference, client_info, tour_summary, status')
-        .eq('booking_reference', ref)
-        .maybeSingle()
+      const itin = await fetch(`/api/voucher/${ref}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(body => body?.itinerary || null)
+        .catch(() => null)
 
       setTyping(false)
 

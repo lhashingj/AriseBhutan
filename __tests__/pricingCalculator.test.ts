@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computePricingDetailed } from '@/utils/pricingCalculator'
+import { computePricingDetailed, computePricingV2 } from '@/utils/pricingCalculator'
 
 const base = {
   nationality: 'United States',
@@ -13,6 +13,24 @@ const base = {
   flightPerPax: 0,
   includeFlights: false,
   wireTransfer: 0,
+}
+
+const baseV2 = {
+  nationality: 'United States',
+  nights: 5,
+  adultPax: 2,
+  child611Pax: 0,
+  infantPax: 0,
+  guideRate: 50,          // per day
+  vehicleRate: 40,        // per day
+  serviceFeeAmount: 300,  // flat
+  mealsAmount: 200,       // flat
+  hotelRoomRate: 60,      // per room/night
+  hotelRooms: 2,
+  entranceFeePerPax: 50,
+  specialsPerPax: 0,
+  includeFlights: false,
+  flightPerPax: 0,
 }
 
 describe('computePricingDetailed — international (non-SAARC)', () => {
@@ -144,6 +162,205 @@ describe('computePricingDetailed — SDF/visa manual overrides', () => {
   it('folds overridden SDF/visa into pkgCost and grandTotal like the auto values would', () => {
     const r = computePricingDetailed({ ...base, sdfOverride: 500, visaOverride: 20 })
     expect(r.pkgCost).toBeCloseTo(500 + 20 + r.svcTotal + r.entrTotal + r.specTotal + r.fltTotal + r.wire)
+    expect(r.grandTotal).toBeCloseTo(r.pkgCost + r.gst)
+  })
+})
+
+describe('computePricingDetailed — ad-hoc extra cost lines', () => {
+  it('defaults to an empty breakdown and zero total when no extras are given', () => {
+    const r = computePricingDetailed(base)
+    expect(r.extrasBreakdown).toEqual([])
+    expect(r.extrasTotal).toBe(0)
+  })
+
+  it('multiplies per-pax extras by totalPax', () => {
+    const r = computePricingDetailed({
+      ...base, extraCosts: [{ label: 'Camera permit', amount: 15, perPax: true }],
+    })
+    expect(r.extrasBreakdown).toEqual([{ label: 'Camera permit', amount: 15, perPax: true, gstApplicable: false, total: 30 }]) // 15 * 2 pax
+    expect(r.extrasTotal).toBe(30)
+  })
+
+  it('keeps flat extras unaffected by pax count', () => {
+    const r = computePricingDetailed({
+      ...base, extraCosts: [{ label: 'Generator rental', amount: 75, perPax: false }],
+    })
+    expect(r.extrasBreakdown[0].total).toBe(75)
+    expect(r.extrasTotal).toBe(75)
+  })
+
+  it('sums multiple extra lines and folds the total into pkgCost/grandTotal without affecting GST', () => {
+    const r = computePricingDetailed({
+      ...base,
+      extraCosts: [
+        { label: 'Camera permit', amount: 15, perPax: true },  // 30
+        { label: 'Generator rental', amount: 75, perPax: false }, // 75
+      ],
+    })
+    expect(r.extrasTotal).toBe(105)
+    expect(r.pkgCost).toBeCloseTo(r.sdfTotal + r.visaTotal + r.svcTotal + r.entrTotal + r.specTotal + r.fltTotal + r.wire + 105)
+    expect(r.grandTotal).toBeCloseTo(r.pkgCost + r.gst)
+    expect(r.gst).toBeCloseTo(100) // unchanged — extras are not GST-taxable
+  })
+
+  it('treats a missing/blank amount as zero rather than throwing', () => {
+    const r = computePricingDetailed({
+      ...base, extraCosts: [{ label: 'TBC fee', amount: '', perPax: true }],
+    })
+    expect(r.extrasBreakdown[0].total).toBe(0)
+    expect(r.extrasTotal).toBe(0)
+  })
+})
+
+describe('computePricingDetailed — per-category GST toggles', () => {
+  it('defaults to taxing only the service line, matching historical behaviour', () => {
+    const r = computePricingDetailed({ ...base, entranceFeePerPax: 50 })
+    expect(r.gstFlags).toEqual({ service: true, entrance: false, specials: false, flights: false, wire: false })
+    expect(r.gst).toBeCloseTo(r.svcTotal * 0.05)
+  })
+
+  it('taxes an additional fixed category when its flag is enabled', () => {
+    const r = computePricingDetailed({
+      ...base, entranceFeePerPax: 50,
+      gstApplicable: { entrance: true },
+    })
+    // service (default true) + entrance (explicitly enabled) both taxed
+    expect(r.gst).toBeCloseTo((r.svcTotal + r.entrTotal) * 0.05)
+  })
+
+  it('can turn GST off entirely by disabling every category', () => {
+    const r = computePricingDetailed({
+      ...base,
+      gstApplicable: { service: false, entrance: false, specials: false, flights: false, wire: false },
+    })
+    expect(r.gst).toBe(0)
+  })
+
+  it('taxes an extra cost line only when that line opts in', () => {
+    const untaxed = computePricingDetailed({
+      ...base, extraCosts: [{ label: 'Permit', amount: 100, perPax: false, gstApplicable: false }],
+    })
+    const taxed = computePricingDetailed({
+      ...base, extraCosts: [{ label: 'Permit', amount: 100, perPax: false, gstApplicable: true }],
+    })
+    expect(taxed.gst).toBeCloseTo(untaxed.gst + 100 * 0.05)
+  })
+
+  it('folds the configured gst into pkgCost/grandTotal consistently', () => {
+    const r = computePricingDetailed({
+      ...base, wireTransfer: 50,
+      gstApplicable: { service: true, wire: true },
+    })
+    expect(r.pkgCost).toBeCloseTo(r.sdfTotal + r.visaTotal + r.svcTotal + r.entrTotal + r.specTotal + r.fltTotal + r.wire)
+    expect(r.gst).toBeCloseTo((r.svcTotal + r.wire) * 0.05)
+    expect(r.grandTotal).toBeCloseTo(r.pkgCost + r.gst)
+  })
+})
+
+describe('computePricingV2 — new voucher schema', () => {
+  it('computes SDF/visa identically to v1 for the same nationality/nights/pax', () => {
+    const v1 = computePricingDetailed(base)
+    const v2 = computePricingV2(baseV2)
+    expect(v2.sdfTotal).toBe(v1.sdfTotal)
+    expect(v2.visaTotal).toBe(v1.visaTotal)
+    expect(v2.sdfAuto).toBe(v1.sdfAuto)
+  })
+
+  it('treats "days" as nights + 1 (standard X days / Y nights convention)', () => {
+    const r = computePricingV2(baseV2) // 5 nights
+    expect(r.days).toBe(6)
+  })
+
+  it('charges Guide and Vehicle per day (rate × days), not per pax', () => {
+    const r = computePricingV2(baseV2) // days = 6
+    expect(r.guideTotal).toBe(50 * 6)   // 300 — unaffected by pax count
+    expect(r.vehicleTotal).toBe(40 * 6) // 240
+
+    const morePax = computePricingV2({ ...baseV2, adultPax: 10 })
+    expect(morePax.guideTotal).toBe(r.guideTotal)
+    expect(morePax.vehicleTotal).toBe(r.vehicleTotal)
+  })
+
+  it('charges Service Charge and Meals as flat lump sums, unaffected by pax or nights', () => {
+    const r = computePricingV2(baseV2)
+    expect(r.serviceFeeTotal).toBe(300)
+    expect(r.mealsTotal).toBe(200)
+
+    const bigger = computePricingV2({ ...baseV2, adultPax: 10, nights: 20 })
+    expect(bigger.serviceFeeTotal).toBe(300)
+    expect(bigger.mealsTotal).toBe(200)
+  })
+
+  it('charges Hotel per room/night (rate × rooms × nights)', () => {
+    const r = computePricingV2(baseV2) // 2 rooms, 5 nights, $60/room/night
+    expect(r.hotelTotal).toBe(60 * 2 * 5) // 600
+    expect(r.rooms).toBe(2)
+  })
+
+  it('defaults hotelRooms to 0 when not provided rather than throwing', () => {
+    const { hotelRooms, ...rest } = baseV2
+    const r = computePricingV2(rest)
+    expect(r.hotelTotal).toBe(0)
+    expect(r.rooms).toBe(0)
+  })
+
+  it('has no wire/bank-transfer concept at all', () => {
+    const r = computePricingV2(baseV2)
+    expect(r.wire).toBeUndefined()
+    expect(r.gstFlags.wire).toBeUndefined()
+  })
+
+  it('defaults to taxing only the Service Charge/Agency Fee line', () => {
+    const r = computePricingV2(baseV2)
+    expect(r.gstFlags).toEqual({
+      guide: false, vehicle: false, serviceFee: true, meals: false, hotel: false,
+      entrance: false, specials: false, flights: false,
+    })
+    expect(r.gst).toBeCloseTo(r.serviceFeeTotal * 0.05)
+  })
+
+  it('taxes any combination of the five split lines when enabled', () => {
+    const r = computePricingV2({
+      ...baseV2,
+      gstApplicable: { guide: true, hotel: true, serviceFee: false },
+    })
+    expect(r.gst).toBeCloseTo((r.guideTotal + r.hotelTotal) * 0.05)
+  })
+
+  it('includes flights only when includeFlights is true, same as v1', () => {
+    const without = computePricingV2({ ...baseV2, flightPerPax: 300 })
+    const withFlt = computePricingV2({ ...baseV2, flightPerPax: 300, includeFlights: true })
+    expect(without.fltTotal).toBe(0)
+    expect(withFlt.fltTotal).toBe(300 * 2)
+  })
+
+  it('supports the same SDF/visa manual overrides as v1', () => {
+    const r = computePricingV2({ ...baseV2, sdfOverride: 0, visaOverride: 20 })
+    expect(r.isSdfOverridden).toBe(true)
+    expect(r.sdfTotal).toBe(0)
+    expect(r.isVisaOverridden).toBe(true)
+    expect(r.visaTotal).toBe(20)
+    expect(r.sdfAuto).toBeGreaterThan(0) // auto value still visible for reference
+  })
+
+  it('supports ad-hoc extra cost lines with independent GST toggles, same as v1', () => {
+    const r = computePricingV2({
+      ...baseV2,
+      extraCosts: [
+        { label: 'Camera permit', amount: 15, perPax: true, gstApplicable: true },
+        { label: 'Generator rental', amount: 75, perPax: false, gstApplicable: false },
+      ],
+    })
+    expect(r.extrasTotal).toBe(15 * 2 + 75) // 105
+    expect(r.gst).toBeCloseTo((r.serviceFeeTotal + 30) * 0.05) // serviceFee (default taxed) + taxed camera permit line (15*2=30)
+  })
+
+  it('sums every line into pkgCost and adds GST for grandTotal, with no wire term', () => {
+    const r = computePricingV2(baseV2)
+    const expectedPkgCost = r.sdfTotal + r.visaTotal
+      + r.guideTotal + r.vehicleTotal + r.serviceFeeTotal + r.mealsTotal + r.hotelTotal
+      + r.entrTotal + r.specTotal + r.fltTotal
+    expect(r.pkgCost).toBeCloseTo(expectedPkgCost)
     expect(r.grandTotal).toBeCloseTo(r.pkgCost + r.gst)
   })
 })
