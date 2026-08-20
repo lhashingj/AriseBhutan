@@ -274,6 +274,11 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
   const [hotelRooms,      setHotelRooms]      = useState(itinerary.pricing?.hotel_rooms      ?? 1)
   const [hotelLabel,      setHotelLabel]      = useState(itinerary.pricing?.hotel_label      || 'Hotel / Accommodation')
 
+  // Manual overrides for the day/night counts that drive Guide/Vehicle (days)
+  // and Hotel (nights) — blank string = auto (days = nights+1, hotel nights = nights).
+  const [guideVehicleDays, setGuideVehicleDays] = useState(itinerary.pricing?.guide_vehicle_days ?? '')
+  const [hotelNightsOverride, setHotelNightsOverride] = useState(itinerary.pricing?.hotel_nights ?? '')
+
   const [entranceFeePerPaxV2, setEntranceFeePerPaxV2] = useState(itinerary.pricing?.entrance_fee_per_pax ?? '')
   const [entranceLabelV2,     setEntranceLabelV2]     = useState(itinerary.pricing?.entrance_label || 'Entrance & Monument Fees')
   const [specialsPerPaxV2,    setSpecialsPerPaxV2]    = useState(itinerary.pricing?.specials_per_pax ?? '')
@@ -420,11 +425,14 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
       visaOverride: visaOverrideOn ? (visaOverride === '' ? 0 : Number(visaOverride)) : null,
       extraCosts,
       gstApplicable: gstApplicableV2,
+      guideVehicleDays,
+      hotelNights: hotelNightsOverride,
     }),
     [primaryNationality, nights, adultPax, child611Pax, infantPax,
      guideRate, vehicleRate, serviceFeeAmount, mealsAmount, hotelRoomRate, hotelRooms,
      entranceFeePerPaxV2, specialsPerPaxV2, includeFlightsV2, flightPerPaxV2,
-     sdfOverrideOn, sdfOverride, visaOverrideOn, visaOverride, extraCosts, gstApplicableV2]
+     sdfOverrideOn, sdfOverride, visaOverrideOn, visaOverride, extraCosts, gstApplicableV2,
+     guideVehicleDays, hotelNightsOverride]
   )
 
   // Whichever schema applies to this itinerary — used for the parts of the
@@ -541,6 +549,8 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
       hotel_room_rate:         Number(hotelRoomRate)          || 0,
       hotel_rooms:             Number(hotelRooms)             || 0,
       hotel_label:             hotelLabel.trim()               || 'Hotel / Accommodation',
+      guide_vehicle_days:      guideVehicleDays === '' ? null : Number(guideVehicleDays),
+      hotel_nights:            hotelNightsOverride === '' ? null : Number(hotelNightsOverride),
       entrance_fee_per_pax:    Number(entranceFeePerPaxV2)    || 0,
       entrance_label:          entranceLabelV2.trim()         || 'Entrance & Monument Fees',
       specials_per_pax:        Number(specialsPerPaxV2)       || 0,
@@ -1876,7 +1886,32 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
 
                 {isV2Pricing && (
                 <>
-                {/* Guide & Vehicle — per day (rate × days, where days = nights + 1) */}
+                {/* Number of Days — shared by Guide & Vehicle below. Defaults to
+                    nights + 1 but can be overridden (e.g. driver leaves a day early). */}
+                <div className="bg-stone-800/60 rounded-xl border border-white/5 p-3">
+                  <label className="text-[10px] text-stone-400 uppercase tracking-wider block mb-1.5">
+                    Number of Days (Guide &amp; Vehicle)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input type="number" min="0" step="1"
+                      value={guideVehicleDays}
+                      onChange={e => setGuideVehicleDays(e.target.value)}
+                      placeholder={String(calcV2.daysAuto)}
+                      className={inp}
+                    />
+                    {calcV2.isDaysOverridden && (
+                      <button type="button" onClick={() => setGuideVehicleDays('')}
+                        className="text-[11px] text-stone-500 hover:text-stone-300 underline whitespace-nowrap shrink-0">
+                        Reset to auto ({calcV2.daysAuto})
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-stone-600 mt-1.5">
+                    Auto = Nights ({nights}) + 1 = {calcV2.daysAuto} days. Override if the guide/vehicle are engaged for a different number of days.
+                  </p>
+                </div>
+
+                {/* Guide & Vehicle — per day (rate × days, where days = nights + 1 unless overridden above) */}
                 {[
                   { label: guideLabel,   setLabel: setGuideLabel,   rate: guideRate,   setRate: setGuideRate,   total: calcV2.guideTotal,   gstKey: 'guide' },
                   { label: vehicleLabel, setLabel: setVehicleLabel, rate: vehicleRate, setRate: setVehicleRate, total: calcV2.vehicleTotal, gstKey: 'vehicle' },
@@ -1945,12 +1980,18 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
                   <input type="text" value={hotelLabel} onChange={e => setHotelLabel(e.target.value)}
                     className="w-full bg-transparent text-[10px] text-stone-400 uppercase tracking-wider mb-1.5 focus:outline-none focus:text-stone-200 border-b border-transparent focus:border-white/10 pb-0.5" />
                   <p className="text-[9px] text-stone-600 mb-1.5">Per room / night</p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     <div>
                       <label className="text-[9px] text-stone-600 block mb-1">Rooms</label>
                       <input type="number" min="0" step="1" value={hotelRooms}
                         onChange={e => setHotelRooms(e.target.value)}
                         placeholder="1" className={inp} />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-stone-600 block mb-1">Nights</label>
+                      <input type="number" min="0" step="1" value={hotelNightsOverride}
+                        onChange={e => setHotelNightsOverride(e.target.value)}
+                        placeholder={String(calcV2.nightsAuto)} className={inp} />
                     </div>
                     <div>
                       <label className="text-[9px] text-stone-600 block mb-1">Rate / room / night</label>
@@ -1962,9 +2003,15 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
                       </div>
                     </div>
                   </div>
+                  {calcV2.isNightsOverridden && (
+                    <button type="button" onClick={() => setHotelNightsOverride('')}
+                      className="text-[11px] text-stone-500 hover:text-stone-300 underline mt-1">
+                      Reset nights to auto ({calcV2.nightsAuto})
+                    </button>
+                  )}
                   {hotelRoomRate > 0 && (
                     <p className="text-[10px] text-stone-500 mt-1.5">
-                      {calcV2.sym}{Number(hotelRoomRate).toLocaleString()} × {calcV2.rooms} room{calcV2.rooms === 1 ? '' : 's'} × {nights} nights = {calcV2.sym}{calcV2.hotelTotal.toLocaleString()}
+                      {calcV2.sym}{Number(hotelRoomRate).toLocaleString()} × {calcV2.rooms} room{calcV2.rooms === 1 ? '' : 's'} × {calcV2.hotelNights} nights = {calcV2.sym}{calcV2.hotelTotal.toLocaleString()}
                     </p>
                   )}
                   <label className="flex items-center gap-1.5 text-[10px] text-amber-600/70 mt-1.5 cursor-pointer">

@@ -271,6 +271,43 @@ describe('computePricingV2 — new voucher schema', () => {
     expect(r.days).toBe(6)
   })
 
+  it('lets admin override guide/vehicle days independently of nights', () => {
+    const r = computePricingV2({ ...baseV2, guideVehicleDays: 9 })
+    expect(r.days).toBe(9)
+    expect(r.isDaysOverridden).toBe(true)
+    expect(r.daysAuto).toBe(6) // unchanged auto value, still visible for reference
+    expect(r.guideTotal).toBe(50 * 9)
+    expect(r.vehicleTotal).toBe(40 * 9)
+    // Hotel/SDF/visa are untouched by a guide/vehicle-only override
+    expect(r.hotelTotal).toBe(60 * 2 * 5)
+  })
+
+  it('lets admin override hotel nights independently of days', () => {
+    const r = computePricingV2({ ...baseV2, hotelNights: 3 })
+    expect(r.hotelNights).toBe(3)
+    expect(r.isNightsOverridden).toBe(true)
+    expect(r.nightsAuto).toBe(5)
+    expect(r.hotelTotal).toBe(60 * 2 * 3)
+    // Guide/vehicle days are untouched by a hotel-only override
+    expect(r.days).toBe(6)
+  })
+
+  it('supports both overrides at once, independently', () => {
+    const r = computePricingV2({ ...baseV2, guideVehicleDays: 9, hotelNights: 3 })
+    expect(r.days).toBe(9)
+    expect(r.hotelNights).toBe(3)
+    expect(r.guideTotal).toBe(50 * 9)
+    expect(r.hotelTotal).toBe(60 * 2 * 3)
+  })
+
+  it('treats a blank override string as "use auto", not zero', () => {
+    const r = computePricingV2({ ...baseV2, guideVehicleDays: '', hotelNights: '' })
+    expect(r.isDaysOverridden).toBe(false)
+    expect(r.isNightsOverridden).toBe(false)
+    expect(r.days).toBe(6)
+    expect(r.hotelNights).toBe(5)
+  })
+
   it('charges Guide and Vehicle per day (rate × days), not per pax', () => {
     const r = computePricingV2(baseV2) // days = 6
     expect(r.guideTotal).toBe(50 * 6)   // 300 — unaffected by pax count

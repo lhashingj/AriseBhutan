@@ -211,6 +211,8 @@ function computeSdfVisa({ nationality, nights, adultPax, child611Pax, infantPax,
  * @param {number|null} [params.visaOverride]
  * @param {Array<{label: string, amount: number, perPax: boolean, gstApplicable?: boolean}>} [params.extraCosts]
  * @param {{guide?: boolean, vehicle?: boolean, serviceFee?: boolean, meals?: boolean, hotel?: boolean, entrance?: boolean, specials?: boolean, flights?: boolean}} [params.gstApplicable]
+ * @param {number|null} [params.guideVehicleDays] - manual override for guide/vehicle day count; null/undefined = auto (nights + 1)
+ * @param {number|null} [params.hotelNights] - manual override for hotel night count; null/undefined = auto (nights)
  */
 export function computePricingV2({
   nationality, nights, adultPax, child611Pax, infantPax,
@@ -220,19 +222,28 @@ export function computePricingV2({
   sdfOverride = null, visaOverride = null,
   extraCosts = [],
   gstApplicable = DEFAULT_GST_APPLICABLE_V2,
+  guideVehicleDays = null,
+  hotelNights = null,
 }) {
   const base = computeSdfVisa({ nationality, nights, adultPax, child611Pax, infantPax, sdfOverride, visaOverride })
   const { n, totalPax, sdfTotal, visaTotal } = base
 
-  // "X days / Y nights" — guide & vehicle are engaged every day of the tour.
-  const days  = n + 1
+  // "X days / Y nights" — guide & vehicle are engaged every day of the tour by
+  // default. Admin can override either count independently (e.g. the driver
+  // leaves a day early, or the hotel stay runs longer than the tour itself).
+  const isDaysOverridden   = guideVehicleDays !== null && guideVehicleDays !== undefined && guideVehicleDays !== ''
+  const isNightsOverridden = hotelNights      !== null && hotelNights      !== undefined && hotelNights      !== ''
+  const daysAuto   = n + 1
+  const nightsAuto = n
+  const days        = isDaysOverridden   ? Math.max(0, Number(guideVehicleDays) || 0) : daysAuto
+  const hotelNightsResolved = isNightsOverridden ? Math.max(0, Number(hotelNights) || 0) : nightsAuto
   const rooms = Math.max(0, Number(hotelRooms) || 0)
 
   const guideTotal      = (Number(guideRate)        || 0) * days
   const vehicleTotal    = (Number(vehicleRate)      || 0) * days
   const serviceFeeTotal =  Number(serviceFeeAmount) || 0
   const mealsTotal      =  Number(mealsAmount)      || 0
-  const hotelTotal      = (Number(hotelRoomRate)    || 0) * rooms * n
+  const hotelTotal      = (Number(hotelRoomRate)    || 0) * rooms * hotelNightsResolved
 
   const entrTotal = (Number(entranceFeePerPax) || 0) * totalPax
   const specTotal = (Number(specialsPerPax)    || 0) * totalPax
@@ -268,7 +279,9 @@ export function computePricingV2({
     currency: base.currency, sym: base.sym,
     sdfAdult: base.sdfAdult, sdfChild: base.sdfChild, sdfTotal, sdfAuto: base.sdfAuto, isSdfOverridden: base.isSdfOverridden,
     visaPerPax: base.visaPerPax, visaTotal, visaAuto: base.visaAuto, isVisaOverridden: base.isVisaOverridden,
-    days, rooms,
+    days, daysAuto, isDaysOverridden,
+    hotelNights: hotelNightsResolved, nightsAuto, isNightsOverridden,
+    rooms,
     guideTotal, vehicleTotal, serviceFeeTotal, mealsTotal, hotelTotal,
     entrTotal, specTotal, fltTotal,
     extrasBreakdown, extrasTotal,
