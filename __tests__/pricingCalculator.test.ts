@@ -24,7 +24,8 @@ const baseV2 = {
   guideRate: 50,          // per day
   vehicleRate: 40,        // per day
   serviceFeeAmount: 300,  // flat
-  mealsAmount: 200,       // flat
+  mealsRate: 10,          // per meal, per pax
+  mealsCount: 10,         // 10 * 10 * 2 pax = 200
   hotelRoomRate: 60,      // per room/night
   hotelRooms: 2,
   entranceFeePerPax: 50,
@@ -318,14 +319,32 @@ describe('computePricingV2 — new voucher schema', () => {
     expect(morePax.vehicleTotal).toBe(r.vehicleTotal)
   })
 
-  it('charges Service Charge and Meals as flat lump sums, unaffected by pax or nights', () => {
+  it('charges Service Charge as a flat lump sum, unaffected by pax or nights', () => {
     const r = computePricingV2(baseV2)
     expect(r.serviceFeeTotal).toBe(300)
-    expect(r.mealsTotal).toBe(200)
 
     const bigger = computePricingV2({ ...baseV2, adultPax: 10, nights: 20 })
     expect(bigger.serviceFeeTotal).toBe(300)
-    expect(bigger.mealsTotal).toBe(200)
+  })
+
+  it('charges Meals as rate × number of meals × pax', () => {
+    const r = computePricingV2(baseV2) // $10/meal × 10 meals × 2 pax (auto)
+    expect(r.mealsTotal).toBe(10 * 10 * 2) // 200
+    expect(r.mealsPax).toBe(2)
+    expect(r.isMealsPaxOverridden).toBe(false)
+
+    const morePax = computePricingV2({ ...baseV2, adultPax: 10 })
+    expect(morePax.mealsPax).toBe(10)
+    expect(morePax.mealsTotal).toBe(10 * 10 * 10) // 1000
+  })
+
+  it('lets admin override the meals pax count independently of totalPax', () => {
+    const r = computePricingV2({ ...baseV2, mealsPax: 5 })
+    expect(r.isMealsPaxOverridden).toBe(true)
+    expect(r.mealsPax).toBe(5)
+    expect(r.mealsTotal).toBe(10 * 10 * 5) // 500
+    // totalPax itself (used elsewhere, e.g. entrance fees) is untouched
+    expect(r.totalPax).toBe(2)
   })
 
   it('charges Hotel per room/night (rate × rooms × nights)', () => {

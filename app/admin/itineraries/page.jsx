@@ -268,16 +268,19 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
   const [vehicleLabel,    setVehicleLabel]    = useState(itinerary.pricing?.vehicle_label    || 'Vehicle & Transportation')
   const [serviceFeeAmount, setServiceFeeAmount] = useState(itinerary.pricing?.service_fee_amount ?? '') // flat
   const [serviceFeeLabel,  setServiceFeeLabel]  = useState(itinerary.pricing?.service_fee_label  || 'Service Charge / Agency Fee')
-  const [mealsAmount,     setMealsAmount]     = useState(itinerary.pricing?.meals_amount     ?? '') // flat
+  const [mealsRate,       setMealsRate]       = useState(itinerary.pricing?.meals_rate       ?? '') // per meal, per pax
+  const [mealsCount,      setMealsCount]      = useState(itinerary.pricing?.meals_count      ?? '')
   const [mealsLabel,      setMealsLabel]      = useState(itinerary.pricing?.meals_label      || 'Meals')
   const [hotelRoomRate,   setHotelRoomRate]   = useState(itinerary.pricing?.hotel_room_rate  ?? '') // per room/night
   const [hotelRooms,      setHotelRooms]      = useState(itinerary.pricing?.hotel_rooms      ?? 1)
   const [hotelLabel,      setHotelLabel]      = useState(itinerary.pricing?.hotel_label      || 'Hotel / Accommodation')
 
-  // Manual overrides for the day/night counts that drive Guide/Vehicle (days)
-  // and Hotel (nights) — blank string = auto (days = nights+1, hotel nights = nights).
+  // Manual overrides for the day/night/pax counts that drive Guide/Vehicle
+  // (days), Hotel (nights) and Meals (pax) — blank string = auto
+  // (days = nights+1, hotel nights = nights, meals pax = total pax).
   const [guideVehicleDays, setGuideVehicleDays] = useState(itinerary.pricing?.guide_vehicle_days ?? '')
   const [hotelNightsOverride, setHotelNightsOverride] = useState(itinerary.pricing?.hotel_nights ?? '')
+  const [mealsPaxOverride, setMealsPaxOverride] = useState(itinerary.pricing?.meals_pax ?? '')
 
   const [entranceFeePerPaxV2, setEntranceFeePerPaxV2] = useState(itinerary.pricing?.entrance_fee_per_pax ?? '')
   const [entranceLabelV2,     setEntranceLabelV2]     = useState(itinerary.pricing?.entrance_label || 'Entrance & Monument Fees')
@@ -418,7 +421,7 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
       nationality: primaryNationality,
       nights,
       adultPax, child611Pax, infantPax,
-      guideRate, vehicleRate, serviceFeeAmount, mealsAmount, hotelRoomRate, hotelRooms,
+      guideRate, vehicleRate, serviceFeeAmount, mealsRate, mealsCount, hotelRoomRate, hotelRooms,
       entranceFeePerPax: entranceFeePerPaxV2, specialsPerPax: specialsPerPaxV2,
       includeFlights: includeFlightsV2, flightPerPax: flightPerPaxV2,
       sdfOverride:  sdfOverrideOn  ? (sdfOverride  === '' ? 0 : Number(sdfOverride))  : null,
@@ -427,12 +430,13 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
       gstApplicable: gstApplicableV2,
       guideVehicleDays,
       hotelNights: hotelNightsOverride,
+      mealsPax: mealsPaxOverride,
     }),
     [primaryNationality, nights, adultPax, child611Pax, infantPax,
-     guideRate, vehicleRate, serviceFeeAmount, mealsAmount, hotelRoomRate, hotelRooms,
+     guideRate, vehicleRate, serviceFeeAmount, mealsRate, mealsCount, hotelRoomRate, hotelRooms,
      entranceFeePerPaxV2, specialsPerPaxV2, includeFlightsV2, flightPerPaxV2,
      sdfOverrideOn, sdfOverride, visaOverrideOn, visaOverride, extraCosts, gstApplicableV2,
-     guideVehicleDays, hotelNightsOverride]
+     guideVehicleDays, hotelNightsOverride, mealsPaxOverride]
   )
 
   // Whichever schema applies to this itinerary — used for the parts of the
@@ -544,7 +548,9 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
       vehicle_label:           vehicleLabel.trim()            || 'Vehicle & Transportation',
       service_fee_amount:      Number(serviceFeeAmount)       || 0,
       service_fee_label:       serviceFeeLabel.trim()         || 'Service Charge / Agency Fee',
-      meals_amount:            Number(mealsAmount)            || 0,
+      meals_rate:              Number(mealsRate)              || 0,
+      meals_count:             Number(mealsCount)             || 0,
+      meals_pax:               mealsPaxOverride === '' ? null : Number(mealsPaxOverride),
       meals_label:             mealsLabel.trim()              || 'Meals',
       hotel_room_rate:         Number(hotelRoomRate)          || 0,
       hotel_rooms:             Number(hotelRooms)             || 0,
@@ -1886,32 +1892,10 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
 
                 {isV2Pricing && (
                 <>
-                {/* Number of Days — shared by Guide & Vehicle below. Defaults to
-                    nights + 1 but can be overridden (e.g. driver leaves a day early). */}
-                <div className="bg-stone-800/60 rounded-xl border border-white/5 p-3">
-                  <label className="text-[10px] text-stone-400 uppercase tracking-wider block mb-1.5">
-                    Number of Days (Guide &amp; Vehicle)
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input type="number" min="0" step="1"
-                      value={guideVehicleDays}
-                      onChange={e => setGuideVehicleDays(e.target.value)}
-                      placeholder={String(calcV2.daysAuto)}
-                      className={inp}
-                    />
-                    {calcV2.isDaysOverridden && (
-                      <button type="button" onClick={() => setGuideVehicleDays('')}
-                        className="text-[11px] text-stone-500 hover:text-stone-300 underline whitespace-nowrap shrink-0">
-                        Reset to auto ({calcV2.daysAuto})
-                      </button>
-                    )}
-                  </div>
-                  <p className="text-[10px] text-stone-600 mt-1.5">
-                    Auto = Nights ({nights}) + 1 = {calcV2.daysAuto} days. Override if the guide/vehicle are engaged for a different number of days.
-                  </p>
-                </div>
-
-                {/* Guide & Vehicle — per day (rate × days, where days = nights + 1 unless overridden above) */}
+                {/* Guide & Vehicle — per day (rate × days). Days defaults to
+                    nights + 1 but can be overridden right in each card (e.g.
+                    driver leaves a day early) — both cards share one Days
+                    value, so editing it in either updates both. */}
                 {[
                   { label: guideLabel,   setLabel: setGuideLabel,   rate: guideRate,   setRate: setGuideRate,   total: calcV2.guideTotal,   gstKey: 'guide' },
                   { label: vehicleLabel, setLabel: setVehicleLabel, rate: vehicleRate, setRate: setVehicleRate, total: calcV2.vehicleTotal, gstKey: 'vehicle' },
@@ -1920,12 +1904,31 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
                     <input type="text" value={f.label} onChange={e => f.setLabel(e.target.value)}
                       className="w-full bg-transparent text-[10px] text-stone-400 uppercase tracking-wider mb-1.5 focus:outline-none focus:text-stone-200 border-b border-transparent focus:border-white/10 pb-0.5" />
                     <p className="text-[9px] text-stone-600 mb-1.5">Per day</p>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">{calcV2.sym}</span>
-                      <input type="number" min="0" step="100" value={f.rate}
-                        onChange={e => f.setRate(e.target.value)}
-                        placeholder="0" className={`${inp} pl-7`} />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[9px] text-stone-600 block mb-1">Days</label>
+                        <input type="number" min="0" step="1"
+                          value={guideVehicleDays}
+                          onChange={e => setGuideVehicleDays(e.target.value)}
+                          placeholder={String(calcV2.daysAuto)}
+                          className={inp} />
+                      </div>
+                      <div>
+                        <label className="text-[9px] text-stone-600 block mb-1">Rate / day</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">{calcV2.sym}</span>
+                          <input type="number" min="0" step="100" value={f.rate}
+                            onChange={e => f.setRate(e.target.value)}
+                            placeholder="0" className={`${inp} pl-7`} />
+                        </div>
+                      </div>
                     </div>
+                    {calcV2.isDaysOverridden && (
+                      <button type="button" onClick={() => setGuideVehicleDays('')}
+                        className="text-[11px] text-stone-500 hover:text-stone-300 underline mt-1.5">
+                        Reset days to auto ({calcV2.daysAuto})
+                      </button>
+                    )}
                     {f.rate > 0 && (
                       <p className="text-[10px] text-stone-500 mt-1.5">
                         {calcV2.sym}{Number(f.rate).toLocaleString()} × {calcV2.days} days = {calcV2.sym}{f.total.toLocaleString()}
@@ -1957,17 +1960,45 @@ function EditDrawer({ itinerary, onClose, onSaved, onDeleted }) {
                   </label>
                 </div>
 
-                {/* Meals — direct/flat total for all meals */}
+                {/* Meals — rate × number of meals × pax */}
                 <div className="bg-stone-800/60 rounded-xl border border-white/5 p-3">
                   <input type="text" value={mealsLabel} onChange={e => setMealsLabel(e.target.value)}
                     className="w-full bg-transparent text-[10px] text-stone-400 uppercase tracking-wider mb-1.5 focus:outline-none focus:text-stone-200 border-b border-transparent focus:border-white/10 pb-0.5" />
-                  <p className="text-[9px] text-stone-600 mb-1.5">Total direct amount</p>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">{calcV2.sym}</span>
-                    <input type="number" min="0" step="10" value={mealsAmount}
-                      onChange={e => setMealsAmount(e.target.value)}
-                      placeholder="0" className={`${inp} pl-7`} />
+                  <p className="text-[9px] text-stone-600 mb-1.5">Rate × no. of meals × no. of pax</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="text-[9px] text-stone-600 block mb-1">Rate / meal</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-sm">{calcV2.sym}</span>
+                        <input type="number" min="0" step="10" value={mealsRate}
+                          onChange={e => setMealsRate(e.target.value)}
+                          placeholder="0" className={`${inp} pl-7`} />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-stone-600 block mb-1">No. of Meals</label>
+                      <input type="number" min="0" step="1" value={mealsCount}
+                        onChange={e => setMealsCount(e.target.value)}
+                        placeholder="0" className={inp} />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-stone-600 block mb-1">No. of Pax</label>
+                      <input type="number" min="0" step="1" value={mealsPaxOverride}
+                        onChange={e => setMealsPaxOverride(e.target.value)}
+                        placeholder={String(calcV2.totalPax)} className={inp} />
+                    </div>
                   </div>
+                  {calcV2.isMealsPaxOverridden && (
+                    <button type="button" onClick={() => setMealsPaxOverride('')}
+                      className="text-[11px] text-stone-500 hover:text-stone-300 underline mt-1.5">
+                      Reset pax to auto ({calcV2.totalPax})
+                    </button>
+                  )}
+                  {Number(mealsRate) > 0 && Number(mealsCount) > 0 && (
+                    <p className="text-[10px] text-stone-500 mt-1.5">
+                      {calcV2.sym}{Number(mealsRate).toLocaleString()} × {mealsCount} meals × {calcV2.mealsPax} pax = {calcV2.sym}{calcV2.mealsTotal.toLocaleString()}
+                    </p>
+                  )}
                   <label className="flex items-center gap-1.5 text-[10px] text-amber-600/70 mt-1.5 cursor-pointer">
                     <input type="checkbox" checked={gstApplicableV2.meals} onChange={() => toggleGstV2('meals')}
                       className="rounded accent-amber-500 w-3 h-3 cursor-pointer" />

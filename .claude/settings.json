@@ -9,7 +9,8 @@
       "Bash(node scripts/theme-codemod.mjs)",
       "Bash(git restore *)",
       "Bash(rm scripts/theme-codemod.mjs)",
-      "Bash(rmdir scripts *)"
+      "Bash(rmdir scripts *)",
+      "Bash(tee /tmp/build_mealsdays.log)"
     ]
   }
 }
