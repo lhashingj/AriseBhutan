@@ -10,7 +10,9 @@
       "Bash(git restore *)",
       "Bash(rm scripts/theme-codemod.mjs)",
       "Bash(rmdir scripts *)",
-      "Bash(tee /tmp/build_mealsdays.log)"
+      "Bash(tee /tmp/build_mealsdays.log)",
+      "Bash(tee /tmp/build_chat.log)",
+      "Bash(tee /tmp/build_chatfix.log)"
     ]
   }
 }
