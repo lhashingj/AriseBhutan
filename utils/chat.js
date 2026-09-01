@@ -68,10 +68,20 @@ export async function fetchAdminUnreadTotal() {
   return count || 0
 }
 
+// Supabase reuses a channel object for a given topic name — subscribing
+// twice under the same name (e.g. the layout's unread badge and the chat
+// page itself, mounted at once) hits an already-subscribed channel and
+// throws trying to attach a second listener. Every subscriber gets its own
+// unique name so independent callers never collide.
+let channelSeq = 0
+function uniqueChannel(base) {
+  channelSeq += 1
+  return supabase.channel(`${base}_${Date.now()}_${channelSeq}`)
+}
+
 /** Live-subscribe to every new/updated message in one client's thread. */
 export function subscribeToThread(clientId, { onInsert, onUpdate } = {}) {
-  const channel = supabase
-    .channel(`chat_thread_${clientId}`)
+  const channel = uniqueChannel(`chat_thread_${clientId}`)
     .on('postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `client_id=eq.${clientId}` },
       (payload) => onInsert?.(payload.new))
@@ -84,8 +94,7 @@ export function subscribeToThread(clientId, { onInsert, onUpdate } = {}) {
 
 /** Admin inbox: live-subscribe to every new message across all threads. */
 export function subscribeToAllThreads(onChange) {
-  const channel = supabase
-    .channel('chat_all_threads')
+  const channel = uniqueChannel('chat_all_threads')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_messages' }, () => onChange?.())
     .subscribe()
   return () => supabase.removeChannel(channel)
