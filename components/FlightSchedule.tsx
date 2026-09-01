@@ -104,7 +104,7 @@ export default function FlightSchedule() {
 
       {/* ── Hero ── */}
       <section
-        className="relative pt-[120px] pb-10 sm:pt-[140px] sm:pb-14 overflow-hidden"
+        className="relative pt-[120px] pb-10 sm:pt-[140px] sm:pb-14"
         style={{ backgroundImage: `url(${heroImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/45 to-stone-950/90" />
