@@ -205,6 +205,7 @@ export default function BookingForm({ defaultTour = '' }: { defaultTour?: string
                   value={data.phone}
                   onChange={v => set('phone', v)}
                   placeholder="Phone number"
+                  defaultCountryName={data.country}
                 />
               </div>
               <div>

@@ -229,6 +229,7 @@ export default function ClientProfilePage() {
                 value={form.phone}
                 onChange={(v) => setForm(f => ({ ...f, phone: v }))}
                 placeholder="Phone number"
+                defaultCountryName={form.nationality}
               />
             </div>
           </div>

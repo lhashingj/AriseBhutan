@@ -252,6 +252,7 @@ function RegisterForm() {
             value={form.phone}
             onChange={v => set('phone', v)}
             placeholder="Phone number"
+            defaultCountryName={form.country}
           />
         </div>
 

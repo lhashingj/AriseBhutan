@@ -4,15 +4,17 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { LayoutDashboard, UserCircle, LogOut, Menu, MailWarning, RefreshCw, MapPin } from 'lucide-react'
+import { LayoutDashboard, UserCircle, LogOut, Menu, MailWarning, RefreshCw, MapPin, MessageCircle } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
 import { useEmailVerified } from '@/utils/useEmailVerified'
 import ThemeToggle from '@/components/ThemeToggle'
 import ClientNotificationBell from '@/components/ClientNotificationBell'
+import { subscribeToThread, fetchClientUnreadCount } from '@/utils/chat'
 
 const navItems = [
   { label: 'Dashboard',      href: '/client/dashboard',   icon: LayoutDashboard },
   { label: 'My Itineraries', href: '/client/itineraries', icon: MapPin },
+  { label: 'Chat',           href: '/client/chat',        icon: MessageCircle },
   { label: 'My Profile',     href: '/client/profile',     icon: UserCircle },
 ]
 
@@ -24,6 +26,7 @@ export default function ClientLayout({ children }) {
   const [showConfirm, setShowConfirm] = useState(false)
   const [resendSent, setResendSent]   = useState(false)
   const [resendError, setResendError] = useState('')
+  const [unreadChat, setUnreadChat]   = useState(0)
 
   const { verified, loading: verifyLoading, resend } = useEmailVerified()
 
@@ -53,6 +56,21 @@ export default function ClientLayout({ children }) {
       setChecking(false)
     })
   }, [router])
+
+  // Unread-chat dot on the "Chat" nav item — separate from the page itself
+  // so it's visible everywhere in the portal, not just while chat is open.
+  useEffect(() => {
+    if (!profile?.id) return
+    let unsubscribe = () => {}
+
+    async function loadUnread() {
+      const count = await fetchClientUnreadCount(profile.id).catch(() => 0)
+      setUnreadChat(count)
+    }
+    loadUnread()
+    unsubscribe = subscribeToThread(profile.id, { onInsert: loadUnread, onUpdate: loadUnread })
+    return () => unsubscribe()
+  }, [profile?.id])
 
   async function signOut() {
     await supabase.auth.signOut()
@@ -104,6 +122,11 @@ export default function ClientLayout({ children }) {
               >
                 <Icon className="w-4 h-4 flex-shrink-0" />
                 {label}
+                {label === 'Chat' && unreadChat > 0 && (
+                  <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-stone-950 text-[10px] font-bold flex items-center justify-center">
+                    {unreadChat > 9 ? '9+' : unreadChat}
+                  </span>
+                )}
               </Link>
             )
           })}

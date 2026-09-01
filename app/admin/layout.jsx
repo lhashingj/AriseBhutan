@@ -4,12 +4,14 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { LayoutDashboard, Users, Map, LogOut, Shield, Menu, UserCircle } from 'lucide-react'
+import { LayoutDashboard, Users, Map, LogOut, Shield, Menu, UserCircle, MessageCircle } from 'lucide-react'
 import { supabase } from '@/utils/supabase/client'
+import { subscribeToAllThreads, fetchAdminUnreadTotal } from '@/utils/chat'
 
 const navItems = [
   { label: 'Overview',    href: '/admin/dashboard',   icon: LayoutDashboard },
   { label: 'Itineraries', href: '/admin/itineraries', icon: Map },
+  { label: 'Chat',        href: '/admin/chat',        icon: MessageCircle },
   { label: 'Clients',     href: '/admin/users',       icon: Users },
   { label: 'My Profile',  href: '/admin/profile',     icon: UserCircle },
 ]
@@ -21,6 +23,7 @@ export default function AdminLayout({ children }) {
   const [checking, setChecking] = useState(true)
   const [sideOpen, setSideOpen]       = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [unreadChat, setUnreadChat]   = useState(0)
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -40,6 +43,18 @@ export default function AdminLayout({ children }) {
       setChecking(false)
     })
   }, [router])
+
+  // Total unread across every client thread, for the sidebar badge.
+  useEffect(() => {
+    if (!profile) return
+    async function loadUnread() {
+      const count = await fetchAdminUnreadTotal().catch(() => 0)
+      setUnreadChat(count)
+    }
+    loadUnread()
+    const unsubscribe = subscribeToAllThreads(loadUnread)
+    return () => unsubscribe()
+  }, [profile])
 
   async function signOut() {
     await supabase.auth.signOut()
@@ -98,6 +113,11 @@ export default function AdminLayout({ children }) {
                     : 'text-stone-400 hover:text-white hover:bg-white/10'
                 }`}>
                 <Icon className="w-4 h-4 flex-shrink-0" />{label}
+                {label === 'Chat' && unreadChat > 0 && (
+                  <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-stone-950 text-[10px] font-bold flex items-center justify-center">
+                    {unreadChat > 9 ? '9+' : unreadChat}
+                  </span>
+                )}
               </Link>
             )
           })}

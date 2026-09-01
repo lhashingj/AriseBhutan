@@ -503,6 +503,7 @@ export default function PackageBuilder({ profile, onClose, onSaved, initialTourD
                       value={clientPhone}
                       onChange={(v) => setClientPhone(v)}
                       placeholder="Phone number"
+                      defaultCountryName={nationality}
                     />
                   </div>
                 </div>

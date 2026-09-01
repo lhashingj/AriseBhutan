@@ -19,6 +19,12 @@ export interface PhoneInputProps {
   placeholder?: string
   disabled?: boolean
   className?: string
+  /** Country name (matching CountrySelect's list, e.g. "Japan") to default the
+   *  dial-code selector to — typically the nationality/country-of-residence
+   *  field elsewhere on the same form. Only applied while the phone number
+   *  itself is still empty, so it never overwrites a number already entered
+   *  or a dial code the user picked themselves. */
+  defaultCountryName?: string
 }
 
 // ─── Flag image from ISO alpha-2 ─────────────────────────────────────────────
@@ -258,6 +264,7 @@ export default function PhoneInput({
   placeholder = 'Phone number',
   disabled = false,
   className = '',
+  defaultCountryName,
 }: PhoneInputProps) {
   const [selected,    setSelected]    = useState<PhoneCountry>(PRIORITY[0]) // Bhutan default
   const [localNumber, setLocalNumber] = useState(value)
@@ -280,6 +287,20 @@ export default function PhoneInput({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value])
+
+  // Follow the nationality field elsewhere on the same form — but only while
+  // the number itself is still empty, so this never fights a number (or a
+  // dial code) the person has already started entering. This is what stops
+  // every phone silently defaulting to Bhutan's +975 regardless of who's
+  // actually filling the form in.
+  useEffect(() => {
+    if (!defaultCountryName || localNumber !== '') return
+    const match = [...PRIORITY, ...REST].find(
+      c => c.name.toLowerCase() === defaultCountryName.trim().toLowerCase()
+    )
+    if (match && match.code !== selected.code) setSelected(match)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultCountryName, localNumber])
 
   // Close on outside click
   useEffect(() => {
