@@ -12,7 +12,15 @@
       "Bash(rmdir scripts *)",
       "Bash(tee /tmp/build_mealsdays.log)",
       "Bash(tee /tmp/build_chat.log)",
-      "Bash(tee /tmp/build_chatfix.log)"
+      "Bash(tee /tmp/build_chatfix.log)",
+      "Bash(xargs -I{} ls -la \"{}\")",
+      "Bash(sort -k6,7)",
+      "Bash(cp '__TRACKED_VAR__/WhatsApp Image 2026-09-02 at 11.22.16 AM \\(1\\).jpeg' public/reviews/budi-review-1.jpg)",
+      "Bash(cp '__TRACKED_VAR__/WhatsApp Image 2026-09-02 at 11.22.16 AM.jpeg' public/reviews/budi-review-2.jpg)",
+      "Bash(cp '__TRACKED_VAR__/WhatsApp Image 2026-09-02 at 11.22.17 AM \\(1\\).jpeg' public/reviews/budi-review-3.jpg)",
+      "Bash(cp '__TRACKED_VAR__/WhatsApp Image 2026-09-02 at 11.22.17 AM \\(2\\).jpeg' public/reviews/budi-review-4.jpg)",
+      "Bash(cp '__TRACKED_VAR__/WhatsApp Image 2026-09-02 at 11.22.17 AM \\(3\\).jpeg' public/reviews/budi-review-5.jpg)",
+      "Bash(grep -iE \"^\\(maximize|expand|x\\)\\\\.js$\")"
     ]
   }
 }
