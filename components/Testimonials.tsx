@@ -1,7 +1,8 @@
 import { Star, Quote } from 'lucide-react'
 import Image from 'next/image'
-import { STATIC_REVIEWS } from '@/data/reviews'
+import { STATIC_REVIEWS, type Review } from '@/data/reviews'
 import { fetchGooglePlaceDetails } from '@/utils/googlePlaces'
+import ReviewPhotoCarousel from './ReviewPhotoCarousel'
 
 // Tiny Google "G" badge SVG (inline so no extra network request)
 function GoogleBadge() {
@@ -16,12 +17,29 @@ function GoogleBadge() {
 }
 
 export default async function Testimonials() {
-  // Use Google API only for the live rating count — always show our curated reviews with photos
+  // Curated reviews (with our own trip photos) always show first — Google's
+  // live "reviews" field fills out the rest of the grid with genuine reviews
+  // we haven't hand-picked yet, so the section keeps growing on its own as
+  // new reviews come in, instead of ever needing to be filled with filler.
   const place = await fetchGooglePlaceDetails()
 
   const mapsUrl = place?.url ?? `https://www.google.com/maps/place/Arise+Bhutan+Tours+%26+Travels/@27.4211577,89.4225462,17z`
   const totalStr = place?.user_ratings_total ? `${place.user_ratings_total.toLocaleString()}+` : '11+'
   const avgStr   = place?.rating ? place.rating.toFixed(1) : '5.0'
+
+  const curatedNames = new Set(STATIC_REVIEWS.map(r => r.author_name.trim().toLowerCase()))
+  const liveExtras: Review[] = (place?.reviews ?? [])
+    .filter(r => !curatedNames.has(r.author_name.trim().toLowerCase()))
+    .map(r => ({
+      author_name: r.author_name,
+      countryFlag: '',
+      rating: r.rating,
+      text: r.text,
+      relative_time_description: r.relative_time_description,
+      profile_photo_url: null, // not in our image allowlist — initials avatar covers it
+      reviewPhoto: null,
+    }))
+  const allReviews = [...STATIC_REVIEWS, ...liveExtras]
 
   return (
     <section className="py-16 sm:py-20 bg-white dark:bg-stone-950 overflow-hidden transition-colors duration-300">
@@ -49,35 +67,14 @@ export default async function Testimonials() {
 
         {/* Mobile: horizontal snap scroll | md+: 2-column grid | lg+: 4-column grid */}
         <div className="flex gap-5 overflow-x-auto scrollbar-hide snap-x snap-mandatory -mx-4 px-4 pb-4 md:grid md:grid-cols-2 lg:grid-cols-4 md:overflow-visible md:pb-0 md:mx-0 md:px-0">
-          {STATIC_REVIEWS.map(({ author_name, countryFlag, rating, text, relative_time_description, reviewPhoto, reviewPhotos }) => (
+          {allReviews.map(({ author_name, countryFlag, rating, text, relative_time_description, reviewPhoto, reviewPhotos }) => (
                 <div
                   key={author_name}
                   className="flex-none w-[82vw] sm:w-[60vw] md:w-auto snap-start bg-stone-50 dark:bg-stone-900 rounded-2xl border border-stone-100 dark:border-stone-800 hover:shadow-lg dark:hover:shadow-black/40 transition-all duration-300 overflow-hidden flex flex-col"
                 >
                   {/* Tour photo(s) */}
                   {reviewPhotos && reviewPhotos.length > 1 ? (
-                    <div className="grid grid-cols-3 gap-0.5 h-32 flex-shrink-0">
-                      {reviewPhotos.slice(0, 3).map((photo, i) => {
-                        const extra = reviewPhotos.length - 3
-                        const showOverlay = i === 2 && extra > 0
-                        return (
-                          <div key={photo} className="relative h-full">
-                            <Image
-                              src={photo}
-                              alt={`${author_name}'s Bhutan tour photo ${i + 1}`}
-                              fill
-                              className="object-cover"
-                              sizes="(max-width: 768px) 27vw, (max-width: 1024px) 17vw, 9vw"
-                            />
-                            {showOverlay && (
-                              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                <span className="text-white text-sm font-bold">+{extra}</span>
-                              </div>
-                            )}
-                          </div>
-                        )
-                      })}
-                    </div>
+                    <ReviewPhotoCarousel photos={reviewPhotos} alt={`${author_name}'s Bhutan tour`} />
                   ) : reviewPhoto && (
                     <div className="relative w-full h-44 flex-shrink-0">
                       <Image
