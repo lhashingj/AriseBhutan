@@ -64,3 +64,13 @@ export const STATIC_REVIEWS: Review[] = [
     reviewPhoto: null,
   },
 ]
+
+/**
+ * Author names of live Google reviews we deliberately keep off the site —
+ * distinct from STATIC_REVIEWS (which is an allowlist we hand-pick from).
+ * Testimonials.tsx also pulls in any *other* review straight from the
+ * Google Places API to keep the section growing on its own, so this is
+ * what stops a specific one of those from reappearing. Matched
+ * case-insensitively against author_name.
+ */
+export const EXCLUDED_REVIEW_AUTHORS: string[] = ['K in Motion', 'Tina Wu', 'Sonam Jamtsho']

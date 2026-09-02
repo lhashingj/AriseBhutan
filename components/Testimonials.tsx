@@ -1,8 +1,8 @@
 import { Star, Quote } from 'lucide-react'
-import Image from 'next/image'
-import { STATIC_REVIEWS, type Review } from '@/data/reviews'
+import { STATIC_REVIEWS, EXCLUDED_REVIEW_AUTHORS, type Review } from '@/data/reviews'
 import { fetchGooglePlaceDetails } from '@/utils/googlePlaces'
 import ReviewPhotoCarousel from './ReviewPhotoCarousel'
+import ExpandableReviewText from './ExpandableReviewText'
 
 // Tiny Google "G" badge SVG (inline so no extra network request)
 function GoogleBadge() {
@@ -28,8 +28,11 @@ export default async function Testimonials() {
   const avgStr   = place?.rating ? place.rating.toFixed(1) : '5.0'
 
   const curatedNames = new Set(STATIC_REVIEWS.map(r => r.author_name.trim().toLowerCase()))
+  const excludedNames = new Set(EXCLUDED_REVIEW_AUTHORS.map(n => n.trim().toLowerCase()))
   const liveExtras: Review[] = (place?.reviews ?? [])
+    .filter(r => r.text?.trim().length > 0) // Google sometimes has a rating with no written review — nothing to show
     .filter(r => !curatedNames.has(r.author_name.trim().toLowerCase()))
+    .filter(r => !excludedNames.has(r.author_name.trim().toLowerCase()))
     .map(r => ({
       author_name: r.author_name,
       countryFlag: '',
@@ -72,21 +75,11 @@ export default async function Testimonials() {
                   key={author_name}
                   className="flex-none w-[82vw] sm:w-[60vw] md:w-auto snap-start bg-stone-50 dark:bg-stone-900 rounded-2xl border border-stone-100 dark:border-stone-800 hover:shadow-lg dark:hover:shadow-black/40 transition-all duration-300 overflow-hidden flex flex-col"
                 >
-                  {/* Tour photo(s) */}
-                  {reviewPhotos && reviewPhotos.length > 1 ? (
-                    <ReviewPhotoCarousel photos={reviewPhotos} alt={`${author_name}'s Bhutan tour`} />
-                  ) : reviewPhoto && (
-                    <div className="relative w-full h-44 flex-shrink-0">
-                      <Image
-                        src={reviewPhoto}
-                        alt={`${author_name}'s Bhutan tour`}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 82vw, (max-width: 1024px) 50vw, 25vw"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-                    </div>
-                  )}
+                  {/* Tour photo(s) — click to expand, swipeable when there's more than one */}
+                  <ReviewPhotoCarousel
+                    photos={reviewPhotos && reviewPhotos.length > 1 ? reviewPhotos : reviewPhoto ? [reviewPhoto] : []}
+                    alt={`${author_name}'s Bhutan tour`}
+                  />
                   <div className="p-6 sm:p-7 flex flex-col flex-1 relative">
                     <Quote className="w-7 h-7 text-amber-200 dark:text-amber-500/30 absolute top-4 right-4" />
                     <div className="flex gap-1 mb-3">
@@ -94,7 +87,7 @@ export default async function Testimonials() {
                         <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                       ))}
                     </div>
-                    <p className="text-stone-700 dark:text-stone-300 text-sm leading-relaxed mb-5 italic flex-1">&ldquo;{text}&rdquo;</p>
+                    <ExpandableReviewText text={text} />
                     <div className="border-t border-stone-200 dark:border-stone-800 pt-4 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-500/15 flex items-center justify-center text-amber-700 dark:text-amber-400 font-bold text-sm flex-shrink-0">
