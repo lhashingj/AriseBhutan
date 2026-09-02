@@ -49,13 +49,36 @@ export default async function Testimonials() {
 
         {/* Mobile: horizontal snap scroll | md+: 2-column grid | lg+: 4-column grid */}
         <div className="flex gap-5 overflow-x-auto scrollbar-hide snap-x snap-mandatory -mx-4 px-4 pb-4 md:grid md:grid-cols-2 lg:grid-cols-4 md:overflow-visible md:pb-0 md:mx-0 md:px-0">
-          {STATIC_REVIEWS.map(({ author_name, countryFlag, rating, text, relative_time_description, reviewPhoto }) => (
+          {STATIC_REVIEWS.map(({ author_name, countryFlag, rating, text, relative_time_description, reviewPhoto, reviewPhotos }) => (
                 <div
                   key={author_name}
                   className="flex-none w-[82vw] sm:w-[60vw] md:w-auto snap-start bg-stone-50 dark:bg-stone-900 rounded-2xl border border-stone-100 dark:border-stone-800 hover:shadow-lg dark:hover:shadow-black/40 transition-all duration-300 overflow-hidden flex flex-col"
                 >
-                  {/* Tour photo */}
-                  {reviewPhoto && (
+                  {/* Tour photo(s) */}
+                  {reviewPhotos && reviewPhotos.length > 1 ? (
+                    <div className="grid grid-cols-3 gap-0.5 h-32 flex-shrink-0">
+                      {reviewPhotos.slice(0, 3).map((photo, i) => {
+                        const extra = reviewPhotos.length - 3
+                        const showOverlay = i === 2 && extra > 0
+                        return (
+                          <div key={photo} className="relative h-full">
+                            <Image
+                              src={photo}
+                              alt={`${author_name}'s Bhutan tour photo ${i + 1}`}
+                              fill
+                              className="object-cover"
+                              sizes="(max-width: 768px) 27vw, (max-width: 1024px) 17vw, 9vw"
+                            />
+                            {showOverlay && (
+                              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                <span className="text-white text-sm font-bold">+{extra}</span>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : reviewPhoto && (
                     <div className="relative w-full h-44 flex-shrink-0">
                       <Image
                         src={reviewPhoto}
