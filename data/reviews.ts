@@ -26,10 +26,10 @@ export const STATIC_REVIEWS: Review[] = [
     text: "Highly recommended. I book 2 nights & 3 days tour with Arise Bhutan. I had Kuenzang Wangchuk as my guide & Ugyen Wangdi as my driver. I had an enjoyable & fun tour with both gentlemen. Highlights of the tour; flexibility...Wangchuk & Ogyen are very well versed on the attractions in Paro and even suggested better ones along the way. 10 km total hike to Taktsang or the famous Tiger's Nest...memorable & very picturesque all the way up. Restaurants selection were all neat & delicious with a restaurant that has my own local dish being recommended. I told them that i want to experience how local lives and their culture, so they took me to have high tea in one of his friend's house coinciding with first rice harvest in the village..plus the archery & town tour...awesome. More importantly, both gentlemen were a lovely, kind, attentive & have a great sense of humour. Bhutan is already a beautiful country, and adding Arise, Wangchuk & Ugyen to it, making my trip near perfection...",
     relative_time_description: 'an hour ago',
     profile_photo_url: null,
-    reviewPhoto: '/reviews/budi-review-3.jpg',
+    reviewPhoto: '/reviews/budi-review-1.jpg',
     reviewPhotos: [
-      '/reviews/budi-review-3.jpg',
       '/reviews/budi-review-1.jpg',
+      '/reviews/budi-review-3.jpg',
       '/reviews/budi-review-2.jpg',
       '/reviews/budi-review-4.jpg',
       '/reviews/budi-review-5.jpg',
