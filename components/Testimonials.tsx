@@ -23,9 +23,20 @@ export default async function Testimonials() {
   // new reviews come in, instead of ever needing to be filled with filler.
   const place = await fetchGooglePlaceDetails()
 
-  const mapsUrl = place?.url ?? `https://www.google.com/maps/place/Arise+Bhutan+Tours+%26+Travels/@27.4211577,89.4225462,17z`
+  const mapsUrl = place?.url ?? `https://maps.app.goo.gl/hfzLjARDXQgzJ8LF7`
   const totalStr = place?.user_ratings_total ? `${place.user_ratings_total.toLocaleString()}+` : '11+'
   const avgStr   = place?.rating ? place.rating.toFixed(1) : '5.0'
+
+  // "X ago" is only ever accurate the day it's written — re-typing it by
+  // hand in data/reviews.ts goes stale the moment time passes. Match each
+  // curated review to its live Google entry by name and take the live
+  // rating/timestamp from there; keep our own curated text (verified
+  // directly with the reviewer's full wording) and trip photos either way.
+  const liveByName = new Map((place?.reviews ?? []).map(r => [r.author_name.trim().toLowerCase(), r] as const))
+  const curated: Review[] = STATIC_REVIEWS.map(r => {
+    const live = liveByName.get(r.author_name.trim().toLowerCase())
+    return live ? { ...r, rating: live.rating, relative_time_description: live.relative_time_description } : r
+  })
 
   const curatedNames = new Set(STATIC_REVIEWS.map(r => r.author_name.trim().toLowerCase()))
   const excludedNames = new Set(EXCLUDED_REVIEW_AUTHORS.map(n => n.trim().toLowerCase()))
@@ -42,7 +53,7 @@ export default async function Testimonials() {
       profile_photo_url: null, // not in our image allowlist — initials avatar covers it
       reviewPhoto: null,
     }))
-  const allReviews = [...STATIC_REVIEWS, ...liveExtras]
+  const allReviews = [...curated, ...liveExtras]
 
   return (
     <section className="py-16 sm:py-20 bg-white dark:bg-stone-950 overflow-hidden transition-colors duration-300">
@@ -101,7 +112,7 @@ export default async function Testimonials() {
                         </div>
                       </div>
                       <a
-                        href="https://www.google.com/maps/place/Arise+Bhutan+Tours+%26+Travels/@27.4211577,89.4225462,17z"
+                        href={mapsUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity"
